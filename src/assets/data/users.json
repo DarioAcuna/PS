@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Administrador",
+      "email": "admin@gym.com",
+      "password": "admin123",
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "name": "Juan Pérez",
+      "email": "juan@gym.com",
+      "password": "juan123",
+      "role": "user"
+    }
+  ]
+}

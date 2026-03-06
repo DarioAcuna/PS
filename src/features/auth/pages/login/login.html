@@ -2,11 +2,27 @@
   <div class="login-box">
     <h1>INICIO DE SESIÓN</h1>
 
-    <form class="login-form">
-      <input type="email" placeholder="EMAIL" />
-      <input type="password" placeholder="CONTRASEÑA" />
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
 
-      <button type="submit">INICIAR SESIÓN</button>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <input
+        type="email"
+        placeholder="EMAIL"
+        formControlName="email"
+        [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+      />
+      <input
+        type="password"
+        placeholder="CONTRASEÑA"
+        formControlName="password"
+        [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+      />
+
+      <button type="submit" [disabled]="isLoading || loginForm.invalid">
+        {{ isLoading ? 'INICIANDO...' : 'INICIAR SESIÓN' }}
+      </button>
     </form>
 
     <a href="#" class="forgot-password">¿HAS OLVIDADO TU CONTRASEÑA?</a>

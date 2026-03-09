@@ -5,6 +5,7 @@
       <p>Usuario: <strong>{{ user.name }}</strong></p>
       <p>Email: <strong>{{ user.email }}</strong></p>
       <p>Rol: <strong>{{ user.role }}</strong></p>
+      <a *ngIf="isAdmin$ | async" routerLink="/admin" class="admin-btn">Ir al Panel de Administrador</a>
       <button (click)="logout()" class="logout-btn">Cerrar Sesión</button>
     </div>
   </div>

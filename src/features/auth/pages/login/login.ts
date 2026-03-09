@@ -40,7 +40,9 @@ export class LoginComponent {
     this.authService.login(email, password).subscribe({
       next: (user) => {
         if (user) {
-          this.router.navigate(['/home']);
+          const role = user.role?.toLowerCase();
+          const targetRoute = role === 'admin' || role === 'administrador' ? '/admin' : '/home';
+          this.router.navigate([targetRoute]);
         } else {
           this.errorMessage = 'Email o contraseña incorrectos';
           this.isLoading = false;

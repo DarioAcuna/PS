@@ -79,6 +79,15 @@ export class AuthService {
     return this.isAuthenticated.value;
   }
 
+  getCurrentUser(): User | null {
+    return this.currentUser.value;
+  }
+
+  isAdmin(): boolean {
+    const role = this.currentUser.value?.role?.toLowerCase();
+    return role === 'admin' || role === 'administrador';
+  }
+
   private checkAuthStatus(): void {
     const userStr = localStorage.getItem('currentUser');
     if (userStr) {
@@ -92,4 +101,3 @@ export class AuthService {
     }
   }
 }
-

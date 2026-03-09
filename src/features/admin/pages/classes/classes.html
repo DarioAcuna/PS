@@ -1,0 +1,136 @@
+<div *ngIf="currentUser$ | async as user" class="dashboard-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">JJB</span>
+      <span class="brand-text">GYM</span>
+    </div>
+
+    <nav class="menu">
+      <a class="menu-item" routerLink="/admin">Dashboard</a>
+      <a class="menu-item is-active" routerLink="/admin/classes">Clases</a>
+      <a class="menu-item" href="#">Instructores</a>
+      <a class="menu-item" href="#">Miembros</a>
+      <a class="menu-item" href="#">Eventos</a>
+      <a class="menu-item" href="#">Tienda</a>
+      <a class="menu-item" href="#">Reportes</a>
+      <a class="menu-item" href="#">Configuracion</a>
+    </nav>
+
+    <div class="sidebar-actions">
+      <a routerLink="/home" class="action-btn action-home">Vista Inicio</a>
+      <button (click)="logout()" class="action-btn action-logout">Cerrar Sesion</button>
+    </div>
+  </aside>
+
+  <section class="main-area">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Clases</h1>
+        <p>{{ user.name }} · Panel de Administracion</p>
+      </div>
+      <div class="topbar-user">
+        <span class="notify-dot">0</span>
+        <span class="avatar">{{ user.name.charAt(0) }}</span>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <section class="panel classes-header">
+        <h2>Gestion de Clases</h2>
+        <p>Esta pantalla esta preparada para conectar listado, filtros y acciones cuando tengas los datos.</p>
+      </section>
+
+      <section class="classes-layout">
+        <article class="panel">
+          <h3>Filtros</h3>
+          <div class="field-grid">
+            <label class="field">
+              <span>Disciplina</span>
+              <input type="text" placeholder="Ej. Jiu-Jitsu" disabled />
+            </label>
+            <label class="field">
+              <span>Nivel</span>
+              <input type="text" placeholder="Todos" disabled />
+            </label>
+            <label class="field">
+              <span>Instructor</span>
+              <input type="text" placeholder="Cualquiera" disabled />
+            </label>
+            <label class="field">
+              <span>Dia</span>
+              <input type="text" placeholder="Lunes - Domingo" disabled />
+            </label>
+          </div>
+          <div class="actions">
+            <button class="main-btn" disabled>Buscar</button>
+            <button class="ghost-btn" disabled>Limpiar</button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3>Horario Semanal</h3>
+          <div class="schedule-grid">
+            <div class="schedule-col">
+              <p class="col-title">Lunes</p>
+              <p class="placeholder">Sin bloques cargados</p>
+            </div>
+            <div class="schedule-col">
+              <p class="col-title">Martes</p>
+              <p class="placeholder">Sin bloques cargados</p>
+            </div>
+            <div class="schedule-col">
+              <p class="col-title">Miercoles</p>
+              <p class="placeholder">Sin bloques cargados</p>
+            </div>
+            <div class="schedule-col">
+              <p class="col-title">Jueves</p>
+              <p class="placeholder">Sin bloques cargados</p>
+            </div>
+            <div class="schedule-col">
+              <p class="col-title">Viernes</p>
+              <p class="placeholder">Sin bloques cargados</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="table-head">
+          <h3>Listado de Clases</h3>
+          <button class="main-btn" disabled>Nueva Clase</button>
+        </div>
+
+        <div class="table-placeholder">
+          <div class="table-row table-row-head">
+            <span>Clase</span>
+            <span>Disciplina</span>
+            <span>Instructor</span>
+            <span>Horario</span>
+            <span>Acciones</span>
+          </div>
+          <div class="table-row">
+            <span class="muted">Pendiente de datos</span>
+            <span class="muted">-</span>
+            <span class="muted">-</span>
+            <span class="muted">-</span>
+            <button class="mini-btn" disabled>Editar</button>
+          </div>
+          <div class="table-row">
+            <span class="muted">Pendiente de datos</span>
+            <span class="muted">-</span>
+            <span class="muted">-</span>
+            <span class="muted">-</span>
+            <button class="mini-btn" disabled>Editar</button>
+          </div>
+          <div class="table-row">
+            <span class="muted">Pendiente de datos</span>
+            <span class="muted">-</span>
+            <span class="muted">-</span>
+            <span class="muted">-</span>
+            <button class="mini-btn" disabled>Editar</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+</div>

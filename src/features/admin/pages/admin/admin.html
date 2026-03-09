@@ -1,0 +1,178 @@
+<div *ngIf="currentUser$ | async as user" class="dashboard-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">JJB</span>
+      <span class="brand-text">GYM</span>
+    </div>
+
+    <nav class="menu">
+      <a class="menu-item is-active" routerLink="/admin">Dashboard</a>
+      <a class="menu-item" routerLink="/admin/classes">Clases</a>
+      <a class="menu-item" href="#">Instructores</a>
+      <a class="menu-item" href="#">Miembros</a>
+      <a class="menu-item" href="#">Eventos</a>
+      <a class="menu-item" href="#">Tienda</a>
+      <a class="menu-item" href="#">Reportes</a>
+      <a class="menu-item" href="#">Configuracion</a>
+    </nav>
+
+    <div class="sidebar-actions">
+      <a routerLink="/home" class="action-btn action-home">Vista Inicio</a>
+      <button (click)="logout()" class="action-btn action-logout">Cerrar Sesion</button>
+    </div>
+  </aside>
+
+  <section class="main-area">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Bienvenido, {{ user.name }}</h1>
+        <p>{{ user.email }} · {{ user.role }}</p>
+      </div>
+      <div class="topbar-user">
+        <span class="notify-dot">3</span>
+        <span class="avatar">{{ user.name.charAt(0) }}</span>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <section class="summary">
+        <h2>Resumen del Gimnasio</h2>
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <p class="metric-label">Miembros Activos</p>
+            <p class="metric-value">325</p>
+          </article>
+          <article class="metric-card">
+            <p class="metric-label">Clases Esta Semana</p>
+            <p class="metric-value">18</p>
+          </article>
+          <article class="metric-card">
+            <p class="metric-label">Proximo Evento</p>
+            <p class="metric-value metric-text">Torneo de Jiu-Jitsu</p>
+          </article>
+          <article class="metric-card">
+            <p class="metric-label">Ingresos Mensuales</p>
+            <p class="metric-value">$7,200</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panels-grid">
+        <article class="panel">
+          <h3>Clases Programadas</h3>
+          <div class="list-row">
+            <div>
+              <p class="item-title">Jiu-Jitsu Avanzado</p>
+              <p class="item-subtitle">Hoy, 18:00</p>
+            </div>
+            <button class="mini-btn">Administrar</button>
+          </div>
+          <div class="list-row">
+            <div>
+              <p class="item-title">MMA</p>
+              <p class="item-subtitle">Manana, 17:00</p>
+            </div>
+            <button class="mini-btn">Administrar</button>
+          </div>
+          <div class="list-row">
+            <div>
+              <p class="item-title">No-Gi Grappling</p>
+              <p class="item-subtitle">Miercoles, 19:30</p>
+            </div>
+            <button class="mini-btn">Administrar</button>
+          </div>
+          <div class="list-row">
+            <div>
+              <p class="item-title">Jiu-Jitsu Basico</p>
+              <p class="item-subtitle">Jueves, 10:00</p>
+            </div>
+            <button class="mini-btn">Administrar</button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3>Nuevos Miembros</h3>
+          <div class="list-row profile-row">
+            <span class="profile-avatar">CP</span>
+            <div>
+              <p class="item-title">Carlos Perez</p>
+              <p class="item-subtitle">Desde hace 2 dias</p>
+            </div>
+            <button class="mini-btn">Ver Perfil</button>
+          </div>
+          <div class="list-row profile-row">
+            <span class="profile-avatar">LG</span>
+            <div>
+              <p class="item-title">Laura Gomez</p>
+              <p class="item-subtitle">Desde hace 4 dias</p>
+            </div>
+            <button class="mini-btn">Ver Perfil</button>
+          </div>
+          <div class="list-row profile-row">
+            <span class="profile-avatar">AS</span>
+            <div>
+              <p class="item-title">Andres Silva</p>
+              <p class="item-subtitle">Desde hace 1 semana</p>
+            </div>
+            <button class="mini-btn">Ver Perfil</button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3>Proximos Eventos</h3>
+          <div class="list-row">
+            <div>
+              <p class="item-title">Seminario de MMA</p>
+              <p class="item-subtitle">22 Sep 2023</p>
+            </div>
+            <button class="mini-btn">Editar</button>
+          </div>
+          <div class="list-row">
+            <div>
+              <p class="item-title">Open Mat No-Gi</p>
+              <p class="item-subtitle">28 Sep 2023</p>
+            </div>
+            <button class="mini-btn">Editar</button>
+          </div>
+
+          <h3 class="panel-subtitle">Tienda Online</h3>
+          <div class="shop-grid">
+            <div class="shop-item">
+              <p class="shop-name">Rashguards</p>
+              <p class="shop-value">24</p>
+            </div>
+            <div class="shop-item">
+              <p class="shop-name">Kimonos</p>
+              <p class="shop-value">15</p>
+            </div>
+            <div class="shop-item">
+              <p class="shop-name">Accesorios</p>
+              <p class="shop-value">38</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel chart-panel">
+        <h3>Estadisticas de Asistencia</h3>
+        <div class="chart-rows">
+          <div class="chart-row">
+            <span>Jiu-Jitsu</span>
+            <div class="track"><div class="fill fill-red fill-85"></div></div>
+            <strong>85%</strong>
+          </div>
+          <div class="chart-row">
+            <span>MMA</span>
+            <div class="track"><div class="fill fill-blue fill-68"></div></div>
+            <strong>68%</strong>
+          </div>
+          <div class="chart-row">
+            <span>No-Gi</span>
+            <div class="track"><div class="fill fill-gray fill-52"></div></div>
+            <strong>52%</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+</div>

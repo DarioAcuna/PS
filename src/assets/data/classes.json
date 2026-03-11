@@ -1,0 +1,75 @@
+[
+  {
+    "id": 1,
+    "name": "Jiu-Jitsu Avanzado",
+    "discipline": "Jiu-Jitsu",
+    "level": "Avanzado",
+    "instructor": "Carlos Perez",
+    "schedule": "Lunes, Miércoles, Viernes",
+    "time": "18:00 - 19:30",
+    "capacity": 15,
+    "enrolled": 12,
+    "status": "Activa"
+  },
+  {
+    "id": 2,
+    "name": "MMA",
+    "discipline": "MMA",
+    "level": "Intermedio",
+    "instructor": "Juan Garcia",
+    "schedule": "Martes, Jueves",
+    "time": "17:00 - 18:30",
+    "capacity": 20,
+    "enrolled": 18,
+    "status": "Activa"
+  },
+  {
+    "id": 3,
+    "name": "No-Gi Grappling",
+    "discipline": "Jiu-Jitsu",
+    "level": "Avanzado",
+    "instructor": "Miguel Lopez",
+    "schedule": "Miércoles",
+    "time": "19:30 - 21:00",
+    "capacity": 12,
+    "enrolled": 10,
+    "status": "Activa"
+  },
+  {
+    "id": 4,
+    "name": "Jiu-Jitsu Basico",
+    "discipline": "Jiu-Jitsu",
+    "level": "Principiante",
+    "instructor": "Ana Martinez",
+    "schedule": "Lunes, Miércoles",
+    "time": "10:00 - 11:30",
+    "capacity": 20,
+    "enrolled": 15,
+    "status": "Activa"
+  },
+  {
+    "id": 5,
+    "name": "Box Fitness",
+    "discipline": "Boxeo",
+    "level": "Todos",
+    "instructor": "Roberto Silva",
+    "schedule": "Lunes, Martes, Jueves",
+    "time": "16:00 - 17:00",
+    "capacity": 25,
+    "enrolled": 22,
+    "status": "Activa"
+  },
+  {
+    "id": 6,
+    "name": "Muay Thai",
+    "discipline": "Muay Thai",
+    "level": "Intermedio",
+    "instructor": "Sofia Gonzalez",
+    "schedule": "Martes, Jueves, Viernes",
+    "time": "19:00 - 20:30",
+    "capacity": 18,
+    "enrolled": 14,
+    "status": "Activa"
+  }
+]
+

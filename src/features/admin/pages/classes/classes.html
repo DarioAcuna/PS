@@ -1,9 +1,5 @@
 <div *ngIf="currentUser$ | async as user" class="dashboard-shell">
   <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-mark">JJB</span>
-      <span class="brand-text">GYM</span>
-    </div>
 
     <nav class="menu">
       <a class="menu-item" routerLink="/admin">Dashboard</a>
@@ -67,31 +63,7 @@
           </div>
         </article>
 
-        <article class="panel">
-          <h3>Horario Semanal</h3>
-          <div class="schedule-grid">
-            <div class="schedule-col">
-              <p class="col-title">Lunes</p>
-              <p class="placeholder">Sin bloques cargados</p>
-            </div>
-            <div class="schedule-col">
-              <p class="col-title">Martes</p>
-              <p class="placeholder">Sin bloques cargados</p>
-            </div>
-            <div class="schedule-col">
-              <p class="col-title">Miercoles</p>
-              <p class="placeholder">Sin bloques cargados</p>
-            </div>
-            <div class="schedule-col">
-              <p class="col-title">Jueves</p>
-              <p class="placeholder">Sin bloques cargados</p>
-            </div>
-            <div class="schedule-col">
-              <p class="col-title">Viernes</p>
-              <p class="placeholder">Sin bloques cargados</p>
-            </div>
-          </div>
-        </article>
+
       </section>
 
       <section class="panel">
@@ -100,7 +72,15 @@
           <button class="main-btn" disabled>Nueva Clase</button>
         </div>
 
-        <div class="table-placeholder">
+        <div *ngIf="loading" class="loading-message">
+          <p>Cargando clases...</p>
+        </div>
+
+        <div *ngIf="!loading && filteredClasses.length === 0" class="empty-message">
+          <p>No hay clases disponibles</p>
+        </div>
+
+        <div *ngIf="!loading && filteredClasses.length > 0" class="table-placeholder">
           <div class="table-row table-row-head">
             <span>Clase</span>
             <span>Disciplina</span>
@@ -108,26 +88,15 @@
             <span>Horario</span>
             <span>Acciones</span>
           </div>
-          <div class="table-row">
-            <span class="muted">Pendiente de datos</span>
-            <span class="muted">-</span>
-            <span class="muted">-</span>
-            <span class="muted">-</span>
-            <button class="mini-btn" disabled>Editar</button>
-          </div>
-          <div class="table-row">
-            <span class="muted">Pendiente de datos</span>
-            <span class="muted">-</span>
-            <span class="muted">-</span>
-            <span class="muted">-</span>
-            <button class="mini-btn" disabled>Editar</button>
-          </div>
-          <div class="table-row">
-            <span class="muted">Pendiente de datos</span>
-            <span class="muted">-</span>
-            <span class="muted">-</span>
-            <span class="muted">-</span>
-            <button class="mini-btn" disabled>Editar</button>
+          <div *ngFor="let clase of filteredClasses" class="table-row">
+            <div>
+              <p class="item-title">{{ clase.name }}</p>
+              <p class="muted">Nivel: {{ clase.level }}</p>
+            </div>
+            <span>{{ clase.discipline }}</span>
+            <span>{{ clase.instructor }}</span>
+            <span>{{ clase.time }}</span>
+            <button class="mini-btn">Editar</button>
           </div>
         </div>
       </section>

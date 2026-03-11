@@ -3,8 +3,8 @@
 
     <nav class="menu">
       <a class="menu-item" routerLink="/admin">Dashboard</a>
-      <a class="menu-item is-active" routerLink="/admin/classes">Clases</a>
-      <a class="menu-item" routerLink="/admin/teachers">Instructores</a>
+      <a class="menu-item" routerLink="/admin/classes">Clases</a>
+      <a class="menu-item is-active" routerLink="/admin/teachers">Instructores</a>
       <a class="menu-item" href="#">Miembros</a>
       <a class="menu-item" href="#">Eventos</a>
       <a class="menu-item" href="#">Tienda</a>
@@ -21,7 +21,7 @@
   <section class="main-area">
     <header class="topbar">
       <div class="topbar-title">
-        <h1>Clases</h1>
+        <h1>Instructores</h1>
         <p>{{ user.name }} · Panel de Administracion</p>
       </div>
       <div class="topbar-user">
@@ -31,30 +31,26 @@
     </header>
 
     <main class="content-area">
-      <section class="panel classes-header">
-        <h2>Gestion de Clases</h2>
+      <section class="panel teachers-header">
+        <h2>Gestion de Instructores</h2>
         <p>Esta pantalla esta preparada para conectar listado, filtros y acciones cuando tengas los datos.</p>
       </section>
 
-      <section class="classes-layout">
+      <section class="teachers-layout">
         <article class="panel">
           <h3>Filtros</h3>
           <div class="field-grid">
             <label class="field">
-              <span>Disciplina</span>
-              <input type="text" placeholder="Ej. Jiu-Jitsu" disabled />
+              <span>Clases</span>
+              <input type="text" placeholder="Ej. JiuJitsu" disabled />
             </label>
             <label class="field">
-              <span>Nivel</span>
+              <span>Estado</span>
+              <input type="text" placeholder="Activo" disabled />
+            </label>
+            <label class="field">
+              <span>Experiencia</span>
               <input type="text" placeholder="Todos" disabled />
-            </label>
-            <label class="field">
-              <span>Instructor</span>
-              <input type="text" placeholder="Cualquiera" disabled />
-            </label>
-            <label class="field">
-              <span>Dia</span>
-              <input type="text" placeholder="Lunes - Domingo" disabled />
             </label>
           </div>
           <div class="actions">
@@ -63,39 +59,40 @@
           </div>
         </article>
 
-
       </section>
 
       <section class="panel">
         <div class="table-head">
-          <h3>Listado de Clases</h3>
-          <button class="main-btn" disabled>Nueva Clase</button>
+          <h3>Listado de Instructores</h3>
+          <button class="main-btn" disabled>Nuevo Instructor</button>
         </div>
 
         <div *ngIf="loading" class="loading-message">
-          <p>Cargando clases...</p>
+          <p>Cargando instructores...</p>
         </div>
 
-        <div *ngIf="!loading && filteredClasses.length === 0" class="empty-message">
-          <p>No hay clases disponibles</p>
+        <div *ngIf="!loading && teachers.length === 0" class="empty-message">
+          <p>No hay instructores disponibles</p>
         </div>
 
-        <div *ngIf="!loading && filteredClasses.length > 0" class="table-placeholder">
+        <div *ngIf="!loading && teachers.length > 0" class="table-placeholder">
           <div class="table-row table-row-head">
-            <span>Clase</span>
-            <span>Disciplina</span>
             <span>Instructor</span>
-            <span>Horario</span>
+            <span>Email</span>
+            <span>Clases</span>
+            <span>Estado</span>
             <span>Acciones</span>
           </div>
-          <div *ngFor="let clase of filteredClasses" class="table-row">
+          <div *ngFor="let teacher of teachers" class="table-row">
             <div>
-              <p class="item-title">{{ clase.name }}</p>
-              <p class="muted">Nivel: {{ clase.level }}</p>
+              <p class="item-title">{{ teacher.name }}</p>
+              <p class="muted">{{ teacher.phone }}</p>
             </div>
-            <span>{{ clase.discipline }}</span>
-            <span>{{ clase.instructor }}</span>
-            <span>{{ clase.time }}</span>
+            <span>{{ teacher.email }}</span>
+            <div class="classes-list">
+              <span *ngFor="let clase of teacher.classes" class="class-badge">{{ clase }}</span>
+            </div>
+            <span class="status-badge" [ngClass]="teacher.status.toLowerCase()">{{ teacher.status }}</span>
             <button class="mini-btn">Editar</button>
           </div>
         </div>
@@ -103,3 +100,4 @@
     </main>
   </section>
 </div>
+

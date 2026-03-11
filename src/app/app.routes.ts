@@ -27,6 +27,12 @@ export const routes: Routes = [
     canActivate: [AdminGuard],
   },
   {
+    path: 'admin/teachers',
+    loadComponent: () =>
+      import('../features/admin/pages/teachers/teachers').then(m => m.AdminTeachers),
+    canActivate: [AdminGuard],
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',

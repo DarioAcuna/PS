@@ -1,0 +1,103 @@
+<div *ngIf="currentUser$ | async as user" class="dashboard-shell">
+  <aside class="sidebar">
+
+    <nav class="menu">
+      <a class="menu-item" routerLink="/admin">Dashboard</a>
+      <a class="menu-item" routerLink="/admin/classes">Clases</a>
+      <a class="menu-item is-active" routerLink="/admin/teachers">Instructores</a>
+      <a class="menu-item" href="#">Miembros</a>
+      <a class="menu-item" href="#">Eventos</a>
+      <a class="menu-item" href="#">Tienda</a>
+      <a class="menu-item" href="#">Reportes</a>
+      <a class="menu-item" href="#">Configuracion</a>
+    </nav>
+
+    <div class="sidebar-actions">
+      <a routerLink="/home" class="action-btn action-home">Vista Inicio</a>
+      <button (click)="logout()" class="action-btn action-logout">Cerrar Sesion</button>
+    </div>
+  </aside>
+
+  <section class="main-area">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Instructores</h1>
+        <p>{{ user.name }} · Panel de Administracion</p>
+      </div>
+      <div class="topbar-user">
+        <span class="notify-dot">0</span>
+        <span class="avatar">{{ user.name.charAt(0) }}</span>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <section class="panel teachers-header">
+        <h2>Gestion de Instructores</h2>
+        <p>Esta pantalla esta preparada para conectar listado, filtros y acciones cuando tengas los datos.</p>
+      </section>
+
+      <section class="teachers-layout">
+        <article class="panel">
+          <h3>Filtros</h3>
+          <div class="field-grid">
+            <label class="field">
+              <span>Clases</span>
+              <input type="text" placeholder="Ej. JiuJitsu" disabled />
+            </label>
+            <label class="field">
+              <span>Estado</span>
+              <input type="text" placeholder="Activo" disabled />
+            </label>
+            <label class="field">
+              <span>Experiencia</span>
+              <input type="text" placeholder="Todos" disabled />
+            </label>
+          </div>
+          <div class="actions">
+            <button class="main-btn" disabled>Buscar</button>
+            <button class="ghost-btn" disabled>Limpiar</button>
+          </div>
+        </article>
+
+      </section>
+
+      <section class="panel">
+        <div class="table-head">
+          <h3>Listado de Instructores</h3>
+          <button class="main-btn" disabled>Nuevo Instructor</button>
+        </div>
+
+        <div *ngIf="loading" class="loading-message">
+          <p>Cargando instructores...</p>
+        </div>
+
+        <div *ngIf="!loading && teachers.length === 0" class="empty-message">
+          <p>No hay instructores disponibles</p>
+        </div>
+
+        <div *ngIf="!loading && teachers.length > 0" class="table-placeholder">
+          <div class="table-row table-row-head">
+            <span>Instructor</span>
+            <span>Email</span>
+            <span>Clases</span>
+            <span>Estado</span>
+            <span>Acciones</span>
+          </div>
+          <div *ngFor="let teacher of teachers" class="table-row">
+            <div>
+              <p class="item-title">{{ teacher.name }}</p>
+              <p class="muted">{{ teacher.phone }}</p>
+            </div>
+            <span>{{ teacher.email }}</span>
+            <div class="classes-list">
+              <span *ngFor="let clase of teacher.classes" class="class-badge">{{ clase }}</span>
+            </div>
+            <span class="status-badge" [ngClass]="teacher.status.toLowerCase()">{{ teacher.status }}</span>
+            <button class="mini-btn">Editar</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+</div>
+

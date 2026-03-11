@@ -13,8 +13,8 @@
   },
   {
     "id": 2,
-    "name": "MMA",
-    "discipline": "MMA",
+    "name": "Nogi",
+    "discipline": "Nogi",
     "level": "Intermedio",
     "instructor": "Juan Garcia",
     "schedule": "Martes, Jueves",
@@ -49,8 +49,8 @@
   },
   {
     "id": 5,
-    "name": "Box Fitness",
-    "discipline": "Boxeo",
+    "name": "JiuJitsu TLN",
+    "discipline": "JiuJitsu TLN",
     "level": "Todos",
     "instructor": "Roberto Silva",
     "schedule": "Lunes, Martes, Jueves",
@@ -61,8 +61,8 @@
   },
   {
     "id": 6,
-    "name": "Muay Thai",
-    "discipline": "Muay Thai",
+    "name": "Nogi Fundamentos",
+    "discipline": "Nogi Fundamentos",
     "level": "Intermedio",
     "instructor": "Sofia Gonzalez",
     "schedule": "Martes, Jueves, Viernes",

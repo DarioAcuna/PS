@@ -33,7 +33,10 @@
     <main class="content-area">
       <section class="panel classes-header">
         <h2>Gestion de Clases</h2>
-        <p>Esta pantalla esta preparada para conectar listado, filtros y acciones cuando tengas los datos.</p>
+        <p>
+          Datos cargados desde <strong>classes.json</strong>.
+          Mostrando {{ filteredClasses.length }} de {{ classes.length }} clases.
+        </p>
       </section>
 
       <section class="classes-layout">
@@ -41,62 +44,95 @@
           <h3>Filtros</h3>
           <div class="field-grid">
             <label class="field">
+              <span>Buscar</span>
+              <input
+                type="text"
+                placeholder="Clase, disciplina o instructor"
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="applyFilters()"
+              />
+            </label>
+            <label class="field">
               <span>Disciplina</span>
-              <input type="text" placeholder="Ej. Jiu-Jitsu" disabled />
+              <select [(ngModel)]="selectedDiscipline" (ngModelChange)="applyFilters()">
+                <option value="">Todas</option>
+                <option *ngFor="let discipline of disciplines" [value]="discipline">
+                  {{ discipline }}
+                </option>
+              </select>
             </label>
             <label class="field">
               <span>Nivel</span>
-              <input type="text" placeholder="Todos" disabled />
+              <select [(ngModel)]="selectedLevel" (ngModelChange)="applyFilters()">
+                <option value="">Todos</option>
+                <option *ngFor="let level of levels" [value]="level">
+                  {{ level }}
+                </option>
+              </select>
             </label>
             <label class="field">
               <span>Instructor</span>
-              <input type="text" placeholder="Cualquiera" disabled />
+              <select [(ngModel)]="selectedInstructor" (ngModelChange)="applyFilters()">
+                <option value="">Todos</option>
+                <option *ngFor="let instructor of instructors" [value]="instructor">
+                  {{ instructor }}
+                </option>
+              </select>
             </label>
             <label class="field">
               <span>Dia</span>
-              <input type="text" placeholder="Lunes - Domingo" disabled />
+              <select [(ngModel)]="selectedDay" (ngModelChange)="applyFilters()">
+                <option value="">Todos</option>
+                <option *ngFor="let day of days" [value]="day">
+                  {{ day }}
+                </option>
+              </select>
             </label>
           </div>
           <div class="actions">
-            <button class="main-btn" disabled>Buscar</button>
-            <button class="ghost-btn" disabled>Limpiar</button>
+            <button class="main-btn" (click)="applyFilters()">Buscar</button>
+            <button class="ghost-btn" (click)="resetFilters()">Limpiar</button>
           </div>
         </article>
-
-
       </section>
 
       <section class="panel">
         <div class="table-head">
           <h3>Listado de Clases</h3>
-          <button class="main-btn" disabled>Nueva Clase</button>
+          <span class="table-counter">{{ filteredClasses.length }} resultados</span>
         </div>
 
         <div *ngIf="loading" class="loading-message">
           <p>Cargando clases...</p>
         </div>
 
-        <div *ngIf="!loading && filteredClasses.length === 0" class="empty-message">
-          <p>No hay clases disponibles</p>
+        <div *ngIf="!loading && errorMessage" class="empty-message">
+          <p>{{ errorMessage }}</p>
         </div>
 
-        <div *ngIf="!loading && filteredClasses.length > 0" class="table-placeholder">
+        <div *ngIf="!loading && !errorMessage && filteredClasses.length === 0" class="empty-message">
+          <p>No hay clases disponibles con los filtros actuales</p>
+        </div>
+
+        <div *ngIf="!loading && !errorMessage && filteredClasses.length > 0" class="table-placeholder">
           <div class="table-row table-row-head">
             <span>Clase</span>
             <span>Disciplina</span>
             <span>Instructor</span>
             <span>Horario</span>
-            <span>Acciones</span>
+            <span>Cupos</span>
+            <span>Estado</span>
           </div>
-          <div *ngFor="let clase of filteredClasses" class="table-row">
+          <div *ngFor="let clase of filteredClasses; trackBy: trackByClassId" class="table-row">
             <div>
               <p class="item-title">{{ clase.name }}</p>
-              <p class="muted">Nivel: {{ clase.level }}</p>
+              <p class="muted">Nivel: {{ clase.level }} · {{ clase.schedule }}</p>
             </div>
             <span>{{ clase.discipline }}</span>
             <span>{{ clase.instructor }}</span>
             <span>{{ clase.time }}</span>
-            <button class="mini-btn">Editar</button>
+            <span>{{ occupancyLabel(clase) }}</span>
+            <span class="status-pill">{{ clase.status }}</span>
           </div>
         </div>
       </section>

@@ -1,0 +1,300 @@
+<div *ngIf="currentUser$ | async as user" class="dashboard-shell">
+  <aside class="sidebar">
+
+    <nav class="menu">
+      <a class="menu-item" routerLink="/admin">Dashboard</a>
+      <a class="menu-item" routerLink="/admin/classes">Clases</a>
+      <a class="menu-item" routerLink="/admin/teachers">Instructores</a>
+      <a class="menu-item is-active" routerLink="/admin/members">Miembros</a>
+      <a class="menu-item" href="#">Eventos</a>
+      <a class="menu-item" href="#">Tienda</a>
+      <a class="menu-item" href="#">Reportes</a>
+      <a class="menu-item" href="#">Configuracion</a>
+    </nav>
+
+    <div class="sidebar-actions">
+      <a routerLink="/home" class="action-btn action-home">Vista Inicio</a>
+      <button (click)="logout()" class="action-btn action-logout">Cerrar Sesion</button>
+    </div>
+  </aside>
+
+  <section class="main-area">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Miembros</h1>
+        <p>{{ user.name }} · Panel de Administracion</p>
+      </div>
+      <div class="topbar-user">
+        <span class="avatar">{{ user.name.charAt(0) }}</span>
+      </div>
+    </header>
+
+    <div *ngIf="true" class="notifications-bar">
+      <span class="notification-badge">{{ 0 }} nuevas notificaciones</span>
+    </div>
+
+    <main class="content-area">
+      <section class="panel members-header">
+        <h2>Gestion de Miembros</h2>
+        <p>
+          Datos cargados desde <strong>users.json</strong>.
+          Mostrando {{ filteredMembers.length }} de {{ members.length }} miembros.
+        </p>
+      </section>
+
+      <section class="members-layout">
+        <article class="panel">
+          <h3>Filtros</h3>
+          <div class="field-grid">
+            <label class="field">
+              <span>Buscar</span>
+              <input
+                type="text"
+                placeholder="Nombre o email"
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="applyFilters()"
+              />
+            </label>
+            <label class="field">
+              <span>Cinturón</span>
+              <select [(ngModel)]="selectedBelt" (ngModelChange)="applyFilters()">
+                <option value="">Todos</option>
+                <option *ngFor="let belt of belts" [value]="belt">
+                  {{ belt }}
+                </option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Tipo de Cuota</span>
+              <select [(ngModel)]="selectedQuotaType" (ngModelChange)="applyFilters()">
+                <option value="">Todos</option>
+                <option *ngFor="let quota of quotaTypes" [value]="quota">
+                  {{ quota }}
+                </option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Estado</span>
+              <select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+                <option value="">Todos</option>
+                <option *ngFor="let status of statuses" [value]="status">
+                  {{ status }}
+                </option>
+              </select>
+            </label>
+          </div>
+          <div class="actions">
+            <button class="main-btn" (click)="applyFilters()">Buscar</button>
+            <button class="ghost-btn" (click)="resetFilters()">Limpiar</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="table-head">
+          <h3>Listado de Miembros</h3>
+          <div class="head-actions">
+            <span class="table-counter">{{ filteredMembers.length }} resultados</span>
+            <button class="main-btn" (click)="openNewMemberModal()">Nuevo Miembro</button>
+          </div>
+        </div>
+
+        <div *ngIf="loading" class="loading-message">
+          <p>Cargando miembros...</p>
+        </div>
+
+        <div *ngIf="!loading && errorMessage" class="empty-message">
+          <p>{{ errorMessage }}</p>
+        </div>
+
+        <div *ngIf="!loading && !errorMessage && filteredMembers.length === 0" class="empty-message">
+          <p>No hay miembros disponibles con los filtros actuales</p>
+        </div>
+
+        <div *ngIf="!loading && !errorMessage && filteredMembers.length > 0" class="table-placeholder">
+          <div class="table-row table-row-head">
+            <span>Miembro</span>
+            <span>Email</span>
+            <span>Cinturón</span>
+            <span>Cuota</span>
+            <span>Clases</span>
+            <span>Estado</span>
+            <span>Acciones</span>
+          </div>
+          <div *ngFor="let member of filteredMembers; trackBy: trackByMemberId" class="table-row">
+            <div>
+              <p class="item-title">{{ member.name }}</p>
+              <p class="muted">Desde {{ member.joinDate }}</p>
+            </div>
+            <span>{{ member.email }}</span>
+            <span class="belt-badge">{{ member.belt }} - G{{ member.beltGrade }}</span>
+            <span>{{ member.quotaType }}</span>
+            <span class="classes-count">{{ member.totalClasses }}</span>
+            <span class="status-badge" [ngClass]="member.status.toLowerCase()">{{ member.status }}</span>
+            <div class="action-buttons">
+              <button class="mini-btn" (click)="openEditMemberModal(member)">Editar</button>
+              <button class="mini-btn danger" (click)="deleteMember(member.id)">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+</div>
+
+<!-- Modal Nuevo Miembro -->
+<div *ngIf="showNewMemberModal" class="modal-overlay" (click)="closeNewMemberModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Crear Nuevo Miembro</h2>
+      <button class="close-btn" (click)="closeNewMemberModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-grid">
+        <label class="field">
+          <span>Nombre *</span>
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            [(ngModel)]="newMember.name"
+          />
+        </label>
+        <label class="field">
+          <span>Email *</span>
+          <input
+            type="email"
+            placeholder="correo@ejemplo.com"
+            [(ngModel)]="newMember.email"
+          />
+        </label>
+        <label class="field">
+          <span>Cinturón</span>
+          <select [(ngModel)]="newMember.belt">
+            <option *ngFor="let belt of belts" [value]="belt">{{ belt }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Grado del Cinturón</span>
+          <input
+            type="number"
+            placeholder="0"
+            min="0"
+            max="4"
+            [(ngModel)]="newMember.beltGrade"
+          />
+        </label>
+        <label class="field">
+          <span>Tipo de Cuota</span>
+          <select [(ngModel)]="newMember.quotaType">
+            <option *ngFor="let quota of quotaTypes" [value]="quota">{{ quota }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Total de Clases</span>
+          <input
+            type="number"
+            placeholder="0"
+            min="0"
+            [(ngModel)]="newMember.totalClasses"
+          />
+        </label>
+        <label class="field">
+          <span>Estado</span>
+          <select [(ngModel)]="newMember.status">
+            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Fecha de Inscripción</span>
+          <input
+            type="date"
+            [(ngModel)]="newMember.joinDate"
+          />
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="ghost-btn" (click)="closeNewMemberModal()">Cancelar</button>
+      <button class="main-btn" (click)="saveMember()">Crear Miembro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Miembro -->
+<div *ngIf="showEditMemberModal && editingMember" class="modal-overlay" (click)="closeEditMemberModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Editar Miembro</h2>
+      <button class="close-btn" (click)="closeEditMemberModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-grid">
+        <label class="field">
+          <span>Nombre</span>
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            [(ngModel)]="editingMember.name"
+          />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input
+            type="email"
+            placeholder="correo@ejemplo.com"
+            [(ngModel)]="editingMember.email"
+          />
+        </label>
+        <label class="field">
+          <span>Cinturón</span>
+          <select [(ngModel)]="editingMember.belt">
+            <option *ngFor="let belt of belts" [value]="belt">{{ belt }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Grado del Cinturón</span>
+          <input
+            type="number"
+            placeholder="0"
+            min="0"
+            max="4"
+            [(ngModel)]="editingMember.beltGrade"
+          />
+        </label>
+        <label class="field">
+          <span>Tipo de Cuota</span>
+          <select [(ngModel)]="editingMember.quotaType">
+            <option *ngFor="let quota of quotaTypes" [value]="quota">{{ quota }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Total de Clases</span>
+          <input
+            type="number"
+            placeholder="0"
+            min="0"
+            [(ngModel)]="editingMember.totalClasses"
+          />
+        </label>
+        <label class="field">
+          <span>Estado</span>
+          <select [(ngModel)]="editingMember.status">
+            <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Fecha de Inscripción</span>
+          <input
+            type="date"
+            [(ngModel)]="editingMember.joinDate"
+          />
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="ghost-btn" (click)="closeEditMemberModal()">Cancelar</button>
+      <button class="main-btn" (click)="saveEdit()">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+

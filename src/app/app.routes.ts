@@ -33,6 +33,12 @@ export const routes: Routes = [
     canActivate: [AdminGuard],
   },
   {
+    path: 'admin/members',
+    loadComponent: () =>
+      import('../features/admin/pages/members/members').then(m => m.AdminMembers),
+    canActivate: [AdminGuard],
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',

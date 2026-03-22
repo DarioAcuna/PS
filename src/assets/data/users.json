@@ -12,7 +12,91 @@
       "name": "Juan Pérez",
       "email": "juan@gym.com",
       "password": "juan123",
-      "role": "user"
+      "role": "user",
+      "belt": "Azul",
+      "beltGrade": "2",
+      "quotaType": "Mensual",
+      "totalClasses": 45,
+      "status": "Activo",
+      "joinDate": "2023-05-15"
+    },
+    {
+      "id": 3,
+      "name": "María García",
+      "email": "maria@gym.com",
+      "password": "maria123",
+      "role": "user",
+      "belt": "Púrpura",
+      "beltGrade": "3",
+      "quotaType": "Trimestral",
+      "totalClasses": 92,
+      "status": "Activo",
+      "joinDate": "2022-08-20"
+    },
+    {
+      "id": 4,
+      "name": "Carlos López",
+      "email": "carlos@gym.com",
+      "password": "carlos123",
+      "role": "user",
+      "belt": "Marrón",
+      "beltGrade": "1",
+      "quotaType": "Anual",
+      "totalClasses": 156,
+      "status": "Activo",
+      "joinDate": "2021-12-10"
+    },
+    {
+      "id": 5,
+      "name": "Ana Martínez",
+      "email": "ana@gym.com",
+      "password": "ana123",
+      "role": "user",
+      "belt": "Blanco",
+      "beltGrade": "0",
+      "quotaType": "Mensual",
+      "totalClasses": 8,
+      "status": "Activo",
+      "joinDate": "2024-02-01"
+    },
+    {
+      "id": 6,
+      "name": "David Fernández",
+      "email": "david@gym.com",
+      "password": "david123",
+      "role": "user",
+      "belt": "Azul",
+      "beltGrade": "1",
+      "quotaType": "Trimestral",
+      "totalClasses": 34,
+      "status": "Inactivo",
+      "joinDate": "2023-11-05"
+    },
+    {
+      "id": 7,
+      "name": "Laura Sánchez",
+      "email": "laura@gym.com",
+      "password": "laura123",
+      "role": "user",
+      "belt": "Púrpura",
+      "beltGrade": "1",
+      "quotaType": "Mensual",
+      "totalClasses": 67,
+      "status": "Activo",
+      "joinDate": "2023-03-18"
+    },
+    {
+      "id": 8,
+      "name": "Miguel Rodríguez",
+      "email": "miguel@gym.com",
+      "password": "miguel123",
+      "role": "user",
+      "belt": "Blanco",
+      "beltGrade": "0",
+      "quotaType": "Mensual",
+      "totalClasses": 2,
+      "status": "Activo",
+      "joinDate": "2024-03-15"
     }
   ]
 }

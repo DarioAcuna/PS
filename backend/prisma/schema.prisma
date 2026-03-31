@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Clase {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  nivel       String?
+  activa      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  horarios    Horario[]
+}
+
+model Horario {
+  id         Int       @id @default(autoincrement())
+  claseId    Int
+  diaSemana  Int
+  horaInicio String
+  horaFin    String
+  instructor String?
+  aula       String?
+  activo     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  clase      Clase     @relation(fields: [claseId], references: [id], onDelete: Restrict)
+  sesiones   Sesion[]
+}
+
+model Sesion {
+  id           Int          @id @default(autoincrement())
+  horarioId    Int
+  fecha        DateTime
+  horaInicio   String
+  horaFin      String
+  instructor   String?
+  aula         String?
+  observaciones String?
+  estado       SesionEstado @default(PROGRAMADA)
+  createdAt    DateTime     @default(now())
+
+  horario      Horario      @relation(fields: [horarioId], references: [id], onDelete: Restrict)
+
+  @@unique([horarioId, fecha])
+}
+
+model Anuncio {
+  id           Int      @id @default(autoincrement())
+  titulo       String
+  contenido    String
+  activo       Boolean  @default(true)
+  publicadoEn  DateTime @default(now())
+}
+
+enum SesionEstado {
+  PROGRAMADA
+  MODIFICADA
+  CANCELADA
+}

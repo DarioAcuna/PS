@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ClasesModule } from './clases/clases.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { SesionesModule } from './sesiones/sesiones.module';
+import { AnunciosModule } from './anuncios/anuncios.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SesionesModule } from './sesiones/sesiones.module';
     ClasesModule,
     HorariosModule,
     SesionesModule,
+    AnunciosModule,
   ],
   controllers: [AppController],
 })

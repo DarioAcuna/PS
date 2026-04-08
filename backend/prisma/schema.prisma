@@ -22,7 +22,6 @@ model Schedule {
   dayOfWeek   Int       @map("day_of_week")
   startTime   String    @map("start_time")
   endTime     String    @map("end_time")
-  instructor String?
   maxCapacity Int       @default(20) @map("max_capacity")
   createdAt   DateTime  @default(now()) @map("created_at")
 

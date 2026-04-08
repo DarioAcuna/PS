@@ -189,7 +189,6 @@ export class SesionesService {
       date: Date;
       startTime: string;
       endTime: string;
-      instructor?: string | null;
       status: SessionStatus;
     }[] = [];
 
@@ -207,7 +206,6 @@ export class SesionesService {
           date: sessionDate,
           startTime: horario.startTime,
           endTime: horario.endTime,
-          instructor: horario.instructor,
           status: SessionStatus.SCHEDULED,
         });
       }

@@ -2,10 +2,10 @@ import { Type } from 'class-transformer';
 import {
   IsInt,
   IsOptional,
-  IsString,
   Max,
   Min,
   IsNotEmpty,
+  IsString,
 } from 'class-validator';
 
 export class UpdateHorarioDto {
@@ -31,9 +31,6 @@ export class UpdateHorarioDto {
   @IsNotEmpty()
   endTime?: string;
 
-  @IsOptional()
-  @IsString()
-  instructor?: string;
 
   @IsOptional()
   @Type(() => Number)

@@ -34,7 +34,6 @@ async function main() {
       dayOfWeek: 1,
       startTime: '18:00',
       endTime: '19:30',
-      instructor: 'Álvaro',
     },
   });
 
@@ -44,7 +43,6 @@ async function main() {
       dayOfWeek: 3,
       startTime: '19:30',
       endTime: '21:00',
-      instructor: 'Javier',
     },
   });
 

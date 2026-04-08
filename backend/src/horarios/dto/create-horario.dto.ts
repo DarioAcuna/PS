@@ -3,9 +3,9 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
-  IsString,
   Max,
   Min,
+  IsString,
 } from 'class-validator';
 
 export class CreateHorarioDto {
@@ -27,9 +27,6 @@ export class CreateHorarioDto {
   @IsNotEmpty()
   endTime: string;
 
-  @IsOptional()
-  @IsString()
-  instructor?: string;
 
   @IsOptional()
   @Type(() => Number)

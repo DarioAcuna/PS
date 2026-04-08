@@ -34,7 +34,6 @@ export class HorariosService {
     dayOfWeek: number,
     startTime: string,
     endTime: string,
-    instructor?: string,
     currentScheduleId?: number,
   ) {
     const schedules = await this.prisma.schedule.findMany({
@@ -54,15 +53,7 @@ export class HorariosService {
 
       if (!solapa) continue;
 
-      if (
-        instructor &&
-        schedule.instructor &&
-        instructor === schedule.instructor
-      ) {
-        throw new ConflictException(
-          'El instructor ya está ocupado en esa franja horaria',
-        );
-      }
+      throw new ConflictException('Ya existe un horario en esa franja horaria');
     }
   }
 
@@ -79,7 +70,6 @@ export class HorariosService {
       dto.dayOfWeek,
       dto.startTime,
       dto.endTime,
-      dto.instructor,
     );
 
     return this.prisma.schedule.create({
@@ -88,7 +78,6 @@ export class HorariosService {
         dayOfWeek: dto.dayOfWeek,
         startTime: dto.startTime,
         endTime: dto.endTime,
-        instructor: dto.instructor?.trim(),
         maxCapacity: dto.maxCapacity,
       },
       include: {
@@ -130,7 +119,6 @@ export class HorariosService {
     const dayOfWeek = dto.dayOfWeek ?? actual.dayOfWeek;
     const startTime = dto.startTime ?? actual.startTime;
     const endTime = dto.endTime ?? actual.endTime;
-    const instructor = dto.instructor ?? actual.instructor ?? undefined;
     const maxCapacity = dto.maxCapacity ?? actual.maxCapacity;
 
     if (startTime >= endTime) {
@@ -145,7 +133,6 @@ export class HorariosService {
       dayOfWeek,
       startTime,
       endTime,
-      instructor,
       id,
     );
 
@@ -156,7 +143,6 @@ export class HorariosService {
         dayOfWeek,
         startTime,
         endTime,
-        instructor,
         maxCapacity,
       },
       include: { class: true },

@@ -1,7 +1,7 @@
 import {
-    ConflictException,
-    Injectable,
-    NotFoundException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateHorarioDto } from './dto/create-horario.dto';
@@ -9,186 +9,181 @@ import { UpdateHorarioDto } from './dto/update-horario.dto';
 
 @Injectable()
 export class HorariosService {
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    private haySolapamiento(
-        inicioA: string,
-        finA: string,
-        inicioB: string,
-        finB: string,
-    ) {
-        return inicioA < finB && finA > inicioB;
+  private haySolapamiento(
+    inicioA: string,
+    finA: string,
+    inicioB: string,
+    finB: string,
+  ) {
+    return inicioA < finB && finA > inicioB;
+  }
+
+  private async validarClaseExiste(classId: number) {
+    const clase = await this.prisma.clase.findUnique({
+      where: { id: classId },
+    });
+
+    if (!clase) {
+      throw new NotFoundException('La clase indicada no existe');
     }
+  }
 
-    private async validarClaseExiste(claseId: number) {
-        const clase = await this.prisma.clase.findUnique({
-            where: { id: claseId },
-        });
+  private async validarSolapamientos(
+    dayOfWeek: number,
+    startTime: string,
+    endTime: string,
+    instructor?: string,
+    currentScheduleId?: number,
+  ) {
+    const schedules = await this.prisma.schedule.findMany({
+      where: {
+        dayOfWeek,
+        ...(currentScheduleId ? { NOT: { id: currentScheduleId } } : {}),
+      },
+    });
 
-        if (!clase) {
-            throw new NotFoundException('La clase indicada no existe');
-        }
-    }
+    for (const schedule of schedules) {
+      const solapa = this.haySolapamiento(
+        startTime,
+        endTime,
+        schedule.startTime,
+        schedule.endTime,
+      );
 
-    private async validarSolapamientos(
-        diaSemana: number,
-        horaInicio: string,
-        horaFin: string,
-        instructor?: string,
-        aula?: string,
-        horarioActualId?: number,
-    ) {
-        const horarios = await this.prisma.horario.findMany({
-            where: {
-                diaSemana,
-                ...(horarioActualId ? { NOT: { id: horarioActualId } } : {}),
-            },
-        });
+      if (!solapa) continue;
 
-        for (const horario of horarios) {
-            const solapa = this.haySolapamiento(
-                horaInicio,
-                horaFin,
-                horario.horaInicio,
-                horario.horaFin,
-            );
-
-            if (!solapa) continue;
-
-            if (instructor && horario.instructor && instructor === horario.instructor) {
-                throw new ConflictException(
-                    'El instructor ya está ocupado en esa franja horaria',
-                );
-            }
-
-            if (aula && horario.aula && aula === horario.aula) {
-                throw new ConflictException(
-                    'El aula ya está ocupada en esa franja horaria',
-                );
-            }
-        }
-    }
-
-    async create(dto: CreateHorarioDto) {
-        if (dto.horaInicio >= dto.horaFin) {
-            throw new ConflictException(
-                'La hora de inicio debe ser menor que la de fin',
-            );
-        }
-
-        await this.validarClaseExiste(dto.claseId);
-
-        await this.validarSolapamientos(
-            dto.diaSemana,
-            dto.horaInicio,
-            dto.horaFin,
-            dto.instructor,
-            dto.aula,
+      if (
+        instructor &&
+        schedule.instructor &&
+        instructor === schedule.instructor
+      ) {
+        throw new ConflictException(
+          'El instructor ya está ocupado en esa franja horaria',
         );
+      }
+    }
+  }
 
-        return this.prisma.horario.create({
-            data: {
-                claseId: dto.claseId,
-                diaSemana: dto.diaSemana,
-                horaInicio: dto.horaInicio,
-                horaFin: dto.horaFin,
-                instructor: dto.instructor?.trim(),
-                aula: dto.aula?.trim(),
-            },
-            include: {
-                clase: true,
-            },
-        });
+  async create(dto: CreateHorarioDto) {
+    if (dto.startTime >= dto.endTime) {
+      throw new ConflictException(
+        'La hora de inicio debe ser menor que la de fin',
+      );
     }
 
-    async findAll() {
-        return this.prisma.horario.findMany({
-            include: { clase: true },
-            orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }],
-        });
+    await this.validarClaseExiste(dto.classId);
+
+    await this.validarSolapamientos(
+      dto.dayOfWeek,
+      dto.startTime,
+      dto.endTime,
+      dto.instructor,
+    );
+
+    return this.prisma.schedule.create({
+      data: {
+        classId: dto.classId,
+        dayOfWeek: dto.dayOfWeek,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        instructor: dto.instructor?.trim(),
+        maxCapacity: dto.maxCapacity,
+      },
+      include: {
+        class: true,
+      },
+    });
+  }
+
+  async findAll() {
+    return this.prisma.schedule.findMany({
+      include: { class: true },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    });
+  }
+
+  async findOne(id: number) {
+    const horario = await this.prisma.schedule.findUnique({
+      where: { id },
+      include: { class: true },
+    });
+
+    if (!horario) {
+      throw new NotFoundException('Horario no encontrado');
     }
 
-    async findOne(id: number) {
-        const horario = await this.prisma.horario.findUnique({
-            where: { id },
-            include: { clase: true },
-        });
+    return horario;
+  }
 
-        if (!horario) {
-            throw new NotFoundException('Horario no encontrado');
-        }
+  async update(id: number, dto: UpdateHorarioDto) {
+    const actual = await this.prisma.schedule.findUnique({
+      where: { id },
+    });
 
-        return horario;
+    if (!actual) {
+      throw new NotFoundException('Horario no encontrado');
     }
 
-    async update(id: number, dto: UpdateHorarioDto) {
-        const actual = await this.prisma.horario.findUnique({
-            where: { id },
-        });
+    const classId = dto.classId ?? actual.classId;
+    const dayOfWeek = dto.dayOfWeek ?? actual.dayOfWeek;
+    const startTime = dto.startTime ?? actual.startTime;
+    const endTime = dto.endTime ?? actual.endTime;
+    const instructor = dto.instructor ?? actual.instructor ?? undefined;
+    const maxCapacity = dto.maxCapacity ?? actual.maxCapacity;
 
-        if (!actual) {
-            throw new NotFoundException('Horario no encontrado');
-        }
-
-        const claseId = dto.claseId ?? actual.claseId;
-        const diaSemana = dto.diaSemana ?? actual.diaSemana;
-        const horaInicio = dto.horaInicio ?? actual.horaInicio;
-        const horaFin = dto.horaFin ?? actual.horaFin;
-        const instructor = dto.instructor ?? actual.instructor ?? undefined;
-        const aula = dto.aula ?? actual.aula ?? undefined;
-
-        if (horaInicio >= horaFin) {
-            throw new ConflictException(
-                'La hora de inicio debe ser menor que la de fin',
-            );
-        }
-
-        await this.validarClaseExiste(claseId);
-
-        await this.validarSolapamientos(
-            diaSemana,
-            horaInicio,
-            horaFin,
-            instructor,
-            aula,
-            id,
-        );
-
-        return this.prisma.horario.update({
-            where: { id },
-            data: {
-                claseId,
-                diaSemana,
-                horaInicio,
-                horaFin,
-                instructor,
-                aula,
-            },
-            include: { clase: true },
-        });
+    if (startTime >= endTime) {
+      throw new ConflictException(
+        'La hora de inicio debe ser menor que la de fin',
+      );
     }
 
-    async remove(id: number) {
-        const horario = await this.prisma.horario.findUnique({
-            where: { id },
-        });
+    await this.validarClaseExiste(classId);
 
-        if (!horario) {
-            throw new NotFoundException('Horario no encontrado');
-        }
+    await this.validarSolapamientos(
+      dayOfWeek,
+      startTime,
+      endTime,
+      instructor,
+      id,
+    );
 
-        const sesionesAsociadas = await this.prisma.sesion.count({
-            where: { horarioId: id },
-        });
+    return this.prisma.schedule.update({
+      where: { id },
+      data: {
+        classId,
+        dayOfWeek,
+        startTime,
+        endTime,
+        instructor,
+        maxCapacity,
+      },
+      include: { class: true },
+    });
+  }
 
-        if (sesionesAsociadas > 0) {
-            throw new ConflictException(
-                'No se puede borrar el horario porque tiene sesiones asociadas',
-            );
-        }
+  async remove(id: number) {
+    const horario = await this.prisma.schedule.findUnique({
+      where: { id },
+    });
 
-        return this.prisma.horario.delete({
-            where: { id },
-        });
+    if (!horario) {
+      throw new NotFoundException('Horario no encontrado');
     }
+
+    const sesionesAsociadas = await this.prisma.session.count({
+      where: { scheduleId: id },
+    });
+
+    if (sesionesAsociadas > 0) {
+      throw new ConflictException(
+        'No se puede borrar el horario porque tiene sesiones asociadas',
+      );
+    }
+
+    return this.prisma.schedule.delete({
+      where: { id },
+    });
+  }
 }

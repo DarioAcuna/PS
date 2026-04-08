@@ -7,11 +7,11 @@ export class AppController {
 
   @Get('health')
   async health() {
-    const totalClases = await this.prisma.clase.count();
+    const totalClasses = await this.prisma.clase.count();
 
     return {
       ok: true,
-      clases: totalClases,
+      classes: totalClasses,
     };
   }
 }

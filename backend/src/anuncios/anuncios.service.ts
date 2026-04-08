@@ -5,56 +5,54 @@ import { UpdateAnuncioDto } from './dto/update-anuncio.dto';
 
 @Injectable()
 export class AnunciosService {
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    async create(dto: CreateAnuncioDto) {
-        return this.prisma.anuncio.create({
-            data: {
-                titulo: dto.titulo.trim(),
-                contenido: dto.contenido.trim(),
-                activo: dto.activo ?? true,
-            },
-        });
+  async create(dto: CreateAnuncioDto) {
+    return this.prisma.announcement.create({
+      data: {
+        title: dto.title.trim(),
+        content: dto.content.trim(),
+        isActive: dto.isActive ?? true,
+      },
+    });
+  }
+
+  async findAll() {
+    return this.prisma.announcement.findMany({
+      orderBy: { publishedAt: 'desc' },
+    });
+  }
+
+  async findOne(id: number) {
+    const anuncio = await this.prisma.announcement.findUnique({
+      where: { id },
+    });
+
+    if (!anuncio) {
+      throw new NotFoundException('Anuncio no encontrado');
     }
 
-    async findAll() {
-        return this.prisma.anuncio.findMany({
-            orderBy: { publicadoEn: 'desc' },
-        });
-    }
+    return anuncio;
+  }
 
-    async findOne(id: number) {
-        const anuncio = await this.prisma.anuncio.findUnique({
-            where: { id },
-        });
+  async update(id: number, dto: UpdateAnuncioDto) {
+    await this.findOne(id);
 
-        if (!anuncio) {
-            throw new NotFoundException('Anuncio no encontrado');
-        }
+    return this.prisma.announcement.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
+        ...(dto.content !== undefined ? { content: dto.content.trim() } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+  }
 
-        return anuncio;
-    }
+  async remove(id: number) {
+    await this.findOne(id);
 
-    async update(id: number, dto: UpdateAnuncioDto) {
-        await this.findOne(id);
-
-        return this.prisma.anuncio.update({
-            where: { id },
-            data: {
-                ...(dto.titulo !== undefined ? { titulo: dto.titulo.trim() } : {}),
-                ...(dto.contenido !== undefined
-                    ? { contenido: dto.contenido.trim() }
-                    : {}),
-                ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
-            },
-        });
-    }
-
-    async remove(id: number) {
-        await this.findOne(id);
-
-        return this.prisma.anuncio.delete({
-            where: { id },
-        });
-    }
+    return this.prisma.announcement.delete({
+      where: { id },
+    });
+  }
 }

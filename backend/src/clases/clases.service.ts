@@ -12,14 +12,14 @@ export class ClasesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createClaseDto: CreateClaseDto) {
-    const nombreLimpio = createClaseDto.nombre.trim();
+    const nameClear = createClaseDto.name.trim();
 
-    if (!nombreLimpio) {
+    if (!nameClear) {
       throw new ConflictException('El nombre de la clase es obligatorio');
     }
 
     const existente = await this.prisma.clase.findUnique({
-      where: { nombre: nombreLimpio },
+      where: { name: nameClear },
     });
 
     if (existente) {
@@ -28,10 +28,8 @@ export class ClasesService {
 
     return this.prisma.clase.create({
       data: {
-        nombre: nombreLimpio,
-        descripcion: createClaseDto.descripcion?.trim(),
-        nivel: createClaseDto.nivel?.trim(),
-        activa: createClaseDto.activa ?? true,
+        name: nameClear,
+        level: createClaseDto.level?.trim(),
       },
     });
   }
@@ -57,18 +55,18 @@ export class ClasesService {
   async update(id: number, updateClaseDto: UpdateClaseDto) {
     await this.findOne(id);
 
-    if (updateClaseDto.nombre) {
-      const nombreLimpio = updateClaseDto.nombre.trim();
+    if (updateClaseDto.name) {
+      const nameClear = updateClaseDto.name.trim();
 
       const existente = await this.prisma.clase.findUnique({
-        where: { nombre: nombreLimpio },
+        where: { name: nameClear },
       });
 
       if (existente && existente.id !== id) {
         throw new ConflictException('Ya existe otra clase con ese nombre');
       }
 
-      updateClaseDto.nombre = nombreLimpio;
+      updateClaseDto.name = nameClear;
     }
 
     return this.prisma.clase.update({
@@ -82,8 +80,8 @@ export class ClasesService {
   async remove(id: number) {
     await this.findOne(id);
 
-    const horariosAsociados = await this.prisma.horario.count({
-      where: { claseId: id },
+    const horariosAsociados = await this.prisma.schedule.count({
+      where: { classId: id },
     });
 
     if (horariosAsociados > 0) {

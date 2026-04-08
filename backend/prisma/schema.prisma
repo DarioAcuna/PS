@@ -7,57 +7,61 @@ datasource db {
 }
 
 model Clase {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  level     String?
+  createdAt DateTime   @default(now()) @map("created_at")
+  schedules Schedule[]
+
+  @@map("classes")
+}
+
+model Schedule {
   id          Int       @id @default(autoincrement())
-  nombre      String    @unique
-  descripcion String?
-  nivel       String?
-  activa      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  horarios    Horario[]
-}
-
-model Horario {
-  id         Int       @id @default(autoincrement())
-  claseId    Int
-  diaSemana  Int
-  horaInicio String
-  horaFin    String
+  classId     Int       @map("class_id")
+  dayOfWeek   Int       @map("day_of_week")
+  startTime   String    @map("start_time")
+  endTime     String    @map("end_time")
   instructor String?
-  aula       String?
-  activo     Boolean   @default(true)
-  createdAt  DateTime  @default(now())
+  maxCapacity Int       @default(20) @map("max_capacity")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
-  clase      Clase     @relation(fields: [claseId], references: [id], onDelete: Restrict)
-  sesiones   Sesion[]
+  class       Clase     @relation(fields: [classId], references: [id], onDelete: Restrict)
+  sessions    Session[]
+
+  @@map("schedules")
 }
 
-model Sesion {
-  id           Int          @id @default(autoincrement())
-  horarioId    Int
-  fecha        DateTime
-  horaInicio   String
-  horaFin      String
+model Session {
+  id           Int           @id @default(autoincrement())
+  scheduleId   Int           @map("schedule_id")
+  date         DateTime      @map("date")
+  startTime    String        @map("start_time")
+  endTime      String        @map("end_time")
   instructor   String?
-  aula         String?
-  observaciones String?
-  estado       SesionEstado @default(PROGRAMADA)
-  createdAt    DateTime     @default(now())
+  status       SessionStatus @default(SCHEDULED) @map("status")
+  createdAt    DateTime     @default(now()) @map("created_at")
 
-  horario      Horario      @relation(fields: [horarioId], references: [id], onDelete: Restrict)
+  schedule     Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
 
-  @@unique([horarioId, fecha])
+  @@unique([scheduleId, date])
+  @@map("sessions")
 }
 
-model Anuncio {
-  id           Int      @id @default(autoincrement())
-  titulo       String
-  contenido    String
-  activo       Boolean  @default(true)
-  publicadoEn  DateTime @default(now())
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  isActive    Boolean  @default(true) @map("is_active")
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  @@map("announcements")
 }
 
-enum SesionEstado {
-  PROGRAMADA
-  MODIFICADA
-  CANCELADA
+enum SessionStatus {
+  SCHEDULED
+  MODIFIED
+  CANCELED
+
+  @@map("session_status")
 }

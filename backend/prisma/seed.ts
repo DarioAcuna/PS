@@ -1,6 +1,6 @@
-import "dotenv/config";
-import { PrismaClient, SesionEstado } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import 'dotenv/config';
+import { PrismaClient, SessionStatus } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -9,81 +9,75 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  await prisma.sesion.deleteMany();
-  await prisma.horario.deleteMany();
-  await prisma.anuncio.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.schedule.deleteMany();
+  await prisma.announcement.deleteMany();
   await prisma.clase.deleteMany();
 
   const clase1 = await prisma.clase.create({
     data: {
-      nombre: "BJJ Principiantes",
-      descripcion: "Clase para alumnos que empiezan",
-      nivel: "Principiante",
+      name: 'BJJ Principiantes',
+      level: 'Principiante',
     },
   });
 
   const clase2 = await prisma.clase.create({
     data: {
-      nombre: "BJJ Avanzado",
-      descripcion: "Clase técnica avanzada",
-      nivel: "Avanzado",
+      name: 'BJJ Avanzado',
+      level: 'Avanzado',
     },
   });
 
-  const horario1 = await prisma.horario.create({
+  const horario1 = await prisma.schedule.create({
     data: {
-      claseId: clase1.id,
-      diaSemana: 1,
-      horaInicio: "18:00",
-      horaFin: "19:30",
-      instructor: "Álvaro",
-      aula: "Tatami 1",
+      classId: clase1.id,
+      dayOfWeek: 1,
+      startTime: '18:00',
+      endTime: '19:30',
+      instructor: 'Álvaro',
     },
   });
 
-  const horario2 = await prisma.horario.create({
+  const horario2 = await prisma.schedule.create({
     data: {
-      claseId: clase2.id,
-      diaSemana: 3,
-      horaInicio: "19:30",
-      horaFin: "21:00",
-      instructor: "Javier",
-      aula: "Tatami 1",
+      classId: clase2.id,
+      dayOfWeek: 3,
+      startTime: '19:30',
+      endTime: '21:00',
+      instructor: 'Javier',
     },
   });
 
-  await prisma.sesion.createMany({
+  await prisma.session.createMany({
     data: [
       {
-        horarioId: horario1.id,
-        fecha: new Date("2026-04-06T00:00:00.000Z"),
-        horaInicio: "18:00",
-        horaFin: "19:30",
-        instructor: "Álvaro",
-        aula: "Tatami 1",
-        estado: SesionEstado.PROGRAMADA,
+        scheduleId: horario1.id,
+        date: new Date('2026-04-06T00:00:00.000Z'),
+        startTime: '18:00',
+        endTime: '19:30',
+        instructor: 'Álvaro',
+        status: SessionStatus.SCHEDULED,
       },
       {
-        horarioId: horario2.id,
-        fecha: new Date("2026-04-08T00:00:00.000Z"),
-        horaInicio: "19:30",
-        horaFin: "21:00",
-        instructor: "Javier",
-        aula: "Tatami 1",
-        estado: SesionEstado.PROGRAMADA,
+        scheduleId: horario2.id,
+        date: new Date('2026-04-08T00:00:00.000Z'),
+        startTime: '19:30',
+        endTime: '21:00',
+        instructor: 'Javier',
+        status: SessionStatus.SCHEDULED,
       },
     ],
   });
 
-  await prisma.anuncio.createMany({
+  await prisma.announcement.createMany({
     data: [
       {
-        titulo: "Cambio de horario",
-        contenido: "La clase del lunes pasa a las 18:00.",
+        title: 'Cambio de horario',
+        content: 'La clase del lunes pasa a las 18:00.',
       },
       {
-        titulo: "Seminario especial",
-        contenido: "Este sábado habrá seminario con invitado.",
+        title: 'Seminario especial',
+        content: 'Este sábado habrá seminario con invitado.',
       },
     ],
   });

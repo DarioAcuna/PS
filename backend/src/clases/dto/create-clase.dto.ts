@@ -1,19 +1,11 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateClaseDto {
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  name: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  descripcion?: string;
-
-  @IsOptional()
-  @IsString()
-  nivel?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  activa?: boolean;
+  level?: string;
 }

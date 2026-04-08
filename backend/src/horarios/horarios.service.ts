@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateHorarioDto } from './dto/create-horario.dto';
 import { UpdateHorarioDto } from './dto/update-horario.dto';
@@ -10,15 +11,6 @@ import { UpdateHorarioDto } from './dto/update-horario.dto';
 @Injectable()
 export class HorariosService {
   constructor(private readonly prisma: PrismaService) {}
-
-  private haySolapamiento(
-    inicioA: string,
-    finA: string,
-    inicioB: string,
-    finB: string,
-  ) {
-    return inicioA < finB && finA > inicioB;
-  }
 
   private async validarClaseExiste(classId: number) {
     const clase = await this.prisma.clase.findUnique({
@@ -30,30 +22,25 @@ export class HorariosService {
     }
   }
 
-  private async validarSolapamientos(
+  private async validarLimiteFranja(
     dayOfWeek: number,
     startTime: string,
     endTime: string,
     currentScheduleId?: number,
   ) {
-    const schedules = await this.prisma.schedule.findMany({
+    const schedulesInSlot = await this.prisma.schedule.count({
       where: {
         dayOfWeek,
+        startTime,
+        endTime,
         ...(currentScheduleId ? { NOT: { id: currentScheduleId } } : {}),
       },
     });
 
-    for (const schedule of schedules) {
-      const solapa = this.haySolapamiento(
-        startTime,
-        endTime,
-        schedule.startTime,
-        schedule.endTime,
+    if (schedulesInSlot >= 2) {
+      throw new ConflictException(
+        'Solo puede haber 2 clases por la misma franja horaria',
       );
-
-      if (!solapa) continue;
-
-      throw new ConflictException('Ya existe un horario en esa franja horaria');
     }
   }
 
@@ -66,24 +53,34 @@ export class HorariosService {
 
     await this.validarClaseExiste(dto.classId);
 
-    await this.validarSolapamientos(
+    await this.validarLimiteFranja(
       dto.dayOfWeek,
       dto.startTime,
       dto.endTime,
     );
 
-    return this.prisma.schedule.create({
-      data: {
-        classId: dto.classId,
-        dayOfWeek: dto.dayOfWeek,
-        startTime: dto.startTime,
-        endTime: dto.endTime,
-        maxCapacity: dto.maxCapacity,
-      },
-      include: {
-        class: true,
-      },
-    });
+    try {
+      return this.prisma.schedule.create({
+        data: {
+          classId: dto.classId,
+          dayOfWeek: dto.dayOfWeek,
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+          maxCapacity: dto.maxCapacity,
+        },
+        include: {
+          class: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new ConflictException(
+          'Solo puede haber 2 clases por la misma franja horaria',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async findAll() {
@@ -129,24 +126,34 @@ export class HorariosService {
 
     await this.validarClaseExiste(classId);
 
-    await this.validarSolapamientos(
+    await this.validarLimiteFranja(
       dayOfWeek,
       startTime,
       endTime,
       id,
     );
 
-    return this.prisma.schedule.update({
-      where: { id },
-      data: {
-        classId,
-        dayOfWeek,
-        startTime,
-        endTime,
-        maxCapacity,
-      },
-      include: { class: true },
-    });
+    try {
+      return this.prisma.schedule.update({
+        where: { id },
+        data: {
+          classId,
+          dayOfWeek,
+          startTime,
+          endTime,
+          maxCapacity,
+        },
+        include: { class: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new ConflictException(
+          'Solo puede haber 2 clases por la misma franja horaria',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async remove(id: number) {

@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SessionStatus } from '@prisma/client';
+import { Prisma, SessionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ListarSesionesDto } from './dto/listar-sesiones.dto';
 import { UpdateSesionDto } from './dto/update-sesion.dto';
@@ -23,15 +23,6 @@ export class SesionesService {
     const inicio = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
     const fin = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
     return { inicio, fin };
-  }
-
-  private haySolapamiento(
-    inicioA: string,
-    finA: string,
-    inicioB: string,
-    finB: string,
-  ) {
-    return inicioA < finB && finA > inicioB;
   }
 
   async findAll(query: ListarSesionesDto) {
@@ -98,43 +89,49 @@ export class SesionesService {
       );
     }
 
-    const sesionesMismoDia = await this.prisma.session.findMany({
-      where: {
-        date: actual.date,
-        NOT: { id },
-        status: { not: SessionStatus.CANCELED },
-      },
-    });
+    if (instructor) {
+      const conflictoInstructor = await this.prisma.session.findFirst({
+        where: {
+          id: { not: id },
+          date: actual.date,
+          startTime,
+          endTime,
+          instructor,
+        },
+      });
 
-    for (const sesion of sesionesMismoDia) {
-      const solapa = this.haySolapamiento(
-        startTime,
-        endTime,
-        sesion.startTime,
-        sesion.endTime,
-      );
-
-      if (!solapa) continue;
-
-      if (instructor && sesion.instructor && instructor === sesion.instructor) {
+      if (conflictoInstructor) {
         throw new ConflictException(
-          'El instructor ya está ocupado en esa franja horaria',
+          'El instructor ya está asignado a esa franja en ese día',
         );
       }
     }
 
-    return this.prisma.session.update({
-      where: { id },
-      data: {
-        startTime,
-        endTime,
-        instructor,
-        status: dto.status ?? SessionStatus.MODIFIED,
-      },
-    });
+    try {
+      return this.prisma.session.update({
+        where: { id },
+        data: {
+          startTime,
+          endTime,
+          instructor,
+          status: dto.status ?? SessionStatus.MODIFIED,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'El instructor ya está asignado a esa franja en ese día',
+        );
+      }
+
+      throw error;
+    }
   }
 
-  async cancelar(id: number) {
+  async remove(id: number) {
     const sesion = await this.prisma.session.findUnique({
       where: { id },
     });
@@ -143,15 +140,8 @@ export class SesionesService {
       throw new NotFoundException('Sesión no encontrada');
     }
 
-    if (sesion.status === SessionStatus.CANCELED) {
-      throw new ConflictException('La sesión ya está cancelada');
-    }
-
-    return this.prisma.session.update({
+    return this.prisma.session.delete({
       where: { id },
-      data: {
-        status: SessionStatus.CANCELED,
-      },
     });
   }
 

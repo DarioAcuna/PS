@@ -7,5 +7,5 @@ export class CreateClaseDto {
 
   @IsNotEmpty()
   @IsString()
-  level?: string;
+  level: string;
 }

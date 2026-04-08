@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -32,9 +33,9 @@ export class SesionesController {
     return this.sesionesService.update(id, dto);
   }
 
-  @Patch(':id/cancelar')
-  cancelar(@Param('id', ParseIntPipe) id: number) {
-    return this.sesionesService.cancelar(id);
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.sesionesService.remove(id);
   }
 
   @Post('generar')

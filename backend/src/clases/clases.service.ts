@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
@@ -11,27 +12,64 @@ import { UpdateClaseDto } from './dto/update-clase.dto';
 export class ClasesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createClaseDto: CreateClaseDto) {
-    const nameClear = createClaseDto.name.trim();
+  private normalizarCampo(value?: string) {
+    const clean = value?.trim();
+    return clean?.length ? clean : undefined;
+  }
 
-    if (!nameClear) {
-      throw new ConflictException('El nombre de la clase es obligatorio');
-    }
-
-    const existente = await this.prisma.clase.findUnique({
-      where: { name: nameClear },
+  private async validarCombinacionUnica(
+    name: string,
+    level: string,
+    currentClassId?: number,
+  ) {
+    const existente = await this.prisma.clase.findFirst({
+      where: {
+        name,
+        level,
+        ...(currentClassId ? { NOT: { id: currentClassId } } : {}),
+      },
     });
 
     if (existente) {
-      throw new ConflictException('Ya existe una clase con ese nombre');
+      throw new ConflictException(
+        'Ya existe una clase con el mismo nombre y nivel',
+      );
+    }
+  }
+
+  async create(createClaseDto: CreateClaseDto) {
+    const name = this.normalizarCampo(createClaseDto.name);
+    const level = this.normalizarCampo(createClaseDto.level);
+
+    if (!name) {
+      throw new ConflictException('El nombre de la clase es obligatorio');
     }
 
-    return this.prisma.clase.create({
-      data: {
-        name: nameClear,
-        level: createClaseDto.level?.trim(),
-      },
-    });
+    if (!level) {
+      throw new ConflictException('El nivel de la clase es obligatorio');
+    }
+
+    await this.validarCombinacionUnica(name, level);
+
+    try {
+      return this.prisma.clase.create({
+        data: {
+          name,
+          level,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Ya existe una clase con el mismo nombre y nivel',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async findAll() {
@@ -53,28 +91,37 @@ export class ClasesService {
   }
 
   async update(id: number, updateClaseDto: UpdateClaseDto) {
-    await this.findOne(id);
+    const actual = await this.findOne(id);
 
-    if (updateClaseDto.name) {
-      const nameClear = updateClaseDto.name.trim();
+    const name = this.normalizarCampo(updateClaseDto.name) ?? actual.name;
+    const level = this.normalizarCampo(updateClaseDto.level) ?? actual.level ?? '';
 
-      const existente = await this.prisma.clase.findUnique({
-        where: { name: nameClear },
-      });
-
-      if (existente && existente.id !== id) {
-        throw new ConflictException('Ya existe otra clase con ese nombre');
-      }
-
-      updateClaseDto.name = nameClear;
+    if (!level) {
+      throw new ConflictException('El nivel de la clase es obligatorio');
     }
 
-    return this.prisma.clase.update({
-      where: { id },
-      data: {
-        ...updateClaseDto,
-      },
-    });
+    await this.validarCombinacionUnica(name, level, id);
+
+    try {
+      return this.prisma.clase.update({
+        where: { id },
+        data: {
+          name,
+          level,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Ya existe una clase con el mismo nombre y nivel',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async remove(id: number) {

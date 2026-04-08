@@ -8,11 +8,12 @@ datasource db {
 
 model Clase {
   id        Int        @id @default(autoincrement())
-  name      String     @unique
+  name      String
   level     String?
   createdAt DateTime   @default(now()) @map("created_at")
   schedules Schedule[]
 
+  @@unique([name, level])
   @@map("classes")
 }
 
@@ -44,6 +45,7 @@ model Session {
   schedule     Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
 
   @@unique([scheduleId, date])
+  @@unique([date, startTime, endTime, instructor])
   @@map("sessions")
 }
 
@@ -60,7 +62,6 @@ model Announcement {
 enum SessionStatus {
   SCHEDULED
   MODIFIED
-  CANCELED
 
   @@map("session_status")
 }

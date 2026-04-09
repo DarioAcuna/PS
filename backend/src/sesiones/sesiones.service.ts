@@ -1,9 +1,9 @@
 import {
-    ConflictException,
-    Injectable,
-    NotFoundException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import { SesionEstado } from '@prisma/client';
+import { Prisma, SessionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ListarSesionesDto } from './dto/listar-sesiones.dto';
 import { UpdateSesionDto } from './dto/update-sesion.dto';
@@ -11,230 +11,203 @@ import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
 
 @Injectable()
 export class SesionesService {
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    private inicioFinDia(fecha: string) {
-        const inicio = new Date(`${fecha}T00:00:00.000Z`);
-        const fin = new Date(`${fecha}T23:59:59.999Z`);
-        return { inicio, fin };
-    }
+  private inicioFinDia(date: string) {
+    const inicio = new Date(`${date}T00:00:00.000Z`);
+    const fin = new Date(`${date}T23:59:59.999Z`);
+    return { inicio, fin };
+  }
 
-    private inicioFinMes(year: number, month: number) {
-        const inicio = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-        const fin = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
-        return { inicio, fin };
-    }
+  private inicioFinMes(year: number, month: number) {
+    const inicio = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const fin = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    return { inicio, fin };
+  }
 
-    private haySolapamiento(
-        inicioA: string,
-        finA: string,
-        inicioB: string,
-        finB: string,
-    ) {
-        return inicioA < finB && finA > inicioB;
-    }
-
-    async findAll(query: ListarSesionesDto) {
-        const where = query.fecha
-            ? (() => {
-                const { inicio, fin } = this.inicioFinDia(query.fecha!);
-                return {
-                    fecha: {
-                        gte: inicio,
-                        lte: fin,
-                    },
-                };
-            })()
-            : {};
-
-        return this.prisma.sesion.findMany({
-            where,
-            include: {
-                horario: {
-                    include: {
-                        clase: true,
-                    },
-                },
+  async findAll(query: ListarSesionesDto) {
+    const where = query.date
+      ? (() => {
+          const { inicio, fin } = this.inicioFinDia(query.date);
+          return {
+            date: {
+              gte: inicio,
+              lte: fin,
             },
-            orderBy: [{ fecha: 'asc' }, { horaInicio: 'asc' }],
-        });
+          };
+        })()
+      : {};
+
+    return this.prisma.session.findMany({
+      where,
+      include: {
+        schedule: {
+          include: {
+            class: true,
+          },
+        },
+      },
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+    });
+  }
+
+  async findOne(id: number) {
+    const sesion = await this.prisma.session.findUnique({
+      where: { id },
+      include: {
+        schedule: {
+          include: {
+            class: true,
+          },
+        },
+      },
+    });
+
+    if (!sesion) {
+      throw new NotFoundException('Sesión no encontrada');
     }
 
-    async findOne(id: number) {
-        const sesion = await this.prisma.sesion.findUnique({
-            where: { id },
-            include: {
-                horario: {
-                    include: {
-                        clase: true,
-                    },
-                },
-            },
-        });
+    return sesion;
+  }
 
-        if (!sesion) {
-            throw new NotFoundException('Sesión no encontrada');
-        }
+  async update(id: number, dto: UpdateSesionDto) {
+    const actual = await this.prisma.session.findUnique({
+      where: { id },
+    });
 
-        return sesion;
+    if (!actual) {
+      throw new NotFoundException('Sesión no encontrada');
     }
 
-    async update(id: number, dto: UpdateSesionDto) {
-        const actual = await this.prisma.sesion.findUnique({
-            where: { id },
-        });
+    const startTime = dto.startTime ?? actual.startTime;
+    const endTime = dto.endTime ?? actual.endTime;
+    const instructor = dto.instructor ?? actual.instructor ?? undefined;
 
-        if (!actual) {
-            throw new NotFoundException('Sesión no encontrada');
-        }
-
-        const horaInicio = dto.horaInicio ?? actual.horaInicio;
-        const horaFin = dto.horaFin ?? actual.horaFin;
-        const instructor = dto.instructor ?? actual.instructor ?? undefined;
-        const aula = dto.aula ?? actual.aula ?? undefined;
-
-        if (horaInicio >= horaFin) {
-            throw new ConflictException(
-                'La hora de inicio debe ser menor que la de fin',
-            );
-        }
-
-        const sesionesMismoDia = await this.prisma.sesion.findMany({
-            where: {
-                fecha: actual.fecha,
-                NOT: { id },
-                estado: { not: SesionEstado.CANCELADA },
-            },
-        });
-
-        for (const sesion of sesionesMismoDia) {
-            const solapa = this.haySolapamiento(
-                horaInicio,
-                horaFin,
-                sesion.horaInicio,
-                sesion.horaFin,
-            );
-
-            if (!solapa) continue;
-
-            if (aula && sesion.aula && aula === sesion.aula) {
-                throw new ConflictException(
-                    'El aula ya está ocupada en esa franja horaria',
-                );
-            }
-
-            if (
-                instructor &&
-                sesion.instructor &&
-                instructor === sesion.instructor
-            ) {
-                throw new ConflictException(
-                    'El instructor ya está ocupado en esa franja horaria',
-                );
-            }
-        }
-
-        return this.prisma.sesion.update({
-            where: { id },
-            data: {
-                horaInicio,
-                horaFin,
-                instructor,
-                aula,
-                observaciones: dto.observaciones ?? actual.observaciones,
-                estado: dto.estado ?? SesionEstado.MODIFICADA,
-            },
-        });
+    if (startTime >= endTime) {
+      throw new ConflictException(
+        'La hora de inicio debe ser menor que la de fin',
+      );
     }
 
-    async cancelar(id: number) {
-        const sesion = await this.prisma.sesion.findUnique({
-            where: { id },
-        });
+    if (instructor) {
+      const conflictoInstructor = await this.prisma.session.findFirst({
+        where: {
+          id: { not: id },
+          date: actual.date,
+          startTime,
+          endTime,
+          instructor,
+        },
+      });
 
-        if (!sesion) {
-            throw new NotFoundException('Sesión no encontrada');
-        }
-
-        if (sesion.estado === SesionEstado.CANCELADA) {
-            throw new ConflictException('La sesión ya está cancelada');
-        }
-
-        return this.prisma.sesion.update({
-            where: { id },
-            data: {
-                estado: SesionEstado.CANCELADA,
-            },
-        });
+      if (conflictoInstructor) {
+        throw new ConflictException(
+          'El instructor ya está asignado a esa franja en ese día',
+        );
+      }
     }
 
-    async generar(dto: GenerarSesionesDto) {
-        const horarios = await this.prisma.horario.findMany({
-            include: { clase: true },
-            orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }],
-        });
+    try {
+      return this.prisma.session.update({
+        where: { id },
+        data: {
+          startTime,
+          endTime,
+          instructor,
+          status: dto.status ?? SessionStatus.MODIFIED,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'El instructor ya está asignado a esa franja en ese día',
+        );
+      }
 
-        if (horarios.length === 0) {
-            throw new ConflictException(
-                'No hay horarios base configurados para generar sesiones',
-            );
-        }
-
-        const { inicio, fin } = this.inicioFinMes(dto.year, dto.month);
-
-        const yaExisten = await this.prisma.sesion.count({
-            where: {
-                fecha: {
-                    gte: inicio,
-                    lte: fin,
-                },
-            },
-        });
-
-        if (yaExisten > 0) {
-            throw new ConflictException(
-                'Las sesiones de ese mes ya fueron generadas previamente',
-            );
-        }
-
-        const data: {
-            horarioId: number;
-            fecha: Date;
-            horaInicio: string;
-            horaFin: string;
-            instructor?: string | null;
-            aula?: string | null;
-            estado: SesionEstado;
-        }[] = [];
-
-        const ultimoDia = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
-
-        for (let day = 1; day <= ultimoDia; day++) {
-            const fecha = new Date(Date.UTC(dto.year, dto.month - 1, day));
-            const diaSemana = fecha.getUTCDay();
-
-            for (const horario of horarios) {
-                if (horario.diaSemana !== diaSemana) continue;
-
-                data.push({
-                    horarioId: horario.id,
-                    fecha,
-                    horaInicio: horario.horaInicio,
-                    horaFin: horario.horaFin,
-                    instructor: horario.instructor,
-                    aula: horario.aula,
-                    estado: SesionEstado.PROGRAMADA,
-                });
-            }
-        }
-
-        await this.prisma.sesion.createMany({
-            data,
-        });
-
-        return {
-            message: 'Sesiones generadas correctamente',
-            total: data.length,
-        };
+      throw error;
     }
+  }
+
+  async remove(id: number) {
+    const sesion = await this.prisma.session.findUnique({
+      where: { id },
+    });
+
+    if (!sesion) {
+      throw new NotFoundException('Sesión no encontrada');
+    }
+
+    return this.prisma.session.delete({
+      where: { id },
+    });
+  }
+
+  async generar(dto: GenerarSesionesDto) {
+    const horarios = await this.prisma.schedule.findMany({
+      include: { class: true },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    });
+
+    if (horarios.length === 0) {
+      throw new ConflictException(
+        'No hay horarios base configurados para generar sesiones',
+      );
+    }
+
+    const { inicio, fin } = this.inicioFinMes(dto.year, dto.month);
+
+    const yaExisten = await this.prisma.session.count({
+      where: {
+        date: {
+          gte: inicio,
+          lte: fin,
+        },
+      },
+    });
+
+    if (yaExisten > 0) {
+      throw new ConflictException(
+        'Las sesiones de ese mes ya fueron generadas previamente',
+      );
+    }
+
+    const data: {
+      scheduleId: number;
+      date: Date;
+      startTime: string;
+      endTime: string;
+      status: SessionStatus;
+    }[] = [];
+
+    const ultimoDia = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
+
+    for (let day = 1; day <= ultimoDia; day++) {
+      const sessionDate = new Date(Date.UTC(dto.year, dto.month - 1, day));
+      const dayOfWeek = sessionDate.getUTCDay();
+
+      for (const horario of horarios) {
+        if (horario.dayOfWeek !== dayOfWeek) continue;
+
+        data.push({
+          scheduleId: horario.id,
+          date: sessionDate,
+          startTime: horario.startTime,
+          endTime: horario.endTime,
+          status: SessionStatus.SCHEDULED,
+        });
+      }
+    }
+
+    await this.prisma.session.createMany({
+      data,
+    });
+
+    return {
+      message: 'Sesiones generadas correctamente',
+      total: data.length,
+    };
+  }
 }

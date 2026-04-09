@@ -1,15 +1,15 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateAnuncioDto {
-    @IsString()
-    @IsNotEmpty()
-    titulo: string;
+  @IsString()
+  @IsNotEmpty()
+  title: string;
 
-    @IsString()
-    @IsNotEmpty()
-    contenido: string;
+  @IsString()
+  @IsNotEmpty()
+  content: string;
 
-    @IsOptional()
-    @IsBoolean()
-    activo?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

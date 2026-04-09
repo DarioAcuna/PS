@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
@@ -11,29 +12,64 @@ import { UpdateClaseDto } from './dto/update-clase.dto';
 export class ClasesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createClaseDto: CreateClaseDto) {
-    const nombreLimpio = createClaseDto.nombre.trim();
+  private normalizarCampo(value?: string) {
+    const clean = value?.trim();
+    return clean?.length ? clean : undefined;
+  }
 
-    if (!nombreLimpio) {
-      throw new ConflictException('El nombre de la clase es obligatorio');
-    }
-
-    const existente = await this.prisma.clase.findUnique({
-      where: { nombre: nombreLimpio },
+  private async validarCombinacionUnica(
+    name: string,
+    level: string,
+    currentClassId?: number,
+  ) {
+    const existente = await this.prisma.clase.findFirst({
+      where: {
+        name,
+        level,
+        ...(currentClassId ? { NOT: { id: currentClassId } } : {}),
+      },
     });
 
     if (existente) {
-      throw new ConflictException('Ya existe una clase con ese nombre');
+      throw new ConflictException(
+        'Ya existe una clase con el mismo nombre y nivel',
+      );
+    }
+  }
+
+  async create(createClaseDto: CreateClaseDto) {
+    const name = this.normalizarCampo(createClaseDto.name);
+    const level = this.normalizarCampo(createClaseDto.level);
+
+    if (!name) {
+      throw new ConflictException('El nombre de la clase es obligatorio');
     }
 
-    return this.prisma.clase.create({
-      data: {
-        nombre: nombreLimpio,
-        descripcion: createClaseDto.descripcion?.trim(),
-        nivel: createClaseDto.nivel?.trim(),
-        activa: createClaseDto.activa ?? true,
-      },
-    });
+    if (!level) {
+      throw new ConflictException('El nivel de la clase es obligatorio');
+    }
+
+    await this.validarCombinacionUnica(name, level);
+
+    try {
+      return this.prisma.clase.create({
+        data: {
+          name,
+          level,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Ya existe una clase con el mismo nombre y nivel',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async findAll() {
@@ -55,35 +91,44 @@ export class ClasesService {
   }
 
   async update(id: number, updateClaseDto: UpdateClaseDto) {
-    await this.findOne(id);
+    const actual = await this.findOne(id);
 
-    if (updateClaseDto.nombre) {
-      const nombreLimpio = updateClaseDto.nombre.trim();
+    const name = this.normalizarCampo(updateClaseDto.name) ?? actual.name;
+    const level = this.normalizarCampo(updateClaseDto.level) ?? actual.level ?? '';
 
-      const existente = await this.prisma.clase.findUnique({
-        where: { nombre: nombreLimpio },
-      });
-
-      if (existente && existente.id !== id) {
-        throw new ConflictException('Ya existe otra clase con ese nombre');
-      }
-
-      updateClaseDto.nombre = nombreLimpio;
+    if (!level) {
+      throw new ConflictException('El nivel de la clase es obligatorio');
     }
 
-    return this.prisma.clase.update({
-      where: { id },
-      data: {
-        ...updateClaseDto,
-      },
-    });
+    await this.validarCombinacionUnica(name, level, id);
+
+    try {
+      return this.prisma.clase.update({
+        where: { id },
+        data: {
+          name,
+          level,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Ya existe una clase con el mismo nombre y nivel',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async remove(id: number) {
     await this.findOne(id);
 
-    const horariosAsociados = await this.prisma.horario.count({
-      where: { claseId: id },
+    const horariosAsociados = await this.prisma.schedule.count({
+      where: { classId: id },
     });
 
     if (horariosAsociados > 0) {

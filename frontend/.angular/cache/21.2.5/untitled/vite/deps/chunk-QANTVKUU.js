@@ -120,9 +120,9 @@ import {
   ɵɵinject,
   ɵɵinjectAttribute,
   ɵɵstyleProp
-} from "./chunk-YH4QILKC.js";
+} from "./chunk-EUTOFWRQ.js";
 
-// ../node_modules/@angular/common/fesm2022/_platform_location-chunk.mjs
+// node_modules/@angular/common/fesm2022/_platform_location-chunk.mjs
 var _DOM = null;
 function getDOM() {
   return _DOM;
@@ -238,7 +238,7 @@ var BrowserPlatformLocation = class _BrowserPlatformLocation extends PlatformLoc
   }], () => [], null);
 })();
 
-// ../node_modules/@angular/common/fesm2022/_location-chunk.mjs
+// node_modules/@angular/common/fesm2022/_location-chunk.mjs
 function joinWithSlash(start, end) {
   if (!start) return end;
   if (!end) return start;
@@ -543,7 +543,7 @@ function _stripOrigin(baseHref) {
   return baseHref;
 }
 
-// ../node_modules/@angular/common/fesm2022/_common_module-chunk.mjs
+// node_modules/@angular/common/fesm2022/_common_module-chunk.mjs
 var HashLocationStrategy = class _HashLocationStrategy extends LocationStrategy {
   _platformLocation;
   _baseHref = "";
@@ -3345,7 +3345,7 @@ var CommonModule = class _CommonModule {
   }], null, null);
 })();
 
-// ../node_modules/@angular/common/fesm2022/_platform_navigation-chunk.mjs
+// node_modules/@angular/common/fesm2022/_platform_navigation-chunk.mjs
 var PRECOMMIT_HANDLER_SUPPORTED = new InjectionToken("", {
   factory: () => {
     return typeof window !== "undefined" && typeof window.NavigationPrecommitController !== "undefined";
@@ -3371,7 +3371,7 @@ var PlatformNavigation = class _PlatformNavigation {
   }], null, null);
 })();
 
-// ../node_modules/@angular/common/fesm2022/_xhr-chunk.mjs
+// node_modules/@angular/common/fesm2022/_xhr-chunk.mjs
 function parseCookieValue(cookieStr, name) {
   name = encodeURIComponent(name);
   for (const cookie of cookieStr.split(";")) {
@@ -3386,7 +3386,7 @@ function parseCookieValue(cookieStr, name) {
 var XhrFactory = class {
 };
 
-// ../node_modules/@angular/common/fesm2022/common.mjs
+// node_modules/@angular/common/fesm2022/common.mjs
 var NavigationAdapterForLocation = class _NavigationAdapterForLocation extends Location {
   navigation = inject(PlatformNavigation);
   destroyRef = inject(DestroyRef);
@@ -4663,7 +4663,7 @@ function booleanOrUrlAttribute(value) {
   return booleanAttribute(value);
 }
 
-// ../node_modules/@angular/platform-browser/fesm2022/_dom_renderer-chunk.mjs
+// node_modules/@angular/platform-browser/fesm2022/_dom_renderer-chunk.mjs
 var EventManagerPlugin = class {
   _doc;
   constructor(_doc) {
@@ -5348,7 +5348,7 @@ var EmulatedEncapsulationDomRenderer2 = class extends NoneEncapsulationDomRender
   }
 };
 
-// ../node_modules/@angular/platform-browser/fesm2022/_browser-chunk.mjs
+// node_modules/@angular/platform-browser/fesm2022/_browser-chunk.mjs
 var BrowserDomAdapter = class _BrowserDomAdapter extends DomAdapter {
   supportsDOMEvents = true;
   static makeCurrent() {
@@ -5713,7 +5713,7 @@ var BrowserModule = class _BrowserModule {
   }], () => [], null);
 })();
 
-// ../node_modules/@angular/common/fesm2022/_module-chunk.mjs
+// node_modules/@angular/common/fesm2022/_module-chunk.mjs
 var HttpHeaders = class _HttpHeaders {
   headers;
   normalizedNames = /* @__PURE__ */ new Map();
@@ -7694,7 +7694,7 @@ var HttpClientJsonpModule = class _HttpClientJsonpModule {
   }], null, null);
 })();
 
-// ../node_modules/@angular/common/fesm2022/http.mjs
+// node_modules/@angular/common/fesm2022/http.mjs
 var HTTP_TRANSFER_CACHE_ORIGIN_MAP = new InjectionToken(typeof ngDevMode !== "undefined" && ngDevMode ? "HTTP_TRANSFER_CACHE_ORIGIN_MAP" : "");
 var BODY = "b";
 var HEADERS = "h";
@@ -8069,7 +8069,7 @@ var HttpResourceImpl = class extends ResourceImpl {
   }
 };
 
-// ../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs
+// node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs
 var Meta = class _Meta {
   _doc;
   _dom;
@@ -8699,4 +8699,4 @@ export {
   provideClientHydration,
   VERSION2 as VERSION
 };
-//# sourceMappingURL=chunk-LO6OIOWC.js.map
+//# sourceMappingURL=chunk-QANTVKUU.js.map

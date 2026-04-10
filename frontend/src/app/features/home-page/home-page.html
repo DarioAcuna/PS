@@ -1,0 +1,135 @@
+<nav class="navbar">
+  <div class="nav-links">
+    <a class="nav-link active">Dashboard</a>
+    <a class="nav-link">Clases</a>
+    <a class="nav-link">Instructores</a>
+    <a class="nav-link">Miembros</a>
+    <a class="nav-link">Eventos</a>
+    <a class="nav-link">Anuncios</a>
+  </div>
+
+  <div class="nav-actions">
+    <button class="btn">Vista inicio</button>
+    <button class="btn btn-primary">Cerrar sesión</button>
+  </div>
+</nav>
+
+<main class="main">
+
+  <div class="page-header">
+    <h1>Resumen del gimnasio</h1>
+    <p>lunes, 10 de abril de 2026</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Miembros activos</div>
+      <div class="value">120</div>
+      <div class="sub">+3 este mes</div>
+    </div>
+
+    <div class="stat-card dark">
+      <div class="label">Clases esta semana</div>
+      <div class="value">18</div>
+      <div class="sub">4 hoy programadas</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="label">Próximo evento</div>
+      <div class="value value-sm">Open BJJ Cup</div>
+      <div class="sub">20 abril 2026</div>
+    </div>
+  </div>
+
+  <!-- Content grid -->
+  <div class="content-grid">
+
+    <!-- Clases hoy -->
+    <div class="card">
+      <h2>Clases programadas hoy</h2>
+
+      <div class="item-row">
+        <div class="time-pill">18:00</div>
+        <div class="item-info">
+          <div class="name">BJJ Principiantes</div>
+          <div class="meta">Carlos · Tatami 1</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="time-pill">19:00</div>
+        <div class="item-info">
+          <div class="name">No-Gi</div>
+          <div class="meta">Laura · Tatami 2</div>
+        </div>
+      </div>
+
+      <div class="empty-state" style="display:none;">
+        No hay clases programadas para hoy.
+      </div>
+    </div>
+
+    <!-- Nuevos miembros -->
+    <div class="card">
+      <h2>Nuevos miembros</h2>
+
+      <div class="item-row">
+        <div class="avatar">JM</div>
+        <div class="item-info">
+          <div class="name">Juan Martínez</div>
+          <div class="meta">Desde hace 2 días · BJJ</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="avatar">AR</div>
+        <div class="item-info">
+          <div class="name">Ana Rodríguez</div>
+          <div class="meta">Desde hace 5 días · No-Gi</div>
+        </div>
+      </div>
+
+      <div class="empty-state" style="display:none;">
+        No hay nuevos miembros recientes.
+      </div>
+    </div>
+
+    <!-- Eventos -->
+    <div class="card full-width">
+      <h2>Próximos eventos</h2>
+
+      <div class="event-row">
+        <div class="event-date">
+          <div class="day">20</div>
+          <div class="month">Abr</div>
+        </div>
+
+        <div class="item-info">
+          <div class="name">Open BJJ Cup</div>
+          <div class="meta">Competición local para principiantes</div>
+        </div>
+
+        <span class="status-pill open">Abierto</span>
+      </div>
+
+      <div class="empty-state" style="display:none;">
+        No hay eventos próximos.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Welcome bar -->
+  <div class="welcome-bar">
+    <div>
+      <div class="greeting">Bienvenido, Admin</div>
+      <div class="sub">Tienes 4 sesiones programadas para hoy.</div>
+    </div>
+
+    <button class="btn btn-primary">
+      Ver agenda completa
+    </button>
+  </div>
+
+</main>

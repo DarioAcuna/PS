@@ -1,0 +1,380 @@
+// ============================================================
+//  Dashboard Component Styles — La Cúpula EJJB
+//  Tema: Blanco / Negro
+// ============================================================
+
+// Variables
+$black: #111111;
+$white: #ffffff;
+$bg-page: #f7f7f7;
+$bg-card: #ffffff;
+$border: #e8e8e8;
+$border-inner: #f0f0f0;
+$text-primary: #111111;
+$text-secondary: #888888;
+$text-muted: #aaaaaa;
+$radius-card: 10px;
+$radius-pill: 99px;
+$radius-sm: 6px;
+
+// ============================================================
+//  Navbar
+// ============================================================
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 52px;
+  background: $black;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2px;
+}
+
+.nav-link {
+  font-size: 13px;
+  color: #aaaaaa;
+  padding: 6px 12px;
+  border-radius: $radius-sm;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #222222;
+    color: $white;
+  }
+
+  &.active {
+    color: $white;
+    font-weight: 500;
+  }
+}
+
+.nav-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// ============================================================
+//  Buttons
+// ============================================================
+.btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: $radius-sm;
+  border: 1px solid #333333;
+  background: transparent;
+  color: #cccccc;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: #555555;
+    color: $white;
+  }
+
+  &.btn-primary {
+    background: $white;
+    color: $black;
+    border-color: $white;
+    font-weight: 500;
+
+    &:hover {
+      background: #e8e8e8;
+    }
+  }
+}
+
+// ============================================================
+//  Layout principal
+// ============================================================
+.main {
+  padding: 1.5rem;
+  background: $bg-page;
+  min-height: calc(100vh - 52px);
+}
+
+// ============================================================
+//  Page header
+// ============================================================
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    font-size: 18px;
+    font-weight: 500;
+    color: $text-primary;
+  }
+
+  p {
+    font-size: 13px;
+    color: $text-secondary;
+  }
+}
+
+// ============================================================
+//  Stats grid
+// ============================================================
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: $radius-card;
+  padding: 1rem 1.25rem;
+
+  .label {
+    font-size: 12px;
+    color: $text-secondary;
+    margin-bottom: 6px;
+  }
+
+  .value {
+    font-size: 28px;
+    font-weight: 500;
+    color: $text-primary;
+  }
+
+  .value-sm {
+    font-size: 16px;
+    margin-top: 6px;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: #999999;
+    margin-top: 4px;
+  }
+
+  &.dark {
+    background: $black;
+    border-color: $black;
+
+    .label { color: #666666; }
+    .value { color: $white; }
+    .sub   { color: #555555; }
+  }
+}
+
+// ============================================================
+//  Content grid
+// ============================================================
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: $radius-card;
+  padding: 1.25rem;
+
+  h2 {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-primary;
+    margin-bottom: 1rem;
+    padding-bottom: 10px;
+    border-bottom: 1px solid $border-inner;
+    letter-spacing: 0.01em;
+  }
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+// ============================================================
+//  Item rows (clases y miembros)
+// ============================================================
+.item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.time-pill {
+  background: $black;
+  color: $white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: $radius-pill;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.item-info {
+  .name {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-primary;
+  }
+
+  .meta {
+    font-size: 12px;
+    color: $text-secondary;
+    margin-top: 2px;
+  }
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: $black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: $white;
+  flex-shrink: 0;
+
+  &.light {
+    background: #f0f0f0;
+    color: #333333;
+  }
+}
+
+// ============================================================
+//  Eventos
+// ============================================================
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.event-date {
+  background: $black;
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: center;
+  min-width: 44px;
+  flex-shrink: 0;
+
+  .day {
+    font-size: 16px;
+    font-weight: 500;
+    color: $white;
+    line-height: 1;
+  }
+
+  .month {
+    font-size: 10px;
+    color: #888888;
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+  }
+}
+
+.status-pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: $radius-pill;
+  border: 1px solid $border;
+  color: $text-secondary;
+  margin-left: auto;
+  flex-shrink: 0;
+
+  &.open {
+    background: $black;
+    color: $white;
+    border-color: $black;
+  }
+}
+
+// ============================================================
+//  Welcome bar
+// ============================================================
+.welcome-bar {
+  background: $black;
+  border-radius: $radius-card;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .greeting {
+    font-size: 15px;
+    font-weight: 500;
+    color: $white;
+  }
+
+  .sub {
+    font-size: 13px;
+    color: #666666;
+    margin-top: 3px;
+  }
+}
+
+// ============================================================
+//  Empty state
+// ============================================================
+.empty-state {
+  font-size: 13px;
+  color: $text-muted;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+// ============================================================
+//  Responsive
+// ============================================================
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .stat-card:last-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+
+    .card.full-width {
+      grid-column: 1;
+    }
+  }
+
+  .navbar {
+    padding: 0 1rem;
+  }
+
+  .nav-links {
+    display: none; // En móvil se ocultaría; añadir hamburger menu si se necesita
+  }
+}

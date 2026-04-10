@@ -1,0 +1,2 @@
+ALTER TABLE "schedules"
+ADD COLUMN "max_capacity" INTEGER NOT NULL DEFAULT 20;

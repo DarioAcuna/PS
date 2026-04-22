@@ -1,0 +1,84 @@
+/* Reseteo básico y cambio a la fuente Roboto Condensed */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto Condensed', sans-serif;
+  text-transform: uppercase; /* Todo el texto en mayúsculas */
+}
+
+/* Centramos todo en el medio de la pantalla blanca */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #ffffff;
+}
+
+.contenedor-login {
+  width: 100%;
+  max-width: 500px; /* Hacemos la caja más ancha (antes 400px) */
+  text-align: center;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 38px; /* Título mucho más grande */
+  font-weight: 700;
+  margin-bottom: 35px;
+  letter-spacing: 1px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Más espacio entre cajas */
+  margin-bottom: 30px;
+}
+
+input {
+  width: 100%;
+  padding: 18px 20px; /* Cajas de texto más altas */
+  border: 2px solid #b5b5b5; /* Borde un pelín más marcado */
+  border-radius: 6px;
+  font-size: 18px; /* Texto interior más grande */
+  font-weight: 700;
+  outline: none;
+  color: #000;
+}
+
+input::placeholder {
+  color: #555;
+  font-weight: 700;
+}
+
+input:focus {
+  border-color: #000;
+}
+
+button {
+  background-color: #000;
+  color: #fff;
+  padding: 20px; /* Botón más alto */
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 22px; /* Letra del botón más grande */
+  cursor: pointer;
+  transition: background-color 0.2s;
+  letter-spacing: 1px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4); /* Sombra para darle volumen */
+}
+
+button:hover {
+  background-color: #333;
+}
+
+.link-recuperar {
+  color: #4a0080;
+  text-decoration: underline;
+  font-size: 18px; /* Enlace más grande */
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}

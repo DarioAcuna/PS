@@ -1,0 +1,65 @@
+.app-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 74px;
+  background: #000;
+  border-top: 1px solid #3a3a3a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+}
+
+.footer-inner {
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 48px;
+  padding-top: 10px;
+}
+
+.footer-item {
+  all: unset;
+  cursor: pointer;
+  min-width: 58px;
+  max-width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  color: #7a7a7a;
+  text-align: center;
+  user-select: none;
+}
+
+.footer-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.footer-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: currentColor;
+}
+
+.footer-item span:last-child {
+  font-size: 10px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  font-family: "Arial Narrow", Arial, sans-serif;
+  text-align: center;
+}
+
+.footer-item.active {
+  color: #ffffff;
+}

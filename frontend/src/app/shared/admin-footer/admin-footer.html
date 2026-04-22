@@ -1,0 +1,51 @@
+<footer class="app-footer">
+  <div class="footer-inner">
+    <button
+      type="button"
+      class="footer-item"
+      [class.active]="activeTab === 'reservas'"
+      (click)="setActiveTab('reservas')"
+    >
+      <span class="footer-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M7 2v2H5a2 2 0 0 0-2 2v13a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm12 8H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9zM5 8h14V6H5v2z"
+          />
+        </svg>
+      </span>
+      <span>RESERVAS</span>
+    </button>
+
+    <button
+      type="button"
+      class="footer-item"
+      [class.active]="activeTab === 'perfil'"
+      (click)="setActiveTab('perfil')"
+    >
+      <span class="footer-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.2 0-8 2.1-8 5v1h16v-1c0-2.9-3.8-5-8-5z"
+          />
+        </svg>
+      </span>
+      <span>PERFIL</span>
+    </button>
+
+    <button
+      type="button"
+      class="footer-item"
+      [class.active]="activeTab === 'panel'"
+      (click)="setActiveTab('panel')"
+    >
+      <span class="footer-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"
+          />
+        </svg>
+      </span>
+      <span>PANEL ADMIN</span>
+    </button>
+  </div>
+</footer>

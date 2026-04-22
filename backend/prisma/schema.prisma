@@ -65,3 +65,23 @@ enum SessionStatus {
 
   @@map("session_status")
 }
+
+enum UserRole {
+  ADMIN
+  PROFESOR
+  ALUMNO
+
+  @@map("user_role")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      UserRole  @default(ALUMNO)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("users")
+}
+

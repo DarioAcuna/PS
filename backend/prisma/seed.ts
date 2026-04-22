@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { PrismaClient, SessionStatus } from '@prisma/client';
+import { PrismaClient, SessionStatus, UserRole } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import * as bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -9,10 +10,22 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  await prisma.user.deleteMany();
   await prisma.session.deleteMany();
   await prisma.schedule.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.clase.deleteMany();
+
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+
+  const adminUser = await prisma.user.create({
+    data: {
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: hashedPassword,
+      role: UserRole.ADMIN,
+    },
+  });
 
   const clase1 = await prisma.clase.create({
     data: {

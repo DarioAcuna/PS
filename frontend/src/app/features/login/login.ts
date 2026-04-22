@@ -1,17 +1,97 @@
-// Atrapamos el formulario usando su ID
-const formulario = document.getElementById('formularioLogin') as HTMLFormElement;
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-// Le decimos qué hacer cuando se envíe el formulario
-formulario.addEventListener('submit', (evento: Event) => {
-  evento.preventDefault();
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './login.html',
+  styleUrls: ['./login.css']
+})
+export class LoginComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  isLoading = false;
 
-  // Capturamos las cajas de texto
-  const inputEmail = document.getElementById('email') as HTMLInputElement;
-  const inputPassword = document.getElementById('password') as HTMLInputElement;
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
-  // Sacamos lo que el usuario ha escrito dentro
-  const emailUsuario = inputEmail.value;
-  const passwordUsuario = inputPassword.value;
+  ngOnInit(): void {
+    this.setupFormListener();
+  }
 
-  console.log('Intentando hacer login con:', emailUsuario, passwordUsuario);
-});
+  private setupFormListener(): void {
+    const form = document.getElementById('formularioLogin') as HTMLFormElement;
+
+    if (form) {
+      form.addEventListener('submit', (e) => this.onSubmit(e));
+    }
+  }
+
+  private onSubmit(event: Event): void {
+    event.preventDefault();
+
+    const emailInput = document.getElementById('email') as HTMLInputElement;
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!email || !password) {
+      this.showError('Por favor completa todos los campos');
+      return;
+    }
+
+    this.isLoading = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Cargando...';
+
+    this.authService.login(email, password)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          console.log('✅ Login exitoso:', response.user);
+          // Redirigir a la página principal
+          this.router.navigate(['/home']);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'INICIAR SESIÓN';
+
+          const message = error?.error?.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+          this.showError(message);
+          console.error('❌ Error de login:', error);
+        }
+      });
+  }
+
+  private showError(message: string): void {
+    const errorContainer = document.getElementById('errorContainer') as HTMLDivElement;
+
+    if (errorContainer) {
+      errorContainer.textContent = message;
+      errorContainer.style.display = 'block';
+
+      // Limpiar el error después de 5 segundos
+      setTimeout(() => {
+        errorContainer.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+
+
+

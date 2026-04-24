@@ -1,0 +1,89 @@
+<div class="dashboard-page">
+  <header class="dashboard-header">
+    <nav class="header-nav">
+      <button
+        *ngFor="let item of navItems"
+        type="button"
+        class="nav-link"
+        [class.active]="selectedTab === item.id"
+        (click)="selectTab(item.id)"
+      >
+        {{ item.label }}
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" class="header-btn" (click)="goToHome()">
+        Vista Inicio
+      </button>
+
+      <button type="button" class="header-btn" (click)="logout()">
+        Cerrar Sesión
+      </button>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <section class="intro-block">
+      <h1>Resumen del Gimnasio</h1>
+      <p>Panel de control del administrador</p>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="card-label">Miembros activos</span>
+        <h3>{{ activeMembers }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Clases esta semana</span>
+        <h3>{{ weeklyClasses }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Próximo evento</span>
+        <h3 class="event-title">{{ nextEvent }}</h3>
+      </article>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Clases programadas</h2>
+      </div>
+
+      <div class="content-list">
+        <article class="content-item" *ngFor="let gymClass of scheduledClasses">
+          <h3>{{ gymClass.name }}</h3>
+          <p>{{ gymClass.date }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Nuevos miembros</h2>
+      </div>
+
+      <div class="content-list">
+        <article class="content-item" *ngFor="let member of newMembers">
+          <h3>{{ member.name }}</h3>
+          <p>{{ member.date }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Próximos eventos</h2>
+      </div>
+
+      <div class="content-list">
+        <article class="content-item" *ngFor="let event of upcomingEvents">
+          <h3>{{ event.name }}</h3>
+          <p>{{ event.date }}</p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <app-admin-footer></app-admin-footer>
+</div>

@@ -3,7 +3,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 74px;
+  height: 58px;
   background: #000;
   border-top: 1px solid #3a3a3a;
   display: flex;
@@ -17,15 +17,15 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 48px;
-  padding-top: 10px;
+  gap: 38px;
+  padding-top: 7px;
 }
 
 .footer-item {
   all: unset;
   cursor: pointer;
-  min-width: 58px;
-  max-width: 110px;
+  min-width: 52px;
+  max-width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -36,24 +36,24 @@
 }
 
 .footer-icon {
-  width: 22px;
-  height: 22px;
+  width: 19px;
+  height: 19px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .footer-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 19px;
+  height: 19px;
   display: block;
   fill: currentColor;
 }
 
 .footer-item span:last-child {
-  font-size: 10px;
-  line-height: 1.05;
+  font-size: 9px;
+  line-height: 1;
   font-weight: 700;
   letter-spacing: -0.2px;
   font-family: "Arial Narrow", Arial, sans-serif;

@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AdminFooterComponent } from '../../shared/admin-footer/admin-footer';
+import { Component } from '@angular/core';
+import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 
 @Component({
+  selector: 'app-home-page',
   standalone: true,
-  imports: [CommonModule, AdminFooterComponent],
+  imports: [CommonModule, FooterComponent],
   templateUrl: './home-page.html',
-  styleUrls: ['./home-page.scss'],
+  styleUrl: './home-page.scss',
 })
-export class HomePage {}
+export class HomePageComponent {}

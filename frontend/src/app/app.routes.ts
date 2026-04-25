@@ -22,22 +22,37 @@ export const routes: Routes = [
     canActivate: [publicGuard]
   },
   {
+    path: '',
+    redirectTo: '/home',
+    pathMatch: 'full'
+  },
+  {
     path: 'home',
     component: HomePageComponent,
     canActivate: [authGuard]
   },
   {
-    path: '',
-    redirectTo: '/login',
-    pathMatch: 'full'
+    path: 'reservas',
+    component: HomePageComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'perfil',
+    component: HomePageComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'panel-admin',
+    component: DashboardComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'anuncios',
+    component: AnunciosComponent,
+    canActivate: [authGuard]
   },
   {
     path: '**',
     redirectTo: '/login'
   },
-  { path: '', component: HomePageComponent },
-  { path: 'reservas', component: HomePageComponent },
-  { path: 'perfil', component: HomePageComponent },
-  { path: 'panel-admin', component: DashboardComponent },
-  { path: 'anuncios', component: AnunciosComponent },
 ];

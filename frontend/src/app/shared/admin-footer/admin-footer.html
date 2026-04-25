@@ -1,10 +1,10 @@
 <footer class="app-footer">
   <div class="footer-inner">
-    <button
-      type="button"
+    <a
       class="footer-item"
-      [class.active]="activeTab === 'reservas'"
-      (click)="setActiveTab('reservas')"
+      routerLink="/reservas"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
     >
       <span class="footer-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -14,13 +14,13 @@
         </svg>
       </span>
       <span>RESERVAS</span>
-    </button>
+    </a>
 
-    <button
-      type="button"
+    <a
       class="footer-item"
-      [class.active]="activeTab === 'perfil'"
-      (click)="setActiveTab('perfil')"
+      routerLink="/perfil"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
     >
       <span class="footer-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -30,22 +30,22 @@
         </svg>
       </span>
       <span>PERFIL</span>
-    </button>
+    </a>
 
-    <button
-      type="button"
+    <a
       class="footer-item"
-      [class.active]="activeTab === 'panel'"
-      (click)="setActiveTab('panel')"
+      routerLink="/panel-admin"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
     >
       <span class="footer-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
+        <svg viewBox="0 0 24 0 24 24">
           <path
             d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"
           />
         </svg>
       </span>
       <span>PANEL ADMIN</span>
-    </button>
+    </a>
   </div>
 </footer>

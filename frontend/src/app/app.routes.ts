@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
-import { HomePage } from './features/home-page/home-page';
+import { HomePageComponent } from './features/home-page/home-page';
+import { DashboardComponent } from './features/admin-panel/admin-panel';
+import { AnunciosComponent } from './features/anuncios/anuncios';
 import { LoginComponent } from './features/login/login';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
 
@@ -21,7 +23,7 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    component: HomePage,
+    component: HomePageComponent,
     canActivate: [authGuard]
   },
   {
@@ -32,5 +34,10 @@ export const routes: Routes = [
   {
     path: '**',
     redirectTo: '/login'
-  }
+  },
+  { path: '', component: HomePageComponent },
+  { path: 'reservas', component: HomePageComponent },
+  { path: 'perfil', component: HomePageComponent },
+  { path: 'panel-admin', component: DashboardComponent },
+  { path: 'anuncios', component: AnunciosComponent },
 ];

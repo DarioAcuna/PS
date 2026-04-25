@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { HomePageComponent } from './features/home-page/home-page';
 import { DashboardComponent } from './features/admin-panel/admin-panel';
 import { AnunciosComponent } from './features/anuncios/anuncios';
 import { LoginComponent } from './features/login/login';
@@ -23,23 +22,23 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: '/home',
+    redirectTo: '/panel-admin',
     pathMatch: 'full'
   },
   {
     path: 'home',
-    component: HomePageComponent,
-    canActivate: [authGuard]
+    redirectTo: '/panel-admin',
+    pathMatch: 'full'
   },
   {
     path: 'reservas',
-    component: HomePageComponent,
-    canActivate: [authGuard]
+    redirectTo: '/panel-admin',
+    pathMatch: 'full'
   },
   {
     path: 'perfil',
-    component: HomePageComponent,
-    canActivate: [authGuard]
+    redirectTo: '/panel-admin',
+    pathMatch: 'full'
   },
   {
     path: 'panel-admin',

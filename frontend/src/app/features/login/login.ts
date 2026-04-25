@@ -60,7 +60,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.isLoading = false;
           console.log('✅ Login exitoso:', response.user);
           // Redirigir a la página principal
-          this.router.navigate(['/home']);
+          this.router.navigate(['/panel-admin']);
         },
         error: (error) => {
           this.isLoading = false;

@@ -1,0 +1,100 @@
+<div class="dashboard-page">
+  <header class="dashboard-header">
+    <nav class="header-nav">
+      <a class="nav-link" routerLink="/panel-admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Dashboard
+      </a>
+      <a class="nav-link active" routerLink="/anuncios" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Anuncios
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" class="header-btn" (click)="goToHome()">Vista Inicio</button>
+      <button type="button" class="header-btn" (click)="logout()">Cerrar Sesion</button>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <section class="intro-block">
+      <h1>Gestion de anuncios</h1>
+      <p>Administra publicaciones visibles para los usuarios.</p>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="card-label">Total anuncios</span>
+        <h3>{{ anuncios().length }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Activos</span>
+        <h3>{{ activeCount() }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Inactivos</span>
+        <h3>{{ inactiveCount() }}</h3>
+      </article>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>{{ editingId() === null ? 'Crear anuncio' : 'Editar anuncio' }}</h2>
+      </div>
+
+      <form class="anuncio-form" [formGroup]="anuncioForm" (ngSubmit)="submit()">
+        <label for="title">Titulo</label>
+        <input id="title" type="text" formControlName="title" maxlength="120" />
+
+        <label for="content">Contenido</label>
+        <textarea id="content" rows="4" formControlName="content" maxlength="2000"></textarea>
+
+        <label class="toggle-row" for="isActive">
+          <input id="isActive" type="checkbox" formControlName="isActive" />
+          Publicado
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="primary-btn">
+            {{ editingId() === null ? 'Crear anuncio' : 'Guardar cambios' }}
+          </button>
+          <button type="button" class="secondary-btn" (click)="startCreate()">Limpiar</button>
+        </div>
+      </form>
+
+      <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+      <p class="status-message success" *ngIf="successMessage()">{{ successMessage() }}</p>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Listado de anuncios</h2>
+      </div>
+
+      <p class="status-message" *ngIf="isLoading()">Cargando anuncios...</p>
+      <p class="status-message" *ngIf="!isLoading() && anuncios().length === 0">No hay anuncios creados.</p>
+
+      <div class="content-list" *ngIf="!isLoading() && anuncios().length > 0">
+        <article class="content-item" *ngFor="let anuncio of anuncios(); trackBy: trackById">
+          <div class="item-row">
+            <h3>{{ anuncio.title }}</h3>
+            <span class="state-pill" [class.inactive]="!anuncio.isActive">
+              {{ anuncio.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+
+          <p>{{ anuncio.content }}</p>
+
+          <div class="item-actions">
+            <button type="button" class="secondary-btn" (click)="startEdit(anuncio)">Editar</button>
+            <button type="button" class="danger-btn" (click)="remove(anuncio.id)">Eliminar</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <app-admin-footer></app-admin-footer>
+</div>
+

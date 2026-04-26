@@ -1,0 +1,23 @@
+<header class="dashboard-header">
+  <nav class="header-nav">
+    <button
+      *ngFor="let item of navItems"
+      type="button"
+      class="nav-link"
+      [class.active]="selectedTab === item.id"
+      (click)="onSelectTab(item.id)"
+    >
+      {{ item.label }}
+    </button>
+  </nav>
+
+  <div class="header-actions">
+    <button type="button" class="header-btn" (click)="onGoHome()">
+      Vista Inicio
+    </button>
+
+    <button type="button" class="header-btn" (click)="onLogout()">
+      Cerrar Sesión
+    </button>
+  </div>
+</header>

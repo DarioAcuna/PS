@@ -85,3 +85,32 @@ model User {
   @@map("users")
 }
 
+enum MemberType {
+  ALUMNO
+  PROFESOR
+
+  @@map("member_type")
+}
+
+enum MemberStatus {
+  ACTIVO
+  INACTIVO
+
+  @@map("member_status")
+}
+
+model Member {
+  id          Int          @id @default(autoincrement())
+  firstName   String       @map("first_name")
+  lastName    String       @map("last_name")
+  email       String       @unique
+  belt        String
+  beltDegree  Int          @default(0) @map("belt_degree")
+  memberType  MemberType   @default(ALUMNO) @map("member_type")
+  status      MemberStatus @default(ACTIVO)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("members")
+}
+

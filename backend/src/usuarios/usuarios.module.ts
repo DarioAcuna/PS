@@ -7,4 +7,3 @@ import { UsuariosController } from './usuarios.controller';
   providers: [UsuariosService],
 })
 export class UsuariosModule {}
-

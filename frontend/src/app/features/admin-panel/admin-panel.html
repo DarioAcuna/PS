@@ -1,27 +1,11 @@
 <div class="dashboard-page">
-  <header class="dashboard-header">
-    <nav class="header-nav">
-      <button
-        *ngFor="let item of navItems"
-        type="button"
-        class="nav-link"
-        [class.active]="selectedTab === item.id"
-        (click)="selectTab(item.id)"
-      >
-        {{ item.label }}
-      </button>
-    </nav>
-
-    <div class="header-actions">
-      <button type="button" class="header-btn" (click)="goToHome()">
-        Vista Inicio
-      </button>
-
-      <button type="button" class="header-btn" (click)="logout()">
-        Cerrar Sesión
-      </button>
-    </div>
-  </header>
+  <app-admin-header
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
 
   <main class="dashboard-main">
     <section class="intro-block">
@@ -85,5 +69,6 @@
       </div>
     </section>
   </main>
+
   <app-admin-footer></app-admin-footer>
 </div>

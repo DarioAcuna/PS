@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { FooterComponent} from '../../shared/admin-footer/admin-footer';
+import { FooterComponent } from '../../shared/admin-footer/admin-footer';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 
 type DashboardTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -18,13 +18,11 @@ interface DashboardItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FooterComponent],
+  imports: [CommonModule, FooterComponent, AdminHeaderComponent],
   templateUrl: './admin-panel.html',
   styleUrl: './admin-panel.css',
 })
 export class DashboardComponent {
-  constructor(private readonly router: Router) {}
-
   selectedTab: DashboardTab = 'dashboard';
 
   navItems: NavItem[] = [
@@ -57,25 +55,16 @@ export class DashboardComponent {
     { name: 'Open Mat Especial', date: '29 Sep 2026' },
   ];
 
-  selectTab(tab: DashboardTab): void {
-    this.selectedTab = tab;
-    if (tab === 'dashboard') {
-      void this.router.navigate(['/panel-admin']);
-      return;
-    }
-
-    if (tab === 'anuncios') {
-      void this.router.navigate(['/anuncios']);
-    }
+  selectTab(tab: string): void {
+    this.selectedTab = tab as DashboardTab;
+    console.log('Ir a:', tab);
   }
 
   goToHome(): void {
-    void this.router.navigate(['/']);
+    console.log('Ir a vista inicio');
   }
 
   logout(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('current_user');
-    void this.router.navigate(['/']);
+    console.log('Cerrar sesión');
   }
 }

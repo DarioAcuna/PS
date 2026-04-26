@@ -140,6 +140,18 @@
   font-family: 'Oswald', Arial, sans-serif;
 }
 
+.state-message {
+  margin: 0;
+  font-size: 14px;
+  color: #4e4e4e;
+  font-weight: 500;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+
+.state-message.error {
+  color: #a02020;
+}
+
 /* RESPONSIVE */
 
 @media (max-width: 1100px) {

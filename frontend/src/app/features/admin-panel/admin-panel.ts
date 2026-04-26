@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { AuthService } from '../../services/auth/auth.service';
 
 type DashboardTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -23,6 +25,11 @@ interface DashboardItem {
   styleUrl: './admin-panel.css',
 })
 export class DashboardComponent {
+  constructor(
+    private readonly router: Router,
+    private readonly authService: AuthService,
+  ) {}
+
   selectedTab: DashboardTab = 'dashboard';
 
   navItems: NavItem[] = [
@@ -57,14 +64,23 @@ export class DashboardComponent {
 
   selectTab(tab: string): void {
     this.selectedTab = tab as DashboardTab;
-    console.log('Ir a:', tab);
+
+    if (tab === 'dashboard') {
+      void this.router.navigate(['/panel-admin']);
+      return;
+    }
+
+    if (tab === 'anuncios') {
+      void this.router.navigate(['/anuncios']);
+    }
   }
 
   goToHome(): void {
-    console.log('Ir a vista inicio');
+    void this.router.navigate(['/']);
   }
 
   logout(): void {
-    console.log('Cerrar sesión');
+    this.authService.logout();
+    void this.router.navigate(['/login']);
   }
 }

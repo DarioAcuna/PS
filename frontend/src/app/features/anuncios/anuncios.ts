@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { AnunciosService } from '../../services/anuncios/anuncios.service';
@@ -11,12 +11,20 @@ import {
   UpdateAnuncioDto,
 } from '../../services/anuncios/anuncios.models';
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { AuthService } from '../../services/auth/auth.service';
+
+type HeaderTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+
+interface HeaderNavItem {
+  id: HeaderTab;
+  label: string;
+}
 
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, RouterLinkActive, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, FooterComponent],
   templateUrl: './anuncios.html',
   styleUrl: './anuncios.css',
 })
@@ -31,6 +39,15 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   readonly editingId = signal<number | null>(null);
   readonly activeCount = computed(() => this.anuncios().filter((anuncio) => anuncio.isActive).length);
   readonly inactiveCount = computed(() => this.anuncios().length - this.activeCount());
+  readonly selectedTab: HeaderTab = 'anuncios';
+  readonly navItems: HeaderNavItem[] = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'clases', label: 'Clases' },
+    { id: 'instructores', label: 'Instructores' },
+    { id: 'miembros', label: 'Miembros' },
+    { id: 'eventos', label: 'Eventos' },
+    { id: 'anuncios', label: 'Anuncios' },
+  ];
 
   anuncioForm;
 
@@ -167,6 +184,21 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   goToHome(): void {
     void this.router.navigate(['/']);
+  }
+
+  selectTab(tabId: string): void {
+    if (tabId === 'dashboard') {
+      void this.router.navigate(['/panel-admin']);
+      return;
+    }
+
+    if (tabId === 'anuncios') {
+      void this.router.navigate(['/anuncios']);
+      return;
+    }
+
+    // Secciones no implementadas aun: llevamos al panel principal.
+    void this.router.navigate(['/panel-admin']);
   }
 
   logout(): void {

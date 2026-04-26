@@ -7,6 +7,7 @@ import { HorariosModule } from './horarios/horarios.module';
 import { SesionesModule } from './sesiones/sesiones.module';
 import { AnunciosModule } from './anuncios/anuncios.module';
 import { AuthModule } from './auth/auth.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthModule } from './auth/auth.module';
     HorariosModule,
     SesionesModule,
     AnunciosModule,
+    UsuariosModule,
   ],
   controllers: [AppController],
 })

@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { SesionesService } from '../../services/sesiones/sesiones.service';
 import { SesionDetallada } from '../../services/sesiones/sesiones.models';
+import { AuthService } from '../../services/auth/auth.service';
 
 type DashboardTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -28,6 +30,8 @@ interface DashboardItem {
 export class DashboardComponent implements OnInit {
   private readonly sesionesService = inject(SesionesService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
 
   selectedTab: DashboardTab = 'dashboard';
 
@@ -200,14 +204,27 @@ export class DashboardComponent implements OnInit {
 
   selectTab(tab: string): void {
     this.selectedTab = tab as DashboardTab;
-    console.log('Ir a:', tab);
+
+    switch (tab) {
+      case 'dashboard':
+        void this.router.navigate(['/panel-admin']);
+        break;
+      case 'anuncios':
+        void this.router.navigate(['/anuncios']);
+        break;
+      default:
+        // Secciones no implementadas aun.
+        void this.router.navigate(['/panel-admin']);
+        break;
+    }
   }
 
   goToHome(): void {
-    console.log('Ir a vista inicio');
+    void this.router.navigate(['/panel-admin']);
   }
 
   logout(): void {
-    console.log('Cerrar sesión');
+    this.authService.logout();
+    void this.router.navigate(['/login']);
   }
 }

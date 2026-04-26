@@ -3,47 +3,33 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole, UserStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
-
-type UsuarioRecord = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  belt: string;
-  beltDegree: number;
-  memberType: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type MemberModelDelegate = {
-  findFirst(args: unknown): Promise<UsuarioRecord | null>;
-  create(args: unknown): Promise<UsuarioRecord>;
-  findMany(args: unknown): Promise<UsuarioRecord[]>;
-  findUnique(args: unknown): Promise<UsuarioRecord | null>;
-  update(args: unknown): Promise<UsuarioRecord>;
-  delete(args: unknown): Promise<UsuarioRecord>;
-};
 
 @Injectable()
 export class UsuariosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private get memberModel(): MemberModelDelegate {
-    return (this.prisma as unknown as { member: MemberModelDelegate }).member;
-  }
-
   private normalizeText(value: string): string {
     return value.trim();
   }
 
+  private buildFullName(firstName: string, lastName: string): string {
+    return `${firstName} ${lastName}`.trim();
+  }
+
+  private toUserRole(memberType: CreateUsuarioDto['memberType']): UserRole {
+    return memberType === 'PROFESOR' ? UserRole.PROFESOR : UserRole.ALUMNO;
+  }
+
+  private toUserStatus(status: CreateUsuarioDto['status']): UserStatus {
+    return status === 'INACTIVO' ? UserStatus.INACTIVO : UserStatus.ACTIVO;
+  }
+
   private async assertUniqueEmail(email: string, currentId?: number) {
-    const existente = await this.memberModel.findFirst({
+    const existente = await this.prisma.user.findFirst({
       where: {
         email,
         ...(currentId ? { NOT: { id: currentId } } : {}),
@@ -60,19 +46,35 @@ export class UsuariosService {
     const lastName = this.normalizeText(dto.lastName);
     const email = dto.email.trim().toLowerCase();
     const belt = this.normalizeText(dto.belt);
+    const role = this.toUserRole(dto.memberType);
+    const status = this.toUserStatus(dto.status);
 
     await this.assertUniqueEmail(email);
 
     try {
-      return await this.memberModel.create({
+      return await this.prisma.user.create({
         data: {
+          name: this.buildFullName(firstName, lastName),
           firstName,
           lastName,
           email,
+          password: null,
+          role,
           belt,
           beltDegree: dto.beltDegree,
-          memberType: dto.memberType,
-          status: dto.status,
+          status,
+        },
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          belt: true,
+          beltDegree: true,
+          status: true,
+          createdAt: true,
         },
       });
     } catch (error) {
@@ -87,14 +89,38 @@ export class UsuariosService {
   }
 
   async findAll() {
-    return this.memberModel.findMany({
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        belt: true,
+        beltDegree: true,
+        status: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async findOne(id: number) {
-    const usuario = await this.memberModel.findUnique({
+    const usuario = await this.prisma.user.findUnique({
       where: { id },
+      select: {
+        id: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        belt: true,
+        beltDegree: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
     if (!usuario) {
@@ -110,15 +136,23 @@ export class UsuariosService {
     const email = dto.email?.trim().toLowerCase() ?? actual.email;
     await this.assertUniqueEmail(email, id);
 
+    const firstName =
+      dto.firstName !== undefined
+        ? this.normalizeText(dto.firstName)
+        : (actual.firstName ?? actual.name);
+    const lastName =
+      dto.lastName !== undefined
+        ? this.normalizeText(dto.lastName)
+        : (actual.lastName ?? '');
+
     try {
-      return await this.memberModel.update({
+      return await this.prisma.user.update({
         where: { id },
         data: {
-          ...(dto.firstName !== undefined
-            ? { firstName: this.normalizeText(dto.firstName) }
-            : {}),
-          ...(dto.lastName !== undefined
-            ? { lastName: this.normalizeText(dto.lastName) }
+          ...(dto.firstName !== undefined ? { firstName } : {}),
+          ...(dto.lastName !== undefined ? { lastName } : {}),
+          ...(dto.firstName !== undefined || dto.lastName !== undefined
+            ? { name: this.buildFullName(firstName, lastName) }
             : {}),
           ...(dto.email !== undefined ? { email } : {}),
           ...(dto.belt !== undefined
@@ -128,9 +162,23 @@ export class UsuariosService {
             ? { beltDegree: dto.beltDegree }
             : {}),
           ...(dto.memberType !== undefined
-            ? { memberType: dto.memberType }
+            ? { role: this.toUserRole(dto.memberType) }
             : {}),
-          ...(dto.status !== undefined ? { status: dto.status } : {}),
+          ...(dto.status !== undefined
+            ? { status: this.toUserStatus(dto.status) }
+            : {}),
+        },
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          belt: true,
+          beltDegree: true,
+          status: true,
+          createdAt: true,
         },
       });
     } catch (error) {
@@ -147,8 +195,20 @@ export class UsuariosService {
   async remove(id: number) {
     await this.findOne(id);
 
-    return this.memberModel.delete({
+    return this.prisma.user.delete({
       where: { id },
+      select: {
+        id: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        belt: true,
+        beltDegree: true,
+        status: true,
+        createdAt: true,
+      },
     });
   }
 }

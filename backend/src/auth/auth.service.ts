@@ -16,7 +16,7 @@ export class AuthService {
       where: { email },
     });
 
-    if (!user) {
+    if (!user || !user.password) {
       throw new Error('Usuario no encontrado');
     }
 
@@ -42,7 +42,12 @@ export class AuthService {
     };
   }
 
-  async register(name: string, email: string, password: string, role: UserRole) {
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    role: UserRole,
+  ) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -52,11 +57,12 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const cleanName = name.trim();
 
     const user = await this.prisma.user.create({
       data: {
-        name,
-        email,
+        name: cleanName,
+        email: email.trim().toLowerCase(),
         password: hashedPassword,
         role,
       },
@@ -70,57 +76,4 @@ export class AuthService {
     };
   }
 
-  async validateUser(userId: number) {
-    return this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-  }
-
-  async getAllUsers() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-  }
-
-  async getUserById(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    return user;
-  }
-
-  async deleteUser(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    await this.prisma.user.delete({
-      where: { id },
-    });
-
-    return { message: 'Usuario eliminado correctamente' };
-  }
 }
-

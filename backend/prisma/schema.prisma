@@ -74,13 +74,25 @@ enum UserRole {
   @@map("user_role")
 }
 
+enum UserStatus {
+  ACTIVO
+  INACTIVO
+
+  @@map("user_status")
+}
+
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  role      UserRole  @default(ALUMNO)
-  createdAt DateTime  @default(now()) @map("created_at")
+  id         Int        @id @default(autoincrement())
+  name       String
+  firstName  String?    @map("first_name")
+  lastName   String?    @map("last_name")
+  email      String     @unique
+  password   String?
+  role       UserRole   @default(ALUMNO)
+  belt       String?
+  beltDegree Int?       @map("belt_degree")
+  status     UserStatus @default(ACTIVO)
+  createdAt  DateTime   @default(now()) @map("created_at")
 
   @@map("users")
 }

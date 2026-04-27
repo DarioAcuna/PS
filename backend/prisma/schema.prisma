@@ -65,3 +65,64 @@ enum SessionStatus {
 
   @@map("session_status")
 }
+
+enum UserRole {
+  ADMIN
+  PROFESOR
+  ALUMNO
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  ACTIVO
+  INACTIVO
+
+  @@map("user_status")
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  name       String
+  firstName  String?    @map("first_name")
+  lastName   String?    @map("last_name")
+  email      String     @unique
+  password   String?
+  role       UserRole   @default(ALUMNO)
+  belt       String?
+  beltDegree Int?       @map("belt_degree")
+  status     UserStatus @default(ACTIVO)
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+enum MemberType {
+  ALUMNO
+  PROFESOR
+
+  @@map("member_type")
+}
+
+enum MemberStatus {
+  ACTIVO
+  INACTIVO
+
+  @@map("member_status")
+}
+
+model Member {
+  id          Int          @id @default(autoincrement())
+  firstName   String       @map("first_name")
+  lastName    String       @map("last_name")
+  email       String       @unique
+  belt        String
+  beltDegree  Int          @default(0) @map("belt_degree")
+  memberType  MemberType   @default(ALUMNO) @map("member_type")
+  status      MemberStatus @default(ACTIVO)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("members")
+}
+

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Cúpula App - Inicio de Sesión</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+<div class="contenedor-login">
+  <h1>INICIO DE SESIÓN</h1>
+
+  <div id="errorContainer" style="display: none;" class="error-container"></div>
+
+  <form id="formularioLogin">
+    <input type="email" id="email" placeholder="EMAIL" required>
+    <input type="password" id="password" placeholder="CONTRASEÑA" required>
+
+    <button type="submit" id="submitBtn">INICIAR SESIÓN</button>
+  </form>
+
+  <a href="#" class="link-recuperar">¿HAS OLVIDADO TU CONTRASEÑA?</a>
+
+  <button type="button" (click)="irASignup()" class="btn-signup">
+    ¿NO TIENES CUENTA? CREAR UNA
+  </button>
+</div>
+
+</body>
+</html>
+
+

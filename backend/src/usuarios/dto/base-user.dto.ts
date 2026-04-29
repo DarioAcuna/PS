@@ -2,7 +2,6 @@ import {
   IsEmail,
   IsEnum,
   IsInt,
-  IsOptional,
   IsString,
   Max,
   Min,
@@ -10,37 +9,30 @@ import {
 } from 'class-validator';
 import { UsuarioEstado, UsuarioTipo } from './usuario.enums';
 
-export class UpdateUsuarioDto {
-  @IsOptional()
+export class BaseUserDto {
   @IsString()
   @MinLength(2)
-  firstName?: string;
+  firstName: string;
 
-  @IsOptional()
   @IsString()
   @MinLength(2)
-  lastName?: string;
+  lastName: string;
 
-  @IsOptional()
   @IsEmail()
-  email?: string;
+  email: string;
 
-  @IsOptional()
   @IsString()
   @MinLength(2)
-  belt?: string;
+  belt: string;
 
-  @IsOptional()
   @IsInt()
   @Min(0)
   @Max(4)
-  beltDegree?: number;
+  beltDegree: number;
 
-  @IsOptional()
   @IsEnum(UsuarioTipo)
-  memberType?: UsuarioTipo;
+  memberType: UsuarioTipo;
 
-  @IsOptional()
   @IsEnum(UsuarioEstado)
-  status?: UsuarioEstado;
+  status: UsuarioEstado;
 }

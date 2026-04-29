@@ -1,18 +1,8 @@
-import { IsEmail, IsString, MinLength, IsEnum } from 'class-validator';
-import { UserRole } from '@prisma/client';
+import { IsString, MinLength } from 'class-validator';
+import { BaseUserDto } from '../../usuarios/dto/base-user.dto';
 
-export class CreateUserDto {
-  @IsString()
-  @MinLength(3)
-  name: string;
-
-  @IsEmail()
-  email: string;
-
+export class CreateUserDto extends BaseUserDto {
   @IsString()
   @MinLength(6)
   password: string;
-
-  @IsEnum(UserRole)
-  role: UserRole;
 }

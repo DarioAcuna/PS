@@ -2,7 +2,9 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { UserRole } from '@prisma/client';
+import { UserRole, UserStatus } from '@prisma/client';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UsuarioEstado, UsuarioTipo } from '../usuarios/dto/usuario.enums';
 
 @Injectable()
 export class AuthService {
@@ -42,12 +44,9 @@ export class AuthService {
     };
   }
 
-  async register(
-    name: string,
-    email: string,
-    password: string,
-    role: UserRole,
-  ) {
+  async register(dto: CreateUserDto) {
+    const email = dto.email.trim().toLowerCase();
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -56,15 +55,33 @@ export class AuthService {
       throw new BadRequestException('El email ya está registrado');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const cleanName = name.trim();
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const firstName = dto.firstName.trim();
+    const lastName = dto.lastName.trim();
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    const role =
+      dto.memberType === UsuarioTipo.PROFESOR
+        ? UserRole.PROFESOR
+        : UserRole.ALUMNO;
+
+    const status =
+      dto.status === UsuarioEstado.INACTIVO
+        ? UserStatus.INACTIVO
+        : UserStatus.ACTIVO;
 
     const user = await this.prisma.user.create({
       data: {
-        name: cleanName,
-        email: email.trim().toLowerCase(),
+        name: fullName,
+        firstName,
+        lastName,
+        email,
         password: hashedPassword,
         role,
+        belt: dto.belt.trim(),
+        beltDegree: dto.beltDegree,
+        status,
       },
     });
 

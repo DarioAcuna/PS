@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -16,13 +16,22 @@ export class AuthService {
       where: { email },
     });
 
+    // Mensaje genérico para prevenir User Enumeration
+    // No revela si el usuario existe o si la contraseña es incorrecta
+    const genericErrorMessage = 'Email o contraseña incorrectos';
+
+    // Si el usuario no existe o no tiene contraseña, usamos la misma excepción
     if (!user || !user.password) {
-      throw new Error('Usuario no encontrado');
+      // Agregar delay artificial para evitar timing attacks
+      await this.delayForSecurityReasons();
+      throw new UnauthorizedException(genericErrorMessage);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error('Contraseña incorrecta');
+      // Agregar delay artificial para evitar timing attacks
+      await this.delayForSecurityReasons();
+      throw new UnauthorizedException(genericErrorMessage);
     }
 
     const token = this.jwtService.sign({
@@ -40,6 +49,17 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  /**
+   * Agrega un delay aleatorio para prevenir timing attacks
+   * Los atacantes no pueden medir el tiempo de respuesta para saber
+   * si el usuario existe o no
+   */
+  private async delayForSecurityReasons(): Promise<void> {
+    // Delay aleatorio entre 100ms y 300ms
+    const randomDelay = Math.floor(Math.random() * 200) + 100;
+    await new Promise(resolve => setTimeout(resolve, randomDelay));
   }
 
   async register(

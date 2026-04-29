@@ -4,26 +4,24 @@ import { AnunciosComponent } from './features/anuncios/anuncios';
 import { LoginComponent } from './features/login/login';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
 
-// 1. Importamos el nuevo componente que hemos creado
-// ⚠️ Ojo: asegúrate de que esta ruta coincida con la carpeta donde guardaste los archivos de signup
 import { Signup } from './features/signup/signup';
 
 export const routes: Routes = [
+  // Ruta raíz: verificar autenticación y redirigir
+  {
+    path: '',
+    canActivate: [authGuard],
+    component: DashboardComponent
+  },
   {
     path: 'login',
     component: LoginComponent,
     canActivate: [publicGuard]
   },
-  // 2. Añadimos el nuevo bloque para la ruta de registro
   {
     path: 'signup',
     component: Signup,
     canActivate: [publicGuard]
-  },
-  {
-    path: '',
-    redirectTo: '/panel-admin',
-    pathMatch: 'full'
   },
   {
     path: 'home',

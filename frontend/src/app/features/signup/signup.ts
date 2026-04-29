@@ -69,9 +69,14 @@ export class Signup {
 
     this.http
       .post('http://localhost:3000/auth/register', {
-        username: this.nombreUsuario,
+        firstName: this.nombreUsuario,
+        lastName: 'Registro',
         email: this.emailUsuario,
         password: this.passwordUsuario,
+        belt: 'BLANCO',
+        beltDegree: 0,
+        memberType: 'ALUMNO',
+        status: 'ACTIVO',
       })
       .subscribe({
         next: (response: any) => {

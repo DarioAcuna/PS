@@ -197,6 +197,11 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (tabId === 'miembros') {
+      void this.router.navigate(['/miembros']);
+      return;
+    }
+
     // Secciones no implementadas aun: llevamos al panel principal.
     void this.router.navigate(['/panel-admin']);
   }

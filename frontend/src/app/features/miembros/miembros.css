@@ -1,0 +1,279 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #111111;
+}
+
+* {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+.dashboard-page {
+  min-height: 100vh;
+  background: #f3f3f3;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+
+.dashboard-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 22px 110px;
+}
+
+.intro-block {
+  margin-bottom: 18px;
+  padding: 4px 2px;
+}
+
+.intro-block h1 {
+  margin: 0 0 4px;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+
+.intro-block p {
+  margin: 0;
+  font-size: 12px;
+  color: #666666;
+  font-weight: 500;
+}
+
+.content-card {
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  padding: 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.content-header {
+  margin-bottom: 18px;
+}
+
+.content-header.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.content-header h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+}
+
+.filters-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: end;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.filter-field input,
+.filter-field select {
+  border: 1px solid #d7d7d7;
+  padding: 10px 12px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.members-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.member-card {
+  border: 1px solid #efefef;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.member-card h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.member-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #4e4e4e;
+}
+
+.member-card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.member-actions {
+  display: flex;
+  align-items: center;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  padding: 18px 20px 20px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.modal-body label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal-body input,
+.modal-body select {
+  border: 1px solid #d7d7d7;
+  padding: 10px 12px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.status-message {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #4e4e4e;
+}
+
+.status-message.error {
+  color: #b70000;
+}
+
+.primary-btn,
+.secondary-btn {
+  min-width: 140px;
+  height: 40px;
+  border: 1px solid #9f9f9f;
+  padding: 0 14px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.primary-btn {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+.secondary-btn {
+  background: #ffffff;
+  color: #111111;
+}
+
+@media (max-width: 1100px) {
+  .members-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-main {
+    padding: 16px 16px 110px;
+  }
+}
+
+@media (max-width: 600px) {
+  .intro-block h1 {
+    font-size: 24px;
+  }
+
+  .content-header h2 {
+    font-size: 22px;
+  }
+
+  .member-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
+
+  .content-header.header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal-card {
+    padding: 16px;
+  }
+}

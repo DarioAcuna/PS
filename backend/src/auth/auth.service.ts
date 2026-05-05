@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -61,15 +65,9 @@ export class AuthService {
   private async delayForSecurityReasons(): Promise<void> {
     // Delay aleatorio entre 100ms y 300ms
     const randomDelay = Math.floor(Math.random() * 200) + 100;
-    await new Promise(resolve => setTimeout(resolve, randomDelay));
+    await new Promise((resolve) => setTimeout(resolve, randomDelay));
   }
 
-  async register(
-    name: string,
-    email: string,
-    password: string,
-    role: UserRole,
-  ) {
   async register(dto: CreateUserDto) {
     const email = dto.email.trim().toLowerCase();
 

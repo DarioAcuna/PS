@@ -1,16 +1,24 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-  // Habilitar CORS
+  // Configurar CORS de forma segura desde variables de entorno
+  const corsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:4200';
+
+  // Permitir múltiples orígenes separados por comas en producción
+  const allowedOrigins = corsOrigin.split(',').map(origin => origin.trim());
+
   app.enableCors({
-    origin: 'http://localhost:4200', // URL del frontend
+    origin: allowedOrigins,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 3600, // 1 hora en segundos
   });
 
   app.useGlobalPipes(
@@ -21,6 +29,10 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = configService.get<number>('PORT') || 3000;
+  await app.listen(port);
+  console.log(`🚀 Servidor corriendo en puerto ${port}`);
+  console.log(`✅ CORS habilitado para: ${allowedOrigins.join(', ')}`);
+  console.log(`⏱️ Rate Limiting habilitado`);
 }
 bootstrap();

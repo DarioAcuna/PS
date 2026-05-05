@@ -202,8 +202,18 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
-    void this.router.navigate(['/']);
+    this.authService
+      .logout()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login']);
+        },
+        error: () => {
+          this.authService.clearAll();
+          void this.router.navigate(['/login']);
+        },
+      });
   }
 
   ngOnDestroy(): void {
@@ -253,4 +263,3 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       });
   }
 }
-

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { Observable, BehaviorSubject, tap, finalize } from 'rxjs';
 import { API_BASE_URL } from '../../core/api/api.config';
 import { User, LoginResponse, RegisterRequest } from './auth.models';
 
@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   /**
-   * Inicia sesión con email y contraseña
+   * Inicia sesión with email y contraseña
    * El token se guarda automáticamente en httpOnly cookie
    */
   login(email: string, password: string): Observable<LoginResponse> {
@@ -55,6 +55,9 @@ export class AuthService {
         tap(response => {
           this.setCurrentUser(response.user);
           this.currentUserSubject.next(response.user);
+          if (response.access_token) {
+            localStorage.setItem('access_token', response.access_token);
+          }
         })
       );
   }
@@ -80,8 +83,9 @@ export class AuthService {
       { withCredentials: true }
     )
       .pipe(
-        tap(() => {
+        finalize(() => {
           localStorage.removeItem('current_user');
+          localStorage.removeItem('access_token');
           this.currentUserSubject.next(null);
         })
       );
@@ -153,6 +157,7 @@ export class AuthService {
    */
   clearAll(): void {
     localStorage.removeItem('current_user');
+    localStorage.removeItem('access_token');
     this.currentUserSubject.next(null);
   }
 }

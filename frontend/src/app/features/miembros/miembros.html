@@ -28,7 +28,7 @@
           <span>Cinturón</span>
           <select formControlName="belt">
             <option value="">Todos</option>
-            <option *ngFor="let belt of beltOptions()" [value]="belt">{{ belt }}</option>
+            <option *ngFor="let belt of beltOptions" [value]="belt">{{ belt }}</option>
           </select>
         </label>
 
@@ -51,7 +51,17 @@
           </select>
         </label>
 
+        <label class="filter-field">
+          <span>Tipo</span>
+          <select formControlName="memberType">
+            <option value="">Todos</option>
+            <option value="ALUMNO">Alumno</option>
+            <option value="PROFESOR">Profesor</option>
+          </select>
+        </label>
+
         <div class="filter-actions">
+          <button type="button" class="primary-btn" (click)="applyFilters()">Aplicar filtros</button>
           <button type="button" class="secondary-btn" (click)="clearFilters()">Limpiar</button>
         </div>
       </form>
@@ -64,11 +74,11 @@
 
       <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
-      <div class="members-layout" *ngIf="!isLoading(); else loading">
-        <div class="members-list">
+       <div class="members-layout" [class.with-edit]="editingUser()" *ngIf="!isLoading(); else loading">
+         <div class="members-list">
           <article
             class="member-card"
-            *ngFor="let usuario of filteredUsuarios(); trackBy: trackById"
+            *ngFor="let usuario of paginatedUsuarios(); trackBy: trackById"
           >
             <div>
               <h3>{{ usuario.firstName || usuario.name }} {{ usuario.lastName }}</h3>
@@ -82,163 +92,110 @@
               </p>
             </div>
             <div class="member-actions">
-              <button class="primary-btn" type="button" (click)="selectUser(usuario.id)">
-                Ver perfil
+              <button class="primary-btn" type="button" (click)="openEdit(usuario)">
+                Editar
               </button>
             </div>
           </article>
 
-          <p class="status-message" *ngIf="filteredUsuarios().length === 0">No hay miembros con esos filtros.</p>
-        </div>
+          <p class="status-message" *ngIf="filteredUsuarios().length === 0">
+            No hay miembros con esos filtros.
+          </p>
 
-        <aside class="member-detail" *ngIf="selectedUser() as user">
-          <h3>Perfil del miembro</h3>
-          <div class="detail-row">
-            <span>Nombre</span>
-            <strong>{{ user.firstName || user.name }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Apellidos</span>
-            <strong>{{ user.lastName || '-' }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Correo</span>
-            <strong>{{ user.email }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Cinturón</span>
-            <strong>{{ user.belt || '-' }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Grado</span>
-            <strong>{{ user.beltDegree ?? '-' }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Rol</span>
-            <strong>{{ user.role }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Estado</span>
-            <strong>{{ user.status === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</strong>
-          </div>
-          <div class="detail-row">
-            <span>Alta</span>
-            <strong>{{ user.createdAt | date: 'shortDate' }}</strong>
-          </div>
-          <div class="detail-actions">
-            <button type="button" class="primary-btn" (click)="openEditModal()">Editar</button>
-            <button type="button" class="danger-btn" (click)="deleteUser()">Eliminar</button>
-          </div>
-        </aside>
-      </div>
+          <div class="pagination" *ngIf="filteredUsuarios().length > 0 && totalPages() > 1">
+            <button
+              class="secondary-btn"
+              type="button"
+              (click)="setPage(currentPage() - 1)"
+              [disabled]="currentPage() === 1"
+            >
+              Anterior
+            </button>
+
+            <button
+              class="page-btn"
+              type="button"
+              *ngFor="let page of pageNumbers()"
+              [class.active]="page === currentPage()"
+              (click)="setPage(page)"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              class="secondary-btn"
+              type="button"
+              (click)="setPage(currentPage() + 1)"
+              [disabled]="currentPage() === totalPages()"
+            >
+              Siguiente
+            </button>
+           </div>
+         </div>
+
+         <div class="member-detail" *ngIf="editingUser() as user">
+           <h3>Editar miembro</h3>
+           <p class="status-message error" *ngIf="editError()">{{ editError() }}</p>
+
+           <form class="edit-form" [formGroup]="editForm">
+             <div class="form-group">
+               <label>Nombre</label>
+               <input type="text" formControlName="firstName" />
+             </div>
+             <div class="form-group">
+               <label>Apellidos</label>
+               <input type="text" formControlName="lastName" />
+             </div>
+             <div class="form-group">
+               <label>Email</label>
+               <input type="email" formControlName="email" />
+             </div>
+             <div class="form-group">
+               <label>Cinturón</label>
+               <select formControlName="belt">
+                 <option *ngFor="let belt of beltOptions" [value]="belt">{{ belt }}</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>Grado</label>
+               <input type="number" formControlName="beltDegree" min="0" max="4" />
+             </div>
+             <div class="form-group">
+               <label>Tipo</label>
+               <select formControlName="memberType">
+                 <option value="ALUMNO">Alumno</option>
+                 <option value="PROFESOR">Profesor</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>Estado</label>
+               <select formControlName="status">
+                 <option value="ACTIVO">Activo</option>
+                 <option value="INACTIVO">Inactivo</option>
+               </select>
+             </div>
+           </form>
+
+           <div class="detail-actions">
+             <button type="button" class="secondary-btn" (click)="closeEdit()" [disabled]="isSaving()">
+               Cancelar
+             </button>
+             <button type="button" class="primary-btn" (click)="saveEdit()" [disabled]="isSaving()">
+               Guardar
+             </button>
+             <button type="button" class="danger-btn" (click)="deleteUser()" [disabled]="isSaving()">
+               Eliminar
+             </button>
+           </div>
+         </div>
+       </div>
 
        <ng-template #loading>
          <p class="status-message">Cargando miembros...</p>
        </ng-template>
      </section>
+  </main>
 
-     <!-- Edit Modal -->
-     <div class="modal-overlay" *ngIf="showEditModal()" (click)="closeEditModal()">
-       <div class="modal-content" (click)="$event.stopPropagation()">
-         <div class="modal-header">
-           <h2>Editar miembro</h2>
-           <button type="button" class="close-btn" (click)="closeEditModal()">×</button>
-         </div>
-
-         <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="edit-form">
-           <p class="status-message error" *ngIf="editErrorMessage()">{{ editErrorMessage() }}</p>
-
-           <div class="form-group">
-             <label>Nombre *</label>
-             <input
-               type="text"
-               formControlName="firstName"
-               placeholder="Nombre"
-               [disabled]="isSaving()"
-             />
-             <p class="field-error" *ngIf="editForm.get('firstName')?.invalid && editForm.get('firstName')?.touched">
-               El nombre es requerido
-             </p>
-           </div>
-
-           <div class="form-group">
-             <label>Apellidos *</label>
-             <input
-               type="text"
-               formControlName="lastName"
-               placeholder="Apellidos"
-               [disabled]="isSaving()"
-             />
-             <p class="field-error" *ngIf="editForm.get('lastName')?.invalid && editForm.get('lastName')?.touched">
-               Los apellidos son requeridos
-             </p>
-           </div>
-
-           <div class="form-group">
-             <label>Correo *</label>
-             <input
-               type="email"
-               formControlName="email"
-               placeholder="correo@ejemplo.com"
-               [disabled]="isSaving()"
-             />
-             <p class="field-error" *ngIf="editForm.get('email')?.invalid && editForm.get('email')?.touched">
-               Correo inválido
-             </p>
-           </div>
-
-           <div class="form-group">
-             <label>Rol *</label>
-             <select formControlName="role" [disabled]="isSaving()">
-               <option value="ALUMNO">Alumno</option>
-               <option value="PROFESOR">Profesor</option>
-               <option value="ADMIN">Admin</option>
-             </select>
-           </div>
-
-           <div class="form-group">
-             <label>Cinturón</label>
-             <input
-               type="text"
-               formControlName="belt"
-               placeholder="Ej: Blanco, Negro"
-               [disabled]="isSaving()"
-             />
-           </div>
-
-           <div class="form-group">
-             <label>Grado</label>
-             <input
-               type="number"
-               formControlName="beltDegree"
-               placeholder="Grado"
-               [disabled]="isSaving()"
-               min="0"
-               max="10"
-             />
-           </div>
-
-           <div class="form-group">
-             <label>Estado *</label>
-             <select formControlName="status" [disabled]="isSaving()">
-               <option value="ACTIVO">Activo</option>
-               <option value="INACTIVO">Inactivo</option>
-             </select>
-           </div>
-
-           <div class="modal-actions">
-             <button type="submit" class="primary-btn" [disabled]="isSaving() || editForm.invalid">
-               {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
-             </button>
-             <button type="button" class="secondary-btn" (click)="closeEditModal()" [disabled]="isSaving()">
-               Cancelar
-             </button>
-           </div>
-         </form>
-       </div>
-     </div>
-   </main>
-
-   <app-admin-footer></app-admin-footer>
- </div>
+  <app-admin-footer></app-admin-footer>
+</div>
 

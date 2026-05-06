@@ -37,6 +37,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly editingId = signal<number | null>(null);
+  readonly originalAnuncio = signal<Anuncio | null>(null);
   readonly activeCount = computed(() => this.anuncios().filter((anuncio) => anuncio.isActive).length);
   readonly inactiveCount = computed(() => this.anuncios().length - this.activeCount());
   readonly selectedTab: HeaderTab = 'anuncios';
@@ -97,6 +98,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
     if (this.anuncioForm.invalid) {
       this.anuncioForm.markAllAsTouched();
+      this.errorMessage.set('Titulo y contenido son obligatorios.');
       return;
     }
 
@@ -127,6 +129,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   startCreate(): void {
     this.editingId.set(null);
+    this.originalAnuncio.set(null);
     this.isSaving.set(false);
     this.successMessage.set('');
     this.errorMessage.set('');
@@ -139,6 +142,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   startEdit(anuncio: Anuncio): void {
     this.editingId.set(anuncio.id);
+    this.originalAnuncio.set({ ...anuncio });
     this.successMessage.set('');
     this.errorMessage.set('');
     this.anuncioForm.patchValue({
@@ -146,6 +150,22 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       content: anuncio.content,
       isActive: anuncio.isActive,
     });
+  }
+
+  clearForm(): void {
+    if (this.editingId() !== null && this.originalAnuncio()) {
+      const original = this.originalAnuncio() as Anuncio;
+      this.successMessage.set('');
+      this.errorMessage.set('');
+      this.anuncioForm.reset({
+        title: original.title,
+        content: original.content,
+        isActive: original.isActive,
+      });
+      return;
+    }
+
+    this.startCreate();
   }
 
   remove(id: number): void {

@@ -259,7 +259,7 @@ export class DashboardComponent implements OnInit {
           const usuariosSeguros = Array.isArray(usuarios) ? usuarios : [];
 
           this.activeMembers = usuariosSeguros
-            .filter((usuario) => usuario.status === UsuarioEstado.ACTIVO)
+            .filter((usuario) => usuario.status === 'ACTIVO')
             .length
             .toString();
 

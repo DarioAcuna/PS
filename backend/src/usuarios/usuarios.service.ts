@@ -242,6 +242,9 @@ export class UsuariosService {
           ...(dto.memberType !== undefined
             ? { role: this.toUserRole(dto.memberType) }
             : {}),
+          ...(dto.role !== undefined
+            ? { role: dto.role }
+            : {}),
           ...(dto.status !== undefined
             ? { status: this.toUserStatus(dto.status) }
             : {}),

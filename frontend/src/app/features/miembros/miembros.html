@@ -125,15 +125,120 @@
             <span>Alta</span>
             <strong>{{ user.createdAt | date: 'shortDate' }}</strong>
           </div>
+          <div class="detail-actions">
+            <button type="button" class="primary-btn" (click)="openEditModal()">Editar</button>
+            <button type="button" class="danger-btn" (click)="deleteUser()">Eliminar</button>
+          </div>
         </aside>
       </div>
 
-      <ng-template #loading>
-        <p class="status-message">Cargando miembros...</p>
-      </ng-template>
-    </section>
-  </main>
+       <ng-template #loading>
+         <p class="status-message">Cargando miembros...</p>
+       </ng-template>
+     </section>
 
-  <app-admin-footer></app-admin-footer>
-</div>
+     <!-- Edit Modal -->
+     <div class="modal-overlay" *ngIf="showEditModal()" (click)="closeEditModal()">
+       <div class="modal-content" (click)="$event.stopPropagation()">
+         <div class="modal-header">
+           <h2>Editar miembro</h2>
+           <button type="button" class="close-btn" (click)="closeEditModal()">×</button>
+         </div>
+
+         <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="edit-form">
+           <p class="status-message error" *ngIf="editErrorMessage()">{{ editErrorMessage() }}</p>
+
+           <div class="form-group">
+             <label>Nombre *</label>
+             <input
+               type="text"
+               formControlName="firstName"
+               placeholder="Nombre"
+               [disabled]="isSaving()"
+             />
+             <p class="field-error" *ngIf="editForm.get('firstName')?.invalid && editForm.get('firstName')?.touched">
+               El nombre es requerido
+             </p>
+           </div>
+
+           <div class="form-group">
+             <label>Apellidos *</label>
+             <input
+               type="text"
+               formControlName="lastName"
+               placeholder="Apellidos"
+               [disabled]="isSaving()"
+             />
+             <p class="field-error" *ngIf="editForm.get('lastName')?.invalid && editForm.get('lastName')?.touched">
+               Los apellidos son requeridos
+             </p>
+           </div>
+
+           <div class="form-group">
+             <label>Correo *</label>
+             <input
+               type="email"
+               formControlName="email"
+               placeholder="correo@ejemplo.com"
+               [disabled]="isSaving()"
+             />
+             <p class="field-error" *ngIf="editForm.get('email')?.invalid && editForm.get('email')?.touched">
+               Correo inválido
+             </p>
+           </div>
+
+           <div class="form-group">
+             <label>Rol *</label>
+             <select formControlName="role" [disabled]="isSaving()">
+               <option value="ALUMNO">Alumno</option>
+               <option value="PROFESOR">Profesor</option>
+               <option value="ADMIN">Admin</option>
+             </select>
+           </div>
+
+           <div class="form-group">
+             <label>Cinturón</label>
+             <input
+               type="text"
+               formControlName="belt"
+               placeholder="Ej: Blanco, Negro"
+               [disabled]="isSaving()"
+             />
+           </div>
+
+           <div class="form-group">
+             <label>Grado</label>
+             <input
+               type="number"
+               formControlName="beltDegree"
+               placeholder="Grado"
+               [disabled]="isSaving()"
+               min="0"
+               max="10"
+             />
+           </div>
+
+           <div class="form-group">
+             <label>Estado *</label>
+             <select formControlName="status" [disabled]="isSaving()">
+               <option value="ACTIVO">Activo</option>
+               <option value="INACTIVO">Inactivo</option>
+             </select>
+           </div>
+
+           <div class="modal-actions">
+             <button type="submit" class="primary-btn" [disabled]="isSaving() || editForm.invalid">
+               {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
+             </button>
+             <button type="button" class="secondary-btn" (click)="closeEditModal()" [disabled]="isSaving()">
+               Cancelar
+             </button>
+           </div>
+         </form>
+       </div>
+     </div>
+   </main>
+
+   <app-admin-footer></app-admin-footer>
+ </div>
 

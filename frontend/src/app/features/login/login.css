@@ -1,104 +1,136 @@
-/* Reseteo básico y cambio a la fuente Roboto Condensed */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto Condensed', sans-serif;
-  text-transform: uppercase; /* Todo el texto en mayúsculas */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #111111;
+  font-family: 'Oswald', Arial, sans-serif;
 }
 
-/* Centramos todo en el medio de la pantalla blanca */
+* {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
 body {
+  margin: 0;
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #ffffff;
+  justify-content: center;
+  padding: 24px;
+  background: #f3f3f3;
+  font-family: 'Oswald', Arial, sans-serif;
 }
 
 .contenedor-login {
   width: 100%;
-  max-width: 500px; /* Hacemos la caja más ancha (antes 400px) */
-  text-align: center;
-  padding: 20px;
+  max-width: 560px;
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  padding: 32px 30px 26px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  text-align: left;
 }
 
 h1 {
-  font-size: 38px; /* Título mucho más grande */
+  margin: 0 0 22px;
+  font-size: 32px;
   font-weight: 700;
-  margin-bottom: 35px;
-  letter-spacing: 1px;
+  letter-spacing: 0.2px;
 }
 
-form {
+.login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Más espacio entre cajas */
-  margin-bottom: 30px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 input {
   width: 100%;
-  padding: 18px 20px; /* Cajas de texto más altas */
-  border: 2px solid #b5b5b5; /* Borde un pelín más marcado */
-  border-radius: 6px;
-  font-size: 18px; /* Texto interior más grande */
-  font-weight: 700;
-  outline: none;
-  color: #000;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid #bdbdbd;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Oswald', Arial, sans-serif;
+  color: #111111;
+  background: #ffffff;
 }
 
 input::placeholder {
-  color: #555;
-  font-weight: 700;
+  color: #6b6b6b;
+  font-weight: 500;
 }
 
 input:focus {
-  border-color: #000;
+  outline: none;
+  border-color: #111111;
+  box-shadow: 0 0 0 1px #111111 inset;
 }
 
-button {
-  background-color: #000;
-  color: #fff;
-  padding: 20px; /* Botón más alto */
-  border: none;
-  border-radius: 6px;
+.primary-btn {
+  height: 52px;
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
+  font-size: 16px;
   font-weight: 700;
-  font-size: 22px; /* Letra del botón más grande */
+  letter-spacing: 0.2px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  letter-spacing: 1px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4); /* Sombra para darle volumen */
+  transition: opacity 0.2s ease;
+  font-family: 'Oswald', Arial, sans-serif;
 }
 
-button:hover {
-  background-color: #333;
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primary-btn:hover {
+  opacity: 0.85;
+}
+
+.error-container {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #d3a0a0;
+  background: #fff5f5;
+  color: #a02020;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.secondary-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .link-recuperar {
-  color: #4a0080;
-  text-decoration: underline;
-  font-size: 18px; /* Enlace más grande */
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  margin-bottom: 12px;
 }
 
 .btn-signup {
-  background-color: transparent !important;
-  color: #666;
-  border: 1px solid #ccc;
-  padding: 12px 20px !important;
-  margin-top: 15px;
-  font-size: 14px !important;
-  box-shadow: none !important;
-  transition: all 0.3s ease;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #bdbdbd;
+  background: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease;
+  font-family: 'Oswald', Arial, sans-serif;
 }
 
 .btn-signup:hover {
-  background-color: #f5f5f5 !important;
-  color: #333;
-  border-color: #999;
+  background: #f8f8f8;
 }
-
-
-

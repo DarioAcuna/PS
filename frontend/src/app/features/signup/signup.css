@@ -1,9 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Roboto Condensed', sans-serif;
-  text-transform: uppercase;
+  font-family: 'Oswald', Arial, sans-serif;
 }
 
 /* Reemplazamos el 'body' por esta clase para centrar todo en Angular */
@@ -11,97 +12,99 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 24px;
+  background-color: #f3f3f3;
 }
 
 .contenedor-registro {
   width: 100%;
-  max-width: 500px;
-  text-align: center;
-  padding: 20px;
+  max-width: 560px;
+  text-align: left;
+  padding: 32px 30px 26px;
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
 }
 
 h1 {
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 700;
-  margin-bottom: 35px;
-  letter-spacing: 1px;
+  margin-bottom: 22px;
+  letter-spacing: 0.2px;
 }
 
 form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 /* Mensaje de error */
 .mensaje-error {
-  background-color: #ffebee;
-  color: #c62828;
-  padding: 15px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  border-left: 4px solid #c62828;
+  background-color: #fff5f5;
+  color: #a02020;
+  padding: 12px 14px;
+  border: 1px solid #d3a0a0;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
 }
 
 input {
   width: 100%;
-  padding: 18px 20px;
-  border: 2px solid #b5b5b5;
-  border-radius: 6px;
-  font-size: 18px;
-  font-weight: 700;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid #bdbdbd;
+  font-size: 16px;
+  font-weight: 600;
   outline: none;
-  color: #000;
+  color: #111111;
+  background: #ffffff;
 }
 
 input:disabled {
   background-color: #f5f5f5;
-  color: #999;
+  color: #999999;
   cursor: not-allowed;
 }
 
 input::placeholder {
-  color: #555;
-  font-weight: 700;
+  color: #6b6b6b;
+  font-weight: 500;
 }
 
 input:focus {
-  border-color: #000;
+  border-color: #111111;
+  box-shadow: 0 0 0 1px #111111 inset;
 }
 
 button {
-  background-color: #000;
-  color: #fff;
-  padding: 20px;
-  border: none;
-  border-radius: 6px;
+  height: 52px;
+  background-color: #111111;
+  color: #ffffff;
+  border: 1px solid #111111;
   font-weight: 700;
-  font-size: 22px;
+  font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  letter-spacing: 1px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease;
+  letter-spacing: 0.2px;
 }
 
 button:hover:not(:disabled) {
-  background-color: #333;
+  opacity: 0.85;
 }
 
 button:disabled {
-  background-color: #999;
+  opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .link-login {
-  color: #4a0080;
+  color: #111111;
   text-decoration: underline;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  text-underline-offset: 3px;
+  font-size: 14px;
+  font-weight: 600;
 }

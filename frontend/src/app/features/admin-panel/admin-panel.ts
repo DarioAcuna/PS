@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { finalize, take } from 'rxjs';
+import { finalize } from 'rxjs';
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { SesionesService } from '../../services/sesiones/sesiones.service';
@@ -209,14 +209,28 @@ export class DashboardComponent implements OnInit {
       case 'dashboard':
         void this.router.navigate(['/panel-admin']);
         break;
+
+      case 'clases':
+        void this.router.navigate(['/clases']);
+        break;
+
       case 'anuncios':
         void this.router.navigate(['/anuncios']);
         break;
-      case 'miembros':
-        void this.router.navigate(['/miembros']);
+
+      case 'instructores':
+        void this.router.navigate(['/panel-admin']);
         break;
+
+      case 'miembros':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
+      case 'eventos':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
       default:
-        // Secciones no implementadas aun.
         void this.router.navigate(['/panel-admin']);
         break;
     }
@@ -227,17 +241,7 @@ export class DashboardComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService
-      .logout()
-      .pipe(take(1))
-      .subscribe({
-        next: () => {
-          void this.router.navigate(['/login']);
-        },
-        error: () => {
-          this.authService.clearAll();
-          void this.router.navigate(['/login']);
-        },
-      });
+    this.authService.logout();
+    void this.router.navigate(['/login']);
   }
 }

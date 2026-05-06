@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { catchError, finalize, forkJoin, of, take } from 'rxjs';
 
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
@@ -397,8 +397,18 @@ export class AdminClasesComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    void this.router.navigate(['/login']);
+    this.authService
+      .logout()
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login']);
+        },
+        error: () => {
+          this.authService.clearAll();
+          void this.router.navigate(['/login']);
+        },
+      });
   }
 
   trackByClassId(_: number, gymClass: ClassView): number {

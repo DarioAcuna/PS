@@ -182,7 +182,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   }
 
   goToHome(): void {
-    void this.router.navigate(['/']);
+    void this.router.navigate(['/panel-admin']);
   }
 
   selectTab(tabId: string): void {

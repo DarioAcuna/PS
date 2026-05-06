@@ -66,11 +66,23 @@
         <h2>Nuevos miembros</h2>
       </div>
 
-      <div class="content-list">
+      <div class="content-list" *ngIf="loadingNewMembers">
+        <p class="state-message">Cargando miembros recientes...</p>
+      </div>
+
+      <div class="content-list" *ngIf="!loadingNewMembers && newMembersError">
+        <p class="state-message error">{{ newMembersError }}</p>
+      </div>
+
+      <div class="content-list" *ngIf="!loadingNewMembers && !newMembersError && newMembers.length > 0">
         <article class="content-item" *ngFor="let member of newMembers">
           <h3>{{ member.name }}</h3>
           <p>{{ member.date }}</p>
         </article>
+      </div>
+
+      <div class="content-list" *ngIf="!loadingNewMembers && !newMembersError && newMembers.length === 0">
+        <p class="state-message">No hay miembros recientes.</p>
       </div>
     </section>
 

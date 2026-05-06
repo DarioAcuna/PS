@@ -158,17 +158,23 @@ export class MiembrosComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit(): void {
-    this.loadUsuarios();
+   ngOnInit(): void {
+     this.loadUsuarios();
 
-    this.filterSnapshot.set(this.filterForm.getRawValue());
-    this.filterForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((value) => {
-        this.filterSnapshot.set(value);
-        this.currentPage.set(1);
-      });
-  }
+     this.filterSnapshot.set(this.filterForm.getRawValue());
+     this.filterForm.valueChanges
+       .pipe(takeUntil(this.destroy$))
+       .subscribe((value) => {
+         this.filterSnapshot.set({
+           name: value.name ?? '',
+           belt: value.belt ?? '',
+           beltDegree: value.beltDegree ?? '',
+           status: value.status ?? ('' as EstadoFiltro),
+           memberType: value.memberType ?? ('' as TipoFiltro),
+         });
+         this.currentPage.set(1);
+       });
+   }
 
   loadUsuarios(): void {
     this.isLoading.set(true);

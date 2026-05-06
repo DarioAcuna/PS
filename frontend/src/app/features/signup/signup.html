@@ -1,6 +1,6 @@
 <div class="pantalla-completa">
   <div class="contenedor-registro">
-    <h1>CREAR CUENTA</h1>
+    <h1>Crear cuenta</h1>
 
     <!-- Mostrar mensaje de error si existe -->
     @if (mensajeError) {
@@ -9,19 +9,19 @@
 
     <form (ngSubmit)="registrar()">
 
-      <input type="text" name="nombre" [(ngModel)]="nombreUsuario" placeholder="NOMBRE" required [disabled]="cargando">
-      <input type="email" name="email" [(ngModel)]="emailUsuario" placeholder="EMAIL" required [disabled]="cargando">
-      <input type="password" name="password" [(ngModel)]="passwordUsuario" placeholder="CONTRASEÑA" required [disabled]="cargando">
+      <input type="text" name="nombre" [(ngModel)]="nombreUsuario" placeholder="Nombre" required [disabled]="cargando">
+      <input type="email" name="email" [(ngModel)]="emailUsuario" placeholder="Email" required [disabled]="cargando">
+      <input type="password" name="password" [(ngModel)]="passwordUsuario" placeholder="Contraseña" required [disabled]="cargando">
 
       <button type="submit" [disabled]="cargando">
         @if (cargando) {
-          CREANDO CUENTA...
+          Creando cuenta...
         } @else {
-          CREAR CUENTA
+          Crear cuenta
         }
       </button>
     </form>
 
-    <a href="/login" class="link-login">¿YA TIENES CUENTA? INICIA SESIÓN</a>
+    <a href="/login" class="link-login">¿Ya tienes cuenta? Inicia sesión</a>
   </div>
 </div>

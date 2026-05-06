@@ -127,18 +127,35 @@ export class ClasesService {
   async remove(id: number) {
     await this.findOne(id);
 
-    const horariosAsociados = await this.prisma.schedule.count({
-      where: { classId: id },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const horarios = await tx.schedule.findMany({
+        where: { classId: id },
+        select: { id: true },
+      });
 
-    if (horariosAsociados > 0) {
-      throw new ConflictException(
-        'No se puede borrar la clase porque tiene horarios asignados',
-      );
-    }
+      const scheduleIds = horarios.map((horario) => horario.id);
 
-    return this.prisma.clase.delete({
-      where: { id },
+      if (scheduleIds.length > 0) {
+        await tx.session.deleteMany({
+          where: {
+            scheduleId: {
+              in: scheduleIds,
+            },
+          },
+        });
+
+        await tx.schedule.deleteMany({
+          where: {
+            id: {
+              in: scheduleIds,
+            },
+          },
+        });
+      }
+
+      return tx.clase.delete({
+        where: { id },
+      });
     });
   }
 }

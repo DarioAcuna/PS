@@ -61,4 +61,3 @@ export interface GenerarSesionesResponse {
   message: string;
   total: number;
 }
-

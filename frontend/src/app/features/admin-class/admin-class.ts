@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { Observable, catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
 
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
@@ -13,10 +13,18 @@ import { ClasesService } from '../../services/clases/clases.service';
 import { Clase, CreateClaseDto, UpdateClaseDto } from '../../services/clases/clases.models';
 
 import { HorariosService } from '../../services/horarios/horarios.service';
-import { Horario } from '../../services/horarios/horarios.models';
+import {
+  CreateHorarioDto,
+  Horario,
+  UpdateHorarioDto,
+} from '../../services/horarios/horarios.models';
 
 import { SesionesService } from '../../services/sesiones/sesiones.service';
-import { SesionDetallada } from '../../services/sesiones/sesiones.models';
+import {
+  CreateSesionDto,
+  SesionDetallada,
+  UpdateSesionDto,
+} from '../../services/sesiones/sesiones.models';
 
 type DashboardTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -35,9 +43,15 @@ interface ClassFilters {
 
 interface ClassForm {
   name: string;
-  discipline: string;
   level: string;
-  description: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  maxCapacity: number;
+  instructor: string;
+  sessionDate: string;
+  createSession: boolean;
+  updateUpcomingSessions: boolean;
 }
 
 interface ClassView {
@@ -77,6 +91,16 @@ export class AdminClasesComponent implements OnInit {
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
+  ];
+
+  readonly weekDays = [
+    { value: 1, label: 'Lunes' },
+    { value: 2, label: 'Martes' },
+    { value: 3, label: 'Miércoles' },
+    { value: 4, label: 'Jueves' },
+    { value: 5, label: 'Viernes' },
+    { value: 6, label: 'Sábado' },
+    { value: 0, label: 'Domingo' },
   ];
 
   loading = false;
@@ -233,11 +257,22 @@ export class AdminClasesComponent implements OnInit {
     this.classModalError = '';
     this.selectedClass = gymClass;
 
+    const horario = gymClass.horarios[0] as any;
+    const firstSession = gymClass.upcomingSessions[0] as any;
+
     this.classForm = {
       name: gymClass.name || '',
-      discipline: gymClass.discipline || '',
       level: gymClass.level || '',
-      description: this.getClassDescription(gymClass.raw),
+      dayOfWeek: Number(horario?.dayOfWeek ?? 1),
+      startTime: horario?.startTime ?? firstSession?.startTime ?? '18:00',
+      endTime: horario?.endTime ?? firstSession?.endTime ?? '19:00',
+      maxCapacity: Number(horario?.maxCapacity ?? 20),
+      instructor: firstSession?.instructor ?? '',
+      sessionDate: firstSession?.date
+        ? String(firstSession.date).split('T')[0]
+        : this.getTodayInputDate(),
+      createSession: false,
+      updateUpcomingSessions: false,
     };
 
     this.cdr.detectChanges();
@@ -263,9 +298,53 @@ export class AdminClasesComponent implements OnInit {
     this.classModalError = '';
 
     const name = this.classForm.name.trim();
+    const level = this.classForm.level.trim();
+    const startTime = this.classForm.startTime.trim();
+    const endTime = this.classForm.endTime.trim();
+    const sessionDate = this.classForm.sessionDate.trim();
 
     if (!name) {
       this.classModalError = 'El nombre de la clase es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!level) {
+      this.classModalError = 'El nivel de la clase es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!startTime || !endTime) {
+      this.classModalError = 'La hora de inicio y fin son obligatorias.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (startTime >= endTime) {
+      this.classModalError = 'La hora de inicio debe ser menor que la de fin.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this.classForm.createSession && !sessionDate) {
+      this.classModalError = 'La fecha de la sesión es obligatoria.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (
+      this.classForm.createSession &&
+      sessionDate &&
+      !this.dateMatchesDayOfWeek(sessionDate, Number(this.classForm.dayOfWeek))
+    ) {
+      this.classModalError = 'La fecha de la sesión debe coincidir con el día del horario.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (Number(this.classForm.maxCapacity) < 1) {
+      this.classModalError = 'El aforo máximo debe ser mayor que 0.';
       this.cdr.detectChanges();
       return;
     }
@@ -279,12 +358,10 @@ export class AdminClasesComponent implements OnInit {
     this.savingClass = true;
     this.cdr.detectChanges();
 
-    const payload = this.buildClassPayload();
-
-    const request =
+    const request: Observable<unknown> =
       this.classModalMode === 'create'
-        ? this.clasesService.create(payload as CreateClaseDto)
-        : this.clasesService.update(this.selectedClass!.id, payload as UpdateClaseDto);
+        ? this.createFullClassFlow()
+        : this.updateFullClassFlow();
 
     request
       .pipe(
@@ -302,16 +379,135 @@ export class AdminClasesComponent implements OnInit {
           this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Error al guardar clase:', error);
+          console.error('Error al guardar clase/horario/sesión:', error);
+          console.error('Respuesta backend:', error?.error);
+
+          const backendMessage = Array.isArray(error?.error?.message)
+            ? error.error.message.join(', ')
+            : error?.error?.message;
 
           this.classModalError =
-            this.classModalMode === 'create'
-              ? 'No se pudo crear la clase.'
-              : 'No se pudo actualizar la clase.';
+            backendMessage ||
+            (this.classModalMode === 'create'
+              ? 'No se pudo crear la clase completa.'
+              : 'No se pudo actualizar la clase completa.');
 
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private createFullClassFlow(): Observable<unknown> {
+    return this.clasesService.create(this.buildClassPayload() as CreateClaseDto).pipe(
+      switchMap((createdClass) =>
+        this.horariosService.create(this.buildCreateHorarioPayload(createdClass.id)).pipe(
+          switchMap((createdHorario) => this.createSessionIfNeeded(createdHorario.id)),
+        ),
+      ),
+    );
+  }
+
+  private updateFullClassFlow(): Observable<unknown> {
+    const selectedClass = this.selectedClass!;
+
+    return this.clasesService
+      .update(selectedClass.id, this.buildClassPayload() as UpdateClaseDto)
+      .pipe(
+        switchMap(() => {
+          const firstHorario = selectedClass.horarios[0];
+
+          if (firstHorario) {
+            return this.horariosService.update(
+              firstHorario.id,
+              this.buildUpdateHorarioPayload(selectedClass.id),
+            );
+          }
+
+          return this.horariosService.create(
+            this.buildCreateHorarioPayload(selectedClass.id),
+          );
+        }),
+        switchMap((horario) => this.createSessionIfNeeded(horario.id)),
+        switchMap(() => this.updateUpcomingSessionsIfNeeded()),
+      );
+  }
+
+  private buildClassPayload(): Partial<CreateClaseDto & UpdateClaseDto> {
+    return {
+      name: this.classForm.name.trim(),
+      level: this.classForm.level.trim(),
+    };
+  }
+
+  private buildCreateHorarioPayload(classId: number): CreateHorarioDto {
+    return {
+      classId,
+      dayOfWeek: Number(this.classForm.dayOfWeek),
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      maxCapacity: Number(this.classForm.maxCapacity) || 20,
+    };
+  }
+
+  private buildUpdateHorarioPayload(classId: number): UpdateHorarioDto {
+    return {
+      classId,
+      dayOfWeek: Number(this.classForm.dayOfWeek),
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      maxCapacity: Number(this.classForm.maxCapacity) || 20,
+    };
+  }
+
+  private createSessionIfNeeded(scheduleId: number): Observable<unknown> {
+    if (!this.classForm.createSession) {
+      return of(null);
+    }
+
+    const payload: CreateSesionDto = {
+      scheduleId,
+      date: this.classForm.sessionDate.trim(),
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+    };
+
+    const instructor = this.classForm.instructor.trim();
+
+    if (instructor) {
+      payload.instructor = instructor;
+    }
+
+    return this.sesionesService.create(payload);
+  }
+
+  private updateUpcomingSessionsIfNeeded(): Observable<unknown> {
+    if (!this.classForm.updateUpcomingSessions || !this.selectedClass) {
+      return of(null);
+    }
+
+    const upcomingSessions = this.selectedClass.upcomingSessions;
+
+    if (upcomingSessions.length === 0) {
+      return of(null);
+    }
+
+    const payload: UpdateSesionDto = {
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      status: 'MODIFIED',
+    };
+
+    const instructor = this.classForm.instructor.trim();
+
+    if (instructor) {
+      payload.instructor = instructor;
+    }
+
+    return forkJoin(
+      upcomingSessions.map((sesion) =>
+        this.sesionesService.update(sesion.id, payload),
+      ),
+    );
   }
 
   deleteClassFromModal(): void {
@@ -353,7 +549,11 @@ export class AdminClasesComponent implements OnInit {
         error: (error) => {
           console.error('Error al eliminar clase:', error);
 
-          const message = 'No se pudo eliminar la clase.';
+          const backendMessage = Array.isArray(error?.error?.message)
+            ? error.error.message.join(', ')
+            : error?.error?.message;
+          const message = backendMessage || 'No se pudo eliminar la clase.';
+
           this.errorMessage = message;
           this.classModalError = message;
 
@@ -401,28 +601,67 @@ export class AdminClasesComponent implements OnInit {
     void this.router.navigate(['/login']);
   }
 
+  onClassDayChange(dayOfWeek: number | string): void {
+    const selectedDay = Number(dayOfWeek);
+
+    if (!Number.isNaN(selectedDay)) {
+      this.classForm.dayOfWeek = selectedDay;
+      this.classForm.sessionDate = this.getNextInputDateForDay(selectedDay);
+    }
+  }
+
   trackByClassId(_: number, gymClass: ClassView): number {
     return gymClass.id;
   }
 
   private getEmptyClassForm(): ClassForm {
+    const defaultDayOfWeek = 1;
+
     return {
       name: '',
-      discipline: '',
       level: '',
-      description: '',
+      dayOfWeek: defaultDayOfWeek,
+      startTime: '18:00',
+      endTime: '19:00',
+      maxCapacity: 20,
+      instructor: '',
+      sessionDate: this.getNextInputDateForDay(defaultDayOfWeek),
+      createSession: true,
+      updateUpcomingSessions: false,
     };
   }
 
-  private buildClassPayload(): Partial<CreateClaseDto & UpdateClaseDto> {
-    const payload: any = {
-      name: this.classForm.name.trim(),
-      discipline: this.classForm.discipline.trim(),
-      level: this.classForm.level.trim(),
-      description: this.classForm.description.trim(),
-    };
+  private getTodayInputDate(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
 
-    return payload as Partial<CreateClaseDto & UpdateClaseDto>;
+    return `${year}-${month}-${day}`;
+  }
+
+  private getNextInputDateForDay(dayOfWeek: number): string {
+    const date = new Date();
+    const currentDay = date.getDay();
+    const daysToAdd = (dayOfWeek - currentDay + 7) % 7;
+
+    date.setDate(date.getDate() + daysToAdd);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private dateMatchesDayOfWeek(dateValue: string, dayOfWeek: number): boolean {
+    const [year, month, day] = dateValue.split('-').map(Number);
+
+    if (!year || !month || !day) {
+      return false;
+    }
+
+    return new Date(year, month - 1, day).getDay() === dayOfWeek;
   }
 
   private buildClassViews(): ClassView[] {
@@ -607,7 +846,13 @@ export class AdminClasesComponent implements OnInit {
   private getHorarioDay(horario: Horario): string {
     const h = horario as any;
 
-    const rawDay = h?.day ?? h?.dia ?? h?.dayOfWeek ?? h?.weekday ?? h?.weekDay ?? '';
+    const rawDay =
+      h?.dayOfWeek ??
+      h?.day ??
+      h?.dia ??
+      h?.weekday ??
+      h?.weekDay ??
+      '';
 
     return this.formatDay(rawDay);
   }
@@ -636,8 +881,10 @@ export class AdminClasesComponent implements OnInit {
       s?.gymClassId ??
       s?.class?.id ??
       s?.clase?.id ??
+      s?.schedule?.classId ??
       s?.schedule?.class?.id ??
       s?.schedule?.clase?.id ??
+      s?.horario?.classId ??
       s?.horario?.class?.id ??
       s?.horario?.clase?.id ??
       0,

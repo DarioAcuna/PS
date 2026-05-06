@@ -6,6 +6,7 @@ import {
   GenerarSesionesDto,
   GenerarSesionesResponse,
   ListarSesionesDto,
+  CreateSesionDto,
   Sesion,
   SesionDetallada,
   UpdateSesionDto,
@@ -33,6 +34,14 @@ export class SesionesService {
   findOne(id: number): Observable<SesionDetallada> {
     return this.http.get<SesionDetallada>(
       `${this.endpoint}/${id}`,
+      this.authOptions,
+    );
+  }
+
+  create(payload: CreateSesionDto): Observable<SesionDetallada> {
+    return this.http.post<SesionDetallada>(
+      this.endpoint,
+      payload,
       this.authOptions,
     );
   }

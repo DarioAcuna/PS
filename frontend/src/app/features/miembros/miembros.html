@@ -1,0 +1,201 @@
+<div class="dashboard-page">
+  <app-admin-header
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="dashboard-main">
+    <section class="intro-block">
+      <h1>Miembros</h1>
+      <p>Gestiona la base de miembros del gimnasio.</p>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Filtros</h2>
+      </div>
+
+      <form class="filters-grid" [formGroup]="filterForm">
+        <label class="filter-field">
+          <span>Nombre</span>
+          <input type="text" formControlName="name" placeholder="Buscar por nombre o email" />
+        </label>
+
+        <label class="filter-field">
+          <span>Cinturón</span>
+          <select formControlName="belt">
+            <option value="">Todos</option>
+            <option *ngFor="let belt of beltOptions" [value]="belt">{{ belt }}</option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>Grado</span>
+          <select formControlName="beltDegree">
+            <option value="">Todos</option>
+            <option *ngFor="let degree of beltDegreeOptions()" [value]="degree">
+              {{ degree }}
+            </option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>Estado</span>
+          <select formControlName="status">
+            <option value="">Todos</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>Tipo</span>
+          <select formControlName="memberType">
+            <option value="">Todos</option>
+            <option value="ALUMNO">Alumno</option>
+            <option value="PROFESOR">Profesor</option>
+          </select>
+        </label>
+
+        <div class="filter-actions">
+          <button type="button" class="primary-btn" (click)="applyFilters()">Aplicar filtros</button>
+          <button type="button" class="secondary-btn" (click)="clearFilters()">Limpiar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header header-row">
+        <h2>Listado de miembros</h2>
+      </div>
+
+      <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+       <div class="members-layout" [class.with-edit]="editingUser()" *ngIf="!isLoading(); else loading">
+         <div class="members-list">
+          <article
+            class="member-card"
+            *ngFor="let usuario of paginatedUsuarios(); trackBy: trackById"
+          >
+            <div>
+              <h3>{{ usuario.firstName || usuario.name }} {{ usuario.lastName }}</h3>
+              <p>{{ usuario.email }}</p>
+              <p class="meta">
+                <span>{{ usuario.belt || 'Sin cinturón' }}</span>
+                <span>Grado {{ usuario.beltDegree ?? '-' }}</span>
+                <span class="pill" [class.inactive]="usuario.status === 'INACTIVO'">
+                  {{ usuario.status === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+                </span>
+              </p>
+            </div>
+            <div class="member-actions">
+              <button class="primary-btn" type="button" (click)="openEdit(usuario)">
+                Editar
+              </button>
+            </div>
+          </article>
+
+          <p class="status-message" *ngIf="filteredUsuarios().length === 0">
+            No hay miembros con esos filtros.
+          </p>
+
+          <div class="pagination" *ngIf="filteredUsuarios().length > 0 && totalPages() > 1">
+            <button
+              class="secondary-btn"
+              type="button"
+              (click)="setPage(currentPage() - 1)"
+              [disabled]="currentPage() === 1"
+            >
+              Anterior
+            </button>
+
+            <button
+              class="page-btn"
+              type="button"
+              *ngFor="let page of pageNumbers()"
+              [class.active]="page === currentPage()"
+              (click)="setPage(page)"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              class="secondary-btn"
+              type="button"
+              (click)="setPage(currentPage() + 1)"
+              [disabled]="currentPage() === totalPages()"
+            >
+              Siguiente
+            </button>
+           </div>
+         </div>
+
+         <div class="member-detail" *ngIf="editingUser() as user">
+           <h3>Editar miembro</h3>
+           <p class="status-message error" *ngIf="editError()">{{ editError() }}</p>
+
+           <form class="edit-form" [formGroup]="editForm">
+             <div class="form-group">
+               <label>Nombre</label>
+               <input type="text" formControlName="firstName" />
+             </div>
+             <div class="form-group">
+               <label>Apellidos</label>
+               <input type="text" formControlName="lastName" />
+             </div>
+             <div class="form-group">
+               <label>Email</label>
+               <input type="email" formControlName="email" />
+             </div>
+             <div class="form-group">
+               <label>Cinturón</label>
+               <select formControlName="belt">
+                 <option *ngFor="let belt of beltOptions" [value]="belt">{{ belt }}</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>Grado</label>
+               <input type="number" formControlName="beltDegree" min="0" max="4" />
+             </div>
+             <div class="form-group">
+               <label>Tipo</label>
+               <select formControlName="memberType">
+                 <option value="ALUMNO">Alumno</option>
+                 <option value="PROFESOR">Profesor</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>Estado</label>
+               <select formControlName="status">
+                 <option value="ACTIVO">Activo</option>
+                 <option value="INACTIVO">Inactivo</option>
+               </select>
+             </div>
+           </form>
+
+           <div class="detail-actions">
+             <button type="button" class="secondary-btn" (click)="closeEdit()" [disabled]="isSaving()">
+               Cancelar
+             </button>
+             <button type="button" class="primary-btn" (click)="saveEdit()" [disabled]="isSaving()">
+               Guardar
+             </button>
+             <button type="button" class="danger-btn" (click)="deleteUser()" [disabled]="isSaving()">
+               Eliminar
+             </button>
+           </div>
+         </div>
+       </div>
+
+       <ng-template #loading>
+         <p class="status-message">Cargando miembros...</p>
+       </ng-template>
+     </section>
+  </main>
+
+  <app-admin-footer></app-admin-footer>
+</div>
+

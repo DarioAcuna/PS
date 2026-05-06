@@ -33,5 +33,6 @@ export interface UpdateUsuarioDto {
   beltDegree?: number;
   memberType?: UsuarioTipo;
   status?: UsuarioEstado;
+  role?: UsuarioRol;
 }
 

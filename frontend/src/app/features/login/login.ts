@@ -92,6 +92,25 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.router.navigate(['/signup']);
   }
 
+  /**
+   * Logout - Limpia la cookie httpOnly y la sesión
+   */
+  logout(): void {
+    this.authService.logout()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          console.log('✅ Logout exitoso');
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          console.error('❌ Error en logout:', err);
+          // Aún así redirige a login aunque haya error
+          this.router.navigate(['/login']);
+        }
+      });
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

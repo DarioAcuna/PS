@@ -14,7 +14,7 @@ import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { AuthService } from '../../services/auth/auth.service';
 
-type HeaderTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+type HeaderTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
 interface HeaderNavItem {
   id: HeaderTab;
@@ -37,13 +37,13 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly editingId = signal<number | null>(null);
+  readonly originalAnuncio = signal<Anuncio | null>(null);
   readonly activeCount = computed(() => this.anuncios().filter((anuncio) => anuncio.isActive).length);
   readonly inactiveCount = computed(() => this.anuncios().length - this.activeCount());
   readonly selectedTab: HeaderTab = 'anuncios';
   readonly navItems: HeaderNavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
@@ -98,6 +98,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
     if (this.anuncioForm.invalid) {
       this.anuncioForm.markAllAsTouched();
+      this.errorMessage.set('Titulo y contenido son obligatorios.');
       return;
     }
 
@@ -128,6 +129,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   startCreate(): void {
     this.editingId.set(null);
+    this.originalAnuncio.set(null);
     this.isSaving.set(false);
     this.successMessage.set('');
     this.errorMessage.set('');
@@ -140,6 +142,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   startEdit(anuncio: Anuncio): void {
     this.editingId.set(anuncio.id);
+    this.originalAnuncio.set({ ...anuncio });
     this.successMessage.set('');
     this.errorMessage.set('');
     this.anuncioForm.patchValue({
@@ -147,6 +150,22 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       content: anuncio.content,
       isActive: anuncio.isActive,
     });
+  }
+
+  clearForm(): void {
+    if (this.editingId() !== null && this.originalAnuncio()) {
+      const original = this.originalAnuncio() as Anuncio;
+      this.successMessage.set('');
+      this.errorMessage.set('');
+      this.anuncioForm.reset({
+        title: original.title,
+        content: original.content,
+        isActive: original.isActive,
+      });
+      return;
+    }
+
+    this.startCreate();
   }
 
   remove(id: number): void {
@@ -183,7 +202,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   }
 
   goToHome(): void {
-    void this.router.navigate(['/']);
+    void this.router.navigate(['/panel-admin']);
   }
 
   selectTab(tabId: string): void {
@@ -192,18 +211,43 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (tabId === 'clases') {
+      void this.router.navigate(['/clases']);
+      return;
+    }
+
     if (tabId === 'anuncios') {
       void this.router.navigate(['/anuncios']);
       return;
     }
 
-    // Secciones no implementadas aun: llevamos al panel principal.
+    if (tabId === 'miembros') {
+      void this.router.navigate(['/miembros']);
+      return;
+    }
+
+    if (tabId === 'eventos') {
+      void this.router.navigate(['/panel-admin']);
+      return;
+    }
+
+    // Secciones no implementadas aún: llevamos al panel principal.
     void this.router.navigate(['/panel-admin']);
   }
 
   logout(): void {
-    this.authService.logout();
-    void this.router.navigate(['/']);
+    this.authService
+      .logout()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login']);
+        },
+        error: () => {
+          this.authService.clearAll();
+          void this.router.navigate(['/login']);
+        },
+      });
   }
 
   ngOnDestroy(): void {
@@ -253,4 +297,3 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       });
   }
 }
-

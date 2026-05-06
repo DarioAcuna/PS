@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
+import { AuthService } from '../../services/auth/auth.service';
 
 @Component({
   selector: 'app-signup',
@@ -12,13 +13,14 @@ import { Router } from '@angular/router';
 })
 export class Signup {
   nombreUsuario = '';
+  apellidosUsuario = '';
   emailUsuario = '';
   passwordUsuario = '';
   cargando = false;
   mensajeError = '';
 
   constructor(
-    private http: HttpClient,
+    private authService: AuthService,
     private router: Router,
   ) {}
 
@@ -28,17 +30,22 @@ export class Signup {
     return regex.test(email);
   }
 
-  // Validar que la contraseña tenga al menos 8 caracteres
+  // Validar contrasena segun backend (min 12, mayusculas, minusculas y numeros, sin espacios)
   validarPassword(password: string): boolean {
-    return password.length >= 8;
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)\S{12,}$/;
+    return regex.test(password);
   }
 
   registrar() {
     this.mensajeError = '';
 
-    // Validar campos vacíos
     if (!this.nombreUsuario.trim()) {
-      this.mensajeError = 'Por favor ingresa un nombre de usuario';
+      this.mensajeError = 'Por favor ingresa tu nombre';
+      return;
+    }
+
+    if (!this.apellidosUsuario.trim()) {
+      this.mensajeError = 'Por favor ingresa tus apellidos';
       return;
     }
 
@@ -47,7 +54,6 @@ export class Signup {
       return;
     }
 
-    // Validar formato de email
     if (!this.validarEmail(this.emailUsuario)) {
       this.mensajeError = 'El email no es válido';
       return;
@@ -58,33 +64,38 @@ export class Signup {
       return;
     }
 
-    // Validar longitud de contraseña
     if (!this.validarPassword(this.passwordUsuario)) {
-      this.mensajeError = 'La contraseña debe tener al menos 8 caracteres';
+      this.mensajeError =
+        'La contraseña debe tener al menos 12 caracteres, incluir mayúsculas, minúsculas y números, y no contener espacios.';
       return;
     }
 
-    // Enviar datos al backend
     this.cargando = true;
 
-    this.http
-      .post('http://localhost:3000/auth/register', {
-        username: this.nombreUsuario,
-        email: this.emailUsuario,
+    this.authService
+      .register({
+        firstName: this.nombreUsuario.trim(),
+        lastName: this.apellidosUsuario.trim(),
+        email: this.emailUsuario.trim(),
         password: this.passwordUsuario,
+        belt: 'BLANCO',
+        beltDegree: 0,
+        memberType: 'ALUMNO',
+        status: 'ACTIVO',
       })
+      .pipe(
+        finalize(() => {
+          this.cargando = false;
+        }),
+      )
       .subscribe({
-        next: (response: any) => {
-          console.log('Cuenta creada exitosamente', response);
+        next: () => {
           alert('¡Cuenta creada! Ahora inicia sesión');
           this.router.navigate(['/login']);
-          this.cargando = false;
         },
         error: (error: any) => {
-          console.error('Error al registrar:', error);
           this.mensajeError =
-            error.error?.message || 'Error al crear la cuenta. Intenta de nuevo.';
-          this.cargando = false;
+            error?.error?.message || 'Error al crear la cuenta. Intenta de nuevo.';
         },
       });
   }

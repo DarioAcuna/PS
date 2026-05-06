@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, take } from 'rxjs';
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { SesionesService } from '../../services/sesiones/sesiones.service';
 import { SesionDetallada } from '../../services/sesiones/sesiones.models';
 import { AuthService } from '../../services/auth/auth.service';
+import { UsuariosService } from '../../services/usuarios/usuarios.service';
+import { Usuario, UsuarioEstado } from '../../services/usuarios/usuarios.models';
 
-type DashboardTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+type DashboardTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
 interface NavItem {
   id: DashboardTab;
@@ -32,19 +34,19 @@ export class DashboardComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly usuariosService = inject(UsuariosService);
 
   selectedTab: DashboardTab = 'dashboard';
 
   navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
   ];
 
-  activeMembers = '128';
+  activeMembers = '0';
   weeklyClasses = '0';
   nextEvent = 'Torneo grappling';
 
@@ -52,11 +54,9 @@ export class DashboardComponent implements OnInit {
   loadingScheduledClasses = false;
   scheduledClassesError = '';
 
-  newMembers: DashboardItem[] = [
-    { name: 'Carlos Perez', date: 'Desde hace 2 días' },
-    { name: 'Lucía Martín', date: 'Desde hace 3 días' },
-    { name: 'Alejandro Suárez', date: 'Desde hace 5 días' },
-  ];
+  newMembers: DashboardItem[] = [];
+  loadingNewMembers = false;
+  newMembersError = '';
 
   upcomingEvents: DashboardItem[] = [
     { name: 'Seminario BJJ', date: '22 Sep 2026' },
@@ -65,6 +65,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarClasesProgramadas();
+    this.cargarMiembros();
   }
 
   cargarClasesProgramadas(): void {
@@ -117,7 +118,7 @@ export class DashboardComponent implements OnInit {
 
   private getCurrentWeekRange(): { startOfWeek: Date; endOfWeek: Date } {
     const now = new Date();
-    const currentDay = now.getDay(); // domingo=0, lunes=1, ..., sábado=6
+    const currentDay = now.getDay();
     const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
 
     const startOfWeek = new Date(now);
@@ -209,11 +210,24 @@ export class DashboardComponent implements OnInit {
       case 'dashboard':
         void this.router.navigate(['/panel-admin']);
         break;
+
+      case 'clases':
+        void this.router.navigate(['/clases']);
+        break;
+
+      case 'miembros':
+        void this.router.navigate(['/miembros']);
+        break;
+
+      case 'eventos':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
       case 'anuncios':
         void this.router.navigate(['/anuncios']);
         break;
+
       default:
-        // Secciones no implementadas aun.
         void this.router.navigate(['/panel-admin']);
         break;
     }
@@ -224,7 +238,83 @@ export class DashboardComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    void this.router.navigate(['/login']);
+    this.authService
+      .logout()
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login']);
+        },
+        error: () => {
+          this.authService.clearAll();
+          void this.router.navigate(['/login']);
+        },
+      });
+  }
+
+  private cargarMiembros(): void {
+    this.loadingNewMembers = true;
+    this.newMembersError = '';
+
+    this.usuariosService
+      .findAll()
+      .pipe(
+        finalize(() => {
+          this.loadingNewMembers = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: (usuarios: Usuario[]) => {
+          const usuariosSeguros = Array.isArray(usuarios) ? usuarios : [];
+
+          this.activeMembers = usuariosSeguros
+            .filter((usuario) => usuario.status === 'ACTIVO')
+            .length
+            .toString();
+
+          this.newMembers = usuariosSeguros
+            .slice()
+            .sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            )
+            .slice(0, 5)
+            .map((usuario) => {
+              const fullName = `${usuario.firstName ?? ''} ${usuario.lastName ?? ''}`.trim();
+
+              return {
+                name: usuario.name || fullName || 'Miembro',
+                date: this.buildMemberSince(usuario.createdAt),
+              };
+            });
+        },
+        error: () => {
+          this.activeMembers = '0';
+          this.newMembers = [];
+          this.newMembersError = 'No se pudieron cargar los miembros recientes.';
+        },
+      });
+  }
+
+  private buildMemberSince(createdAt: string): string {
+    const createdDate = new Date(createdAt);
+
+    if (Number.isNaN(createdDate.getTime())) {
+      return 'Fecha no disponible';
+    }
+
+    const now = new Date();
+    const diffMs = now.getTime() - createdDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      return 'Hoy';
+    }
+
+    if (diffDays === 1) {
+      return 'Hace 1 día';
+    }
+
+    return `Hace ${diffDays} días`;
   }
 }

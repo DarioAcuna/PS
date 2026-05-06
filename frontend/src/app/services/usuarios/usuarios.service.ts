@@ -10,23 +10,22 @@ export class UsuariosService {
   private readonly endpoint = `${API_BASE_URL}/usuarios`;
 
   findAll(): Observable<Usuario[]> {
-    return this.http.get<Usuario[]>(this.endpoint);
+    return this.http.get<Usuario[]>(this.endpoint, { withCredentials: true });
   }
 
   findOne(id: number): Observable<Usuario> {
-    return this.http.get<Usuario>(`${this.endpoint}/${id}`);
+    return this.http.get<Usuario>(`${this.endpoint}/${id}`, { withCredentials: true });
   }
 
   create(payload: CreateUsuarioDto): Observable<Usuario> {
-    return this.http.post<Usuario>(this.endpoint, payload);
+    return this.http.post<Usuario>(this.endpoint, payload, { withCredentials: true });
   }
 
   update(id: number, payload: UpdateUsuarioDto): Observable<Usuario> {
-    return this.http.patch<Usuario>(`${this.endpoint}/${id}`, payload);
+    return this.http.patch<Usuario>(`${this.endpoint}/${id}`, payload, { withCredentials: true });
   }
 
   remove(id: number): Observable<Usuario> {
-    return this.http.delete<Usuario>(`${this.endpoint}/${id}`);
+    return this.http.delete<Usuario>(`${this.endpoint}/${id}`, { withCredentials: true });
   }
 }
-

@@ -11,9 +11,13 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-  role: string;
+  belt: string;
+  beltDegree: number;
+  memberType: string;
+  status: string;
 }
 

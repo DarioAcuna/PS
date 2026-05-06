@@ -39,7 +39,12 @@ export class UpdateUsuarioDto {
   @IsOptional()
   @IsEnum(UsuarioTipo)
   memberType?: UsuarioTipo;
+
   @IsOptional()
   @IsEnum(UsuarioEstado)
   status?: UsuarioEstado;
+
+  @IsOptional()
+  @IsEnum(['ADMIN', 'PROFESOR', 'ALUMNO'])
+  role?: string;
 }

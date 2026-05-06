@@ -1,0 +1,377 @@
+<div class="classes-page">
+  <app-admin-header
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="classes-main">
+    <section class="intro-block">
+      <h1>Gestión de Clases</h1>
+      <p>Administración de clases, horarios y sesiones</p>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="card-label">Clases registradas</span>
+        <h3>{{ classViews.length }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Horarios activos</span>
+        <h3>{{ horarios.length }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Próximas sesiones</span>
+        <h3>{{ totalUpcomingSessions }}</h3>
+      </article>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Filtros</h2>
+      </div>
+
+      <form class="filters-form" (ngSubmit)="searchClasses()">
+        <div class="form-group">
+          <label for="search">Buscar</label>
+          <input
+            id="search"
+            name="search"
+            type="text"
+            [(ngModel)]="filters.search"
+            placeholder="Nombre de la clase"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="discipline">Disciplina</label>
+          <select
+            id="discipline"
+            name="discipline"
+            [(ngModel)]="filters.discipline"
+          >
+            <option value="">Todas</option>
+            <option *ngFor="let discipline of disciplineOptions" [value]="discipline">
+              {{ discipline }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="level">Nivel</label>
+          <select id="level" name="level" [(ngModel)]="filters.level">
+            <option value="">Todos</option>
+            <option *ngFor="let level of levelOptions" [value]="level">
+              {{ level }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="instructor">Instructor</label>
+          <select
+            id="instructor"
+            name="instructor"
+            [(ngModel)]="filters.instructor"
+          >
+            <option value="">Todos</option>
+            <option *ngFor="let instructor of instructorOptions" [value]="instructor">
+              {{ instructor }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="day">Día</label>
+          <select id="day" name="day" [(ngModel)]="filters.day">
+            <option value="">Todos</option>
+            <option *ngFor="let day of dayOptions" [value]="day">
+              {{ day }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filters-actions">
+          <button type="submit" class="admin-button">
+            Buscar
+          </button>
+
+          <button type="button" class="admin-button secondary" (click)="clearFilters()">
+            Limpiar
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header classes-header">
+        <h2>Listado de clases</h2>
+
+        <button type="button" class="admin-button" (click)="createClass()">
+          Nueva clase
+        </button>
+      </div>
+
+      <div class="content-list" *ngIf="loading">
+        <p class="state-message">Cargando clases...</p>
+      </div>
+
+      <div class="content-list" *ngIf="!loading && errorMessage">
+        <p class="state-message error">{{ errorMessage }}</p>
+      </div>
+
+      <div
+        class="classes-list"
+        *ngIf="!loading && !errorMessage && filteredClasses.length > 0"
+      >
+        <article
+          class="class-item"
+          *ngFor="let gymClass of filteredClasses; trackBy: trackByClassId"
+        >
+          <div class="class-info">
+            <h3>{{ gymClass.name }}</h3>
+
+            <p>
+              {{ gymClass.primarySchedule || 'Sin horario asignado' }}
+            </p>
+
+            <span>
+              {{ gymClass.discipline || 'Sin disciplina' }}
+              ·
+              {{ gymClass.level || 'Sin nivel' }}
+              ·
+              {{ gymClass.instructor || 'Sin instructor' }}
+            </span>
+
+            <small>
+              Horarios: {{ gymClass.scheduleCount }}
+              ·
+              Próximas sesiones: {{ gymClass.upcomingSessionCount }}
+            </small>
+          </div>
+
+          <div class="class-actions">
+            <button
+              type="button"
+              class="admin-button"
+              (click)="manageClass(gymClass)"
+            >
+              Administrar
+            </button>
+
+            <button
+              type="button"
+              class="admin-button danger"
+              [disabled]="deletingClassId === gymClass.id"
+              (click)="deleteClass(gymClass)"
+            >
+              {{ deletingClassId === gymClass.id ? 'Eliminando...' : 'Eliminar' }}
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div
+        class="empty-state"
+        *ngIf="!loading && !errorMessage && filteredClasses.length === 0"
+      >
+        <p>No hay clases que coincidan con los filtros.</p>
+      </div>
+    </section>
+
+    <section class="content-card" *ngIf="selectedClass">
+      <div class="content-header classes-header">
+        <h2>Administrar clase</h2>
+
+        <button type="button" class="admin-button secondary" (click)="closeClassDetail()">
+          Cerrar
+        </button>
+      </div>
+
+      <div class="selected-class-title">
+        <h3>{{ selectedClass.name }}</h3>
+        <p>
+          {{ selectedClass.discipline || 'Sin disciplina' }}
+          ·
+          {{ selectedClass.level || 'Sin nivel' }}
+        </p>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-column">
+          <h3>Horarios asignados</h3>
+
+          <div class="detail-list" *ngIf="selectedClass.horarios.length > 0">
+            <article class="detail-item" *ngFor="let horario of selectedClass.horarios">
+              <strong>{{ getHorarioText(horario) }}</strong>
+              <span>{{ getInstructorFromHorario(horario) || 'Sin instructor' }}</span>
+            </article>
+          </div>
+
+          <p class="state-message" *ngIf="selectedClass.horarios.length === 0">
+            Esta clase no tiene horarios asignados.
+          </p>
+        </div>
+
+        <div class="detail-column">
+          <h3>Próximas sesiones</h3>
+
+          <div class="detail-list" *ngIf="selectedClass.upcomingSessions.length > 0">
+            <article class="detail-item" *ngFor="let sesion of selectedClass.upcomingSessions">
+              <strong>{{ buildSesionSubtitle(sesion) }}</strong>
+              <span>{{ getSessionInstructor(sesion) || 'Sin instructor' }}</span>
+            </article>
+          </div>
+
+          <p class="state-message" *ngIf="selectedClass.upcomingSessions.length === 0">
+            Esta clase no tiene próximas sesiones.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" *ngIf="classModalOpen" (click)="closeClassModal()">
+    <section class="class-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ classModalMode === 'create' ? 'Nueva clase' : 'Administrar clase' }}</h2>
+          <p>
+            {{
+              classModalMode === 'create'
+                ? 'Crear una nueva clase para el gimnasio'
+                : 'Editar información y revisar horarios/sesiones'
+            }}
+          </p>
+        </div>
+
+        <button type="button" class="modal-close" (click)="closeClassModal()">
+          ✕
+        </button>
+      </div>
+
+      <form class="class-form" (ngSubmit)="saveClass()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="className">Nombre</label>
+            <input
+              id="className"
+              name="className"
+              type="text"
+              [(ngModel)]="classForm.name"
+              placeholder="Ej: Jiu-Jitsu Básico"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="classDiscipline">Disciplina</label>
+            <input
+              id="classDiscipline"
+              name="classDiscipline"
+              type="text"
+              [(ngModel)]="classForm.discipline"
+              placeholder="Ej: Jiu-Jitsu"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="classLevel">Nivel</label>
+            <select
+              id="classLevel"
+              name="classLevel"
+              [(ngModel)]="classForm.level"
+            >
+              <option value="">Sin nivel</option>
+              <option value="Básico">Básico</option>
+              <option value="Intermedio">Intermedio</option>
+              <option value="Avanzado">Avanzado</option>
+              <option value="Todos los niveles">Todos los niveles</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="classDescription">Descripción</label>
+            <textarea
+              id="classDescription"
+              name="classDescription"
+              rows="3"
+              [(ngModel)]="classForm.description"
+              placeholder="Descripción breve de la clase"
+            ></textarea>
+          </div>
+        </div>
+
+        <p class="state-message error" *ngIf="classModalError">
+          {{ classModalError }}
+        </p>
+
+        <div class="modal-detail-grid" *ngIf="classModalMode === 'edit' && selectedClass">
+          <div class="modal-detail-column">
+            <h3>Horarios asignados</h3>
+
+            <div class="detail-list" *ngIf="selectedClass.horarios.length > 0">
+              <article class="detail-item" *ngFor="let horario of selectedClass.horarios">
+                <strong>{{ getHorarioText(horario) }}</strong>
+                <span>{{ getInstructorFromHorario(horario) || 'Sin instructor' }}</span>
+              </article>
+            </div>
+
+            <p class="state-message" *ngIf="selectedClass.horarios.length === 0">
+              Esta clase no tiene horarios asignados.
+            </p>
+          </div>
+
+          <div class="modal-detail-column">
+            <h3>Próximas sesiones</h3>
+
+            <div class="detail-list" *ngIf="selectedClass.upcomingSessions.length > 0">
+              <article class="detail-item" *ngFor="let sesion of selectedClass.upcomingSessions">
+                <strong>{{ buildSesionSubtitle(sesion) }}</strong>
+                <span>{{ getSessionInstructor(sesion) || 'Sin instructor' }}</span>
+              </article>
+            </div>
+
+            <p class="state-message" *ngIf="selectedClass.upcomingSessions.length === 0">
+              Esta clase no tiene próximas sesiones.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="admin-button secondary"
+            (click)="closeClassModal()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="admin-button danger"
+            *ngIf="classModalMode === 'edit' && selectedClass"
+            [disabled]="savingClass || deletingClassId === selectedClass.id"
+            (click)="deleteClassFromModal()"
+          >
+            {{ deletingClassId === selectedClass.id ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+
+          <button
+            type="submit"
+            class="admin-button"
+            [disabled]="savingClass"
+          >
+            {{ savingClass ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <app-admin-footer></app-admin-footer>
+</div>

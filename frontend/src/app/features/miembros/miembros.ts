@@ -47,14 +47,13 @@ export class MiembrosComponent implements OnInit, OnDestroy {
   readonly beltOptions = ['BLANCO', 'AZUL', 'MORADO', 'MARRON', 'NEGRO'];
 
   readonly selectedTab: HeaderTab = 'miembros';
-  readonly navItems: HeaderNavItem[] = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
-    { id: 'miembros', label: 'Miembros' },
-    { id: 'eventos', label: 'Eventos' },
-    { id: 'anuncios', label: 'Anuncios' },
-  ];
+   readonly navItems: HeaderNavItem[] = [
+     { id: 'dashboard', label: 'Dashboard' },
+     { id: 'clases', label: 'Clases' },
+     { id: 'miembros', label: 'Miembros' },
+     { id: 'eventos', label: 'Eventos' },
+     { id: 'anuncios', label: 'Anuncios' },
+   ];
 
   readonly filterForm;
   readonly editForm;
@@ -160,20 +159,6 @@ export class MiembrosComponent implements OnInit, OnDestroy {
 
    ngOnInit(): void {
      this.loadUsuarios();
-
-     this.filterSnapshot.set(this.filterForm.getRawValue());
-     this.filterForm.valueChanges
-       .pipe(takeUntil(this.destroy$))
-       .subscribe((value) => {
-         this.filterSnapshot.set({
-           name: value.name ?? '',
-           belt: value.belt ?? '',
-           beltDegree: value.beltDegree ?? '',
-           status: value.status ?? ('' as EstadoFiltro),
-           memberType: value.memberType ?? ('' as TipoFiltro),
-         });
-         this.currentPage.set(1);
-       });
    }
 
   loadUsuarios(): void {
@@ -199,15 +184,28 @@ export class MiembrosComponent implements OnInit, OnDestroy {
       });
   }
 
-  clearFilters(): void {
-    this.filterForm.reset({
-      name: '',
-      belt: '',
-      beltDegree: '',
-      status: '',
-      memberType: '',
-    });
-  }
+   clearFilters(): void {
+     this.filterForm.reset({
+       name: '',
+       belt: '',
+       beltDegree: '',
+       status: '',
+       memberType: '',
+     });
+     this.applyFilters();
+   }
+
+   applyFilters(): void {
+     const value = this.filterForm.getRawValue();
+     this.filterSnapshot.set({
+       name: value.name ?? '',
+       belt: value.belt ?? '',
+       beltDegree: value.beltDegree ?? '',
+       status: value.status ?? ('' as EstadoFiltro),
+       memberType: value.memberType ?? ('' as TipoFiltro),
+     });
+     this.currentPage.set(1);
+   }
 
   setPage(page: number): void {
     const total = this.totalPages();
@@ -406,20 +404,15 @@ export class MiembrosComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (tabId === 'clases') {
-      void this.router.navigate(['/clases']);
-      return;
-    }
+     if (tabId === 'clases') {
+       void this.router.navigate(['/clases']);
+       return;
+     }
 
-    if (tabId === 'instructores') {
-      void this.router.navigate(['/panel-admin']);
-      return;
-    }
-
-    if (tabId === 'anuncios') {
-      void this.router.navigate(['/anuncios']);
-      return;
-    }
+     if (tabId === 'anuncios') {
+       void this.router.navigate(['/anuncios']);
+       return;
+     }
 
     if (tabId === 'miembros') {
       void this.router.navigate(['/miembros']);

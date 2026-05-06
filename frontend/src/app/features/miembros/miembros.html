@@ -61,6 +61,7 @@
         </label>
 
         <div class="filter-actions">
+          <button type="button" class="primary-btn" (click)="applyFilters()">Aplicar filtros</button>
           <button type="button" class="secondary-btn" (click)="clearFilters()">Limpiar</button>
         </div>
       </form>
@@ -73,8 +74,8 @@
 
       <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
-      <div class="members-layout" *ngIf="!isLoading(); else loading">
-        <div class="members-list">
+       <div class="members-layout" [class.with-edit]="editingUser()" *ngIf="!isLoading(); else loading">
+         <div class="members-list">
           <article
             class="member-card"
             *ngFor="let usuario of paginatedUsuarios(); trackBy: trackById"
@@ -129,76 +130,70 @@
             >
               Siguiente
             </button>
-          </div>
-        </div>
-      </div>
+           </div>
+         </div>
 
-      <ng-template #loading>
-        <p class="status-message">Cargando miembros...</p>
-      </ng-template>
-    </section>
+         <div class="member-detail" *ngIf="editingUser() as user">
+           <h3>Editar miembro</h3>
+           <p class="status-message error" *ngIf="editError()">{{ editError() }}</p>
 
-    <div class="modal-backdrop" *ngIf="editingUser() as user">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>Editar miembro</h3>
-          <button type="button" class="icon-btn" (click)="closeEdit()">×</button>
-        </div>
+           <form class="edit-form" [formGroup]="editForm">
+             <div class="form-group">
+               <label>Nombre</label>
+               <input type="text" formControlName="firstName" />
+             </div>
+             <div class="form-group">
+               <label>Apellidos</label>
+               <input type="text" formControlName="lastName" />
+             </div>
+             <div class="form-group">
+               <label>Email</label>
+               <input type="email" formControlName="email" />
+             </div>
+             <div class="form-group">
+               <label>Cinturón</label>
+               <select formControlName="belt">
+                 <option *ngFor="let belt of beltOptions" [value]="belt">{{ belt }}</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>Grado</label>
+               <input type="number" formControlName="beltDegree" min="0" max="4" />
+             </div>
+             <div class="form-group">
+               <label>Tipo</label>
+               <select formControlName="memberType">
+                 <option value="ALUMNO">Alumno</option>
+                 <option value="PROFESOR">Profesor</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>Estado</label>
+               <select formControlName="status">
+                 <option value="ACTIVO">Activo</option>
+                 <option value="INACTIVO">Inactivo</option>
+               </select>
+             </div>
+           </form>
 
-        <form class="edit-form" [formGroup]="editForm">
-          <label>
-            <span>Nombre</span>
-            <input type="text" formControlName="firstName" />
-          </label>
-          <label>
-            <span>Apellidos</span>
-            <input type="text" formControlName="lastName" />
-          </label>
-          <label>
-            <span>Email</span>
-            <input type="email" formControlName="email" />
-          </label>
-          <label>
-            <span>Cinturón</span>
-            <select formControlName="belt">
-              <option *ngFor="let belt of beltOptions" [value]="belt">{{ belt }}</option>
-            </select>
-          </label>
-          <label>
-            <span>Grado</span>
-            <input type="number" formControlName="beltDegree" min="0" max="4" />
-          </label>
-          <label>
-            <span>Tipo</span>
-            <select formControlName="memberType">
-              <option value="ALUMNO">Alumno</option>
-              <option value="PROFESOR">Profesor</option>
-            </select>
-          </label>
-          <label>
-            <span>Estado</span>
-            <select formControlName="status">
-              <option value="ACTIVO">Activo</option>
-              <option value="INACTIVO">Inactivo</option>
-            </select>
-          </label>
-        </form>
+           <div class="detail-actions">
+             <button type="button" class="secondary-btn" (click)="closeEdit()" [disabled]="isSaving()">
+               Cancelar
+             </button>
+             <button type="button" class="primary-btn" (click)="saveEdit()" [disabled]="isSaving()">
+               Guardar
+             </button>
+             <button type="button" class="danger-btn" (click)="deleteUser()" [disabled]="isSaving()">
+               Eliminar
+             </button>
+           </div>
+         </div>
+       </div>
 
-        <p class="status-message error" *ngIf="editError()">{{ editError() }}</p>
-
-        <div class="modal-actions">
-          <button type="button" class="secondary-btn" (click)="closeEdit()" [disabled]="isSaving()">
-            Cancelar
-          </button>
-          <button type="button" class="primary-btn" (click)="saveEdit()" [disabled]="isSaving()">
-            Guardar cambios
-          </button>
-          <button type="button" class="danger-btn" (click)="deleteUser()" [disabled]="isSaving()">
-            Eliminar perfil
-          </button>
-        </div>
-      </div>
-    </div>
+       <ng-template #loading>
+         <p class="status-message">Cargando miembros...</p>
+       </ng-template>
+     </section>
   </main>
 
   <app-admin-footer></app-admin-footer>

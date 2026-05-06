@@ -1,0 +1,139 @@
+<div class="dashboard-page">
+  <app-admin-header
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="dashboard-main">
+    <section class="intro-block">
+      <h1>Miembros</h1>
+      <p>Gestiona la base de miembros del gimnasio.</p>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Filtros</h2>
+      </div>
+
+      <form class="filters-grid" [formGroup]="filterForm">
+        <label class="filter-field">
+          <span>Nombre</span>
+          <input type="text" formControlName="name" placeholder="Buscar por nombre o email" />
+        </label>
+
+        <label class="filter-field">
+          <span>Cinturón</span>
+          <select formControlName="belt">
+            <option value="">Todos</option>
+            <option *ngFor="let belt of beltOptions()" [value]="belt">{{ belt }}</option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>Grado</span>
+          <select formControlName="beltDegree">
+            <option value="">Todos</option>
+            <option *ngFor="let degree of beltDegreeOptions()" [value]="degree">
+              {{ degree }}
+            </option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>Estado</span>
+          <select formControlName="status">
+            <option value="">Todos</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </label>
+
+        <div class="filter-actions">
+          <button type="button" class="secondary-btn" (click)="clearFilters()">Limpiar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header header-row">
+        <h2>Listado de miembros</h2>
+      </div>
+
+      <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+      <div class="members-layout" *ngIf="!isLoading(); else loading">
+        <div class="members-list">
+          <article
+            class="member-card"
+            *ngFor="let usuario of filteredUsuarios(); trackBy: trackById"
+          >
+            <div>
+              <h3>{{ usuario.firstName || usuario.name }} {{ usuario.lastName }}</h3>
+              <p>{{ usuario.email }}</p>
+              <p class="meta">
+                <span>{{ usuario.belt || 'Sin cinturón' }}</span>
+                <span>Grado {{ usuario.beltDegree ?? '-' }}</span>
+                <span class="pill" [class.inactive]="usuario.status === 'INACTIVO'">
+                  {{ usuario.status === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+                </span>
+              </p>
+            </div>
+            <div class="member-actions">
+              <button class="primary-btn" type="button" (click)="selectUser(usuario.id)">
+                Ver perfil
+              </button>
+            </div>
+          </article>
+
+          <p class="status-message" *ngIf="filteredUsuarios().length === 0">No hay miembros con esos filtros.</p>
+        </div>
+
+        <aside class="member-detail" *ngIf="selectedUser() as user">
+          <h3>Perfil del miembro</h3>
+          <div class="detail-row">
+            <span>Nombre</span>
+            <strong>{{ user.firstName || user.name }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Apellidos</span>
+            <strong>{{ user.lastName || '-' }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Correo</span>
+            <strong>{{ user.email }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Cinturón</span>
+            <strong>{{ user.belt || '-' }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Grado</span>
+            <strong>{{ user.beltDegree ?? '-' }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Rol</span>
+            <strong>{{ user.role }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Estado</span>
+            <strong>{{ user.status === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Alta</span>
+            <strong>{{ user.createdAt | date: 'shortDate' }}</strong>
+          </div>
+        </aside>
+      </div>
+
+      <ng-template #loading>
+        <p class="status-message">Cargando miembros...</p>
+      </ng-template>
+    </section>
+  </main>
+
+  <app-admin-footer></app-admin-footer>
+</div>
+

@@ -5,6 +5,7 @@ import { LoginComponent } from './features/login/login';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
 
 import { Signup } from './features/signup/signup';
+import { MiembrosComponent } from './features/miembros/miembros';
 
 export const routes: Routes = [
   // Ruta raíz: verificar autenticación y redirigir
@@ -46,6 +47,11 @@ export const routes: Routes = [
   {
     path: 'anuncios',
     component: AnunciosComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'miembros',
+    component: MiembrosComponent,
     canActivate: [authGuard]
   },
   {

@@ -209,11 +209,28 @@ export class DashboardComponent implements OnInit {
       case 'dashboard':
         void this.router.navigate(['/panel-admin']);
         break;
+
+      case 'clases':
+        void this.router.navigate(['/clases']);
+        break;
+
       case 'anuncios':
         void this.router.navigate(['/anuncios']);
         break;
+
+      case 'instructores':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
+      case 'miembros':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
+      case 'eventos':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
       default:
-        // Secciones no implementadas aun.
         void this.router.navigate(['/panel-admin']);
         break;
     }

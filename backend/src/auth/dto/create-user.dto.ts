@@ -6,9 +6,9 @@ export class CreateUserDto extends BaseUserDto {
   @MinLength(12, {
     message: 'La contraseña debe tener al menos 12 caracteres',
   })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{12,}$/, {
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)\S{12,}$/, {
     message:
-      'La contraseña debe contener mayúsculas, minúsculas y números. Los símbolos son opcionales.',
+      'La contraseña debe tener al menos 12 caracteres, incluir mayúsculas, minúsculas y números, y no contener espacios.',
   })
   password: string;
 }

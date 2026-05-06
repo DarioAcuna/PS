@@ -10,6 +10,7 @@
     <form (ngSubmit)="registrar()">
 
       <input type="text" name="nombre" [(ngModel)]="nombreUsuario" placeholder="Nombre" required [disabled]="cargando">
+      <input type="text" name="apellidos" [(ngModel)]="apellidosUsuario" placeholder="Apellidos" required [disabled]="cargando">
       <input type="email" name="email" [(ngModel)]="emailUsuario" placeholder="Email" required [disabled]="cargando">
       <input type="password" name="password" [(ngModel)]="passwordUsuario" placeholder="Contraseña" required [disabled]="cargando">
 

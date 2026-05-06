@@ -33,6 +33,16 @@
         </label>
 
         <label class="filter-field">
+          <span>Grado</span>
+          <select formControlName="beltDegree">
+            <option value="">Todos</option>
+            <option *ngFor="let degree of beltDegreeOptions()" [value]="degree">
+              {{ degree }}
+            </option>
+          </select>
+        </label>
+
+        <label class="filter-field">
           <span>Estado</span>
           <select formControlName="status">
             <option value="">Todos</option>
@@ -50,7 +60,6 @@
     <section class="content-card">
       <div class="content-header header-row">
         <h2>Listado de miembros</h2>
-        <button class="primary-btn" type="button" (click)="openCreateModal()">Crear miembro</button>
       </div>
 
       <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
@@ -124,62 +133,6 @@
       </ng-template>
     </section>
   </main>
-
-  <div class="modal-backdrop" *ngIf="isCreateModalOpen()">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>Nuevo miembro</h3>
-        <button class="secondary-btn" type="button" (click)="closeCreateModal()">Cerrar</button>
-      </div>
-
-      <form class="modal-body" [formGroup]="createForm" (ngSubmit)="submitCreate()">
-        <label>
-          <span>Nombre</span>
-          <input type="text" formControlName="firstName" placeholder="Nombre" />
-        </label>
-        <label>
-          <span>Apellidos</span>
-          <input type="text" formControlName="lastName" placeholder="Apellidos" />
-        </label>
-        <label>
-          <span>Correo</span>
-          <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
-        </label>
-        <label>
-          <span>Cinturón</span>
-          <select formControlName="belt">
-            <option value="" disabled>Selecciona cinturón</option>
-            <option *ngFor="let belt of beltChoices" [value]="belt">{{ belt }}</option>
-          </select>
-        </label>
-        <label>
-          <span>Grado (0-4)</span>
-          <input type="number" formControlName="beltDegree" min="0" max="4" />
-        </label>
-        <label>
-          <span>Tipo de miembro</span>
-          <select formControlName="memberType">
-            <option value="ALUMNO">Alumno</option>
-            <option value="PROFESOR">Profesor</option>
-          </select>
-        </label>
-        <label>
-          <span>Estado</span>
-          <select formControlName="status">
-            <option value="ACTIVO">Activo</option>
-            <option value="INACTIVO">Inactivo</option>
-          </select>
-        </label>
-
-        <p class="status-message error" *ngIf="createErrorMessage()">{{ createErrorMessage() }}</p>
-
-        <div class="modal-actions">
-          <button class="secondary-btn" type="button" (click)="closeCreateModal()">Cancelar</button>
-          <button class="primary-btn" type="submit" [disabled]="isCreating()">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <app-admin-footer></app-admin-footer>
 </div>

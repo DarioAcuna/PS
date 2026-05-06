@@ -142,77 +142,6 @@
   align-items: center;
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 50;
-}
-
-.modal-card {
-  width: min(560px, 100%);
-  background: #ffffff;
-  border: 1px solid #dfdfdf;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-  padding: 18px 20px 20px;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.modal-body {
-  display: grid;
-  gap: 12px;
-}
-
-.modal-body label {
-  display: grid;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.modal-body input,
-.modal-body select {
-  border: 1px solid #d7d7d7;
-  padding: 10px 12px;
-  font-family: 'Oswald', Arial, sans-serif;
-  font-size: 14px;
-  background: #ffffff;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.status-message {
-  margin: 12px 0 0;
-  font-size: 13px;
-  color: #4e4e4e;
-}
-
-.status-message.error {
-  color: #b70000;
-}
-
 .primary-btn,
 .secondary-btn {
   min-width: 140px;
@@ -271,9 +200,5 @@
   .content-header.header-row {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .modal-card {
-    padding: 16px;
   }
 }

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
@@ -11,8 +11,6 @@ import { UsuariosService } from '../../services/usuarios/usuarios.service';
 import {
   Usuario,
   UsuarioEstado,
-  UsuarioTipo,
-  CreateUsuarioDto,
 } from '../../services/usuarios/usuarios.models';
 
 type HeaderTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
@@ -38,11 +36,7 @@ export class MiembrosComponent implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
   readonly selectedUserId = signal<number | null>(null);
-  readonly isCreateModalOpen = signal(false);
-  readonly isCreating = signal(false);
-  readonly createErrorMessage = signal('');
 
-  readonly beltChoices = ['Blanco', 'Azul', 'Morado', 'Marron', 'Negro'];
   readonly selectedTab: HeaderTab = 'miembros';
   readonly navItems: HeaderNavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -55,12 +49,11 @@ export class MiembrosComponent implements OnInit, OnDestroy {
 
   readonly filterForm;
 
-  readonly createForm;
-
   readonly filteredUsuarios = computed(() => {
-    const { name, belt, status } = this.filterForm.getRawValue();
+    const { name, belt, beltDegree, status } = this.filterForm.getRawValue();
     const query = (name ?? '').trim().toLowerCase();
     const beltFilter = (belt ?? '').trim().toLowerCase();
+    const degreeFilter = (beltDegree ?? '').trim();
     const statusFilter = (status ?? '') as EstadoFiltro;
 
     return this.usuarios().filter((usuario) => {
@@ -74,9 +67,12 @@ export class MiembrosComponent implements OnInit, OnDestroy {
       const beltValue = (usuario.belt ?? '').trim().toLowerCase();
       const beltMatch = !beltFilter || beltValue === beltFilter;
 
+      const degreeValue = usuario.beltDegree;
+      const degreeMatch = !degreeFilter || (degreeValue !== null && degreeValue.toString() === degreeFilter);
+
       const statusMatch = !statusFilter || usuario.status === statusFilter;
 
-      return nameMatch && beltMatch && statusMatch;
+      return nameMatch && beltMatch && degreeMatch && statusMatch;
     });
   });
 
@@ -90,6 +86,18 @@ export class MiembrosComponent implements OnInit, OnDestroy {
     });
 
     return Array.from(belts).sort((a, b) => a.localeCompare(b, 'es'));
+  });
+
+  readonly beltDegreeOptions = computed(() => {
+    const degrees = new Set<number>();
+
+    this.usuarios().forEach((usuario) => {
+      if (usuario.beltDegree !== null && usuario.beltDegree !== undefined) {
+        degrees.add(usuario.beltDegree);
+      }
+    });
+
+    return Array.from(degrees).sort((a, b) => a - b);
   });
 
   readonly selectedUser = computed(() => {
@@ -106,17 +114,8 @@ export class MiembrosComponent implements OnInit, OnDestroy {
     this.filterForm = this.formBuilder.nonNullable.group({
       name: '',
       belt: '',
+      beltDegree: '',
       status: '' as EstadoFiltro,
-    });
-
-    this.createForm = this.formBuilder.nonNullable.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      belt: ['', [Validators.required]],
-      beltDegree: [0, [Validators.required, Validators.min(0), Validators.max(4)]],
-      memberType: ['ALUMNO' as UsuarioTipo, [Validators.required]],
-      status: ['ACTIVO' as UsuarioEstado, [Validators.required]],
     });
   }
 
@@ -153,70 +152,9 @@ export class MiembrosComponent implements OnInit, OnDestroy {
     this.filterForm.reset({
       name: '',
       belt: '',
+      beltDegree: '',
       status: '',
     });
-  }
-
-  openCreateModal(): void {
-    this.createErrorMessage.set('');
-    this.isCreateModalOpen.set(true);
-  }
-
-  closeCreateModal(): void {
-    this.isCreateModalOpen.set(false);
-  }
-
-  submitCreate(): void {
-    if (this.isCreating()) {
-      return;
-    }
-
-    if (this.createForm.invalid) {
-      this.createForm.markAllAsTouched();
-      return;
-    }
-
-    this.isCreating.set(true);
-    this.createErrorMessage.set('');
-
-    const payload = this.createForm.getRawValue();
-    const dto: CreateUsuarioDto = {
-      firstName: payload.firstName.trim(),
-      lastName: payload.lastName.trim(),
-      email: payload.email.trim().toLowerCase(),
-      belt: payload.belt.trim(),
-      beltDegree: Number(payload.beltDegree),
-      memberType: payload.memberType,
-      status: payload.status,
-    };
-
-    this.usuariosService
-      .create(dto)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => {
-          this.isCreating.set(false);
-        }),
-      )
-      .subscribe({
-        next: (usuario) => {
-          this.selectedUserId.set(usuario.id);
-          this.closeCreateModal();
-          this.createForm.reset({
-            firstName: '',
-            lastName: '',
-            email: '',
-            belt: '',
-            beltDegree: 0,
-            memberType: 'ALUMNO' as UsuarioTipo,
-            status: 'ACTIVO' as UsuarioEstado,
-          });
-          this.loadUsuarios();
-        },
-        error: () => {
-          this.createErrorMessage.set('No se pudo crear el miembro.');
-        },
-      });
   }
 
   selectUser(id: number): void {
@@ -270,4 +208,3 @@ export class MiembrosComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 }
-

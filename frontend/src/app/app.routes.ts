@@ -6,56 +6,61 @@ import { authGuard, publicGuard } from './core/guards/auth.guard';
 
 import { Signup } from './features/signup/signup';
 import { MiembrosComponent } from './features/miembros/miembros';
+import { AdminClasesComponent } from './features/admin-class/admin-class';
 
 export const routes: Routes = [
-  // Ruta raíz: verificar autenticación y redirigir
   {
     path: '',
     canActivate: [authGuard],
-    component: DashboardComponent
+    component: DashboardComponent,
   },
   {
     path: 'login',
     component: LoginComponent,
-    canActivate: [publicGuard]
+    canActivate: [publicGuard],
   },
   {
     path: 'signup',
     component: Signup,
-    canActivate: [publicGuard]
+    canActivate: [publicGuard],
   },
   {
     path: 'home',
     redirectTo: '/panel-admin',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'reservas',
     redirectTo: '/panel-admin',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'perfil',
     redirectTo: '/panel-admin',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'panel-admin',
     component: DashboardComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+  },
+  {
+    path: 'clases',
+    component: AdminClasesComponent,
+    canActivate: [authGuard],
   },
   {
     path: 'anuncios',
     component: AnunciosComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'miembros',
     component: MiembrosComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: '**',
-    redirectTo: '/login'
+    redirectTo: '/login',
   },
 ];

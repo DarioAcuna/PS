@@ -18,7 +18,7 @@ import { Horario } from '../../services/horarios/horarios.models';
 import { SesionesService } from '../../services/sesiones/sesiones.service';
 import { SesionDetallada } from '../../services/sesiones/sesiones.models';
 
-type DashboardTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+type DashboardTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
 interface NavItem {
   id: DashboardTab;
@@ -74,7 +74,6 @@ export class AdminClasesComponent implements OnInit {
   navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
@@ -370,12 +369,23 @@ export class AdminClasesComponent implements OnInit {
       case 'dashboard':
         void this.router.navigate(['/panel-admin']);
         break;
+
       case 'clases':
         void this.router.navigate(['/clases']);
         break;
+
+      case 'miembros':
+        void this.router.navigate(['/miembros']);
+        break;
+
+      case 'eventos':
+        void this.router.navigate(['/panel-admin']);
+        break;
+
       case 'anuncios':
         void this.router.navigate(['/anuncios']);
         break;
+
       default:
         void this.router.navigate(['/panel-admin']);
         break;

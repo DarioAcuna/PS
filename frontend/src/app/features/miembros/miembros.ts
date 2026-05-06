@@ -13,7 +13,7 @@ import {
   UsuarioEstado,
 } from '../../services/usuarios/usuarios.models';
 
-type HeaderTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+type HeaderTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
 type EstadoFiltro = '' | UsuarioEstado;
 
@@ -41,7 +41,6 @@ export class MiembrosComponent implements OnInit, OnDestroy {
   readonly navItems: HeaderNavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
@@ -175,6 +174,11 @@ export class MiembrosComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (tabId === 'clases') {
+      void this.router.navigate(['/clases']);
+      return;
+    }
+
     if (tabId === 'anuncios') {
       void this.router.navigate(['/anuncios']);
       return;
@@ -182,6 +186,11 @@ export class MiembrosComponent implements OnInit, OnDestroy {
 
     if (tabId === 'miembros') {
       void this.router.navigate(['/miembros']);
+      return;
+    }
+
+    if (tabId === 'eventos') {
+      void this.router.navigate(['/panel-admin']);
       return;
     }
 

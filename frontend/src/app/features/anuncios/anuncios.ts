@@ -14,7 +14,7 @@ import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { AuthService } from '../../services/auth/auth.service';
 
-type HeaderTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+type HeaderTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
 interface HeaderNavItem {
   id: HeaderTab;
@@ -43,7 +43,6 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   readonly navItems: HeaderNavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
@@ -192,6 +191,11 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (tabId === 'clases') {
+      void this.router.navigate(['/clases']);
+      return;
+    }
+
     if (tabId === 'anuncios') {
       void this.router.navigate(['/anuncios']);
       return;
@@ -202,7 +206,12 @@ export class AnunciosComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Secciones no implementadas aun: llevamos al panel principal.
+    if (tabId === 'eventos') {
+      void this.router.navigate(['/panel-admin']);
+      return;
+    }
+
+    // Secciones no implementadas aún: llevamos al panel principal.
     void this.router.navigate(['/panel-admin']);
   }
 

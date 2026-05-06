@@ -8,7 +8,7 @@ import { SesionesService } from '../../services/sesiones/sesiones.service';
 import { SesionDetallada } from '../../services/sesiones/sesiones.models';
 import { AuthService } from '../../services/auth/auth.service';
 
-type DashboardTab = 'dashboard' | 'clases' | 'instructores' | 'miembros' | 'eventos' | 'anuncios';
+type DashboardTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
 interface NavItem {
   id: DashboardTab;
@@ -38,7 +38,6 @@ export class DashboardComponent implements OnInit {
   navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'clases', label: 'Clases' },
-    { id: 'instructores', label: 'Instructores' },
     { id: 'miembros', label: 'Miembros' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'anuncios', label: 'Anuncios' },
@@ -117,7 +116,7 @@ export class DashboardComponent implements OnInit {
 
   private getCurrentWeekRange(): { startOfWeek: Date; endOfWeek: Date } {
     const now = new Date();
-    const currentDay = now.getDay(); // domingo=0, lunes=1, ..., sábado=6
+    const currentDay = now.getDay();
     const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
 
     const startOfWeek = new Date(now);
@@ -214,20 +213,16 @@ export class DashboardComponent implements OnInit {
         void this.router.navigate(['/clases']);
         break;
 
-      case 'anuncios':
-        void this.router.navigate(['/anuncios']);
-        break;
-
-      case 'instructores':
-        void this.router.navigate(['/panel-admin']);
-        break;
-
       case 'miembros':
-        void this.router.navigate(['/panel-admin']);
+        void this.router.navigate(['/miembros']);
         break;
 
       case 'eventos':
         void this.router.navigate(['/panel-admin']);
+        break;
+
+      case 'anuncios':
+        void this.router.navigate(['/anuncios']);
         break;
 
       default:

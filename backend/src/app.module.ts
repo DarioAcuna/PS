@@ -9,6 +9,7 @@ import { SesionesModule } from './sesiones/sesiones.module';
 import { AnunciosModule } from './anuncios/anuncios.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { EventosModule } from './eventos/eventos.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     SesionesModule,
     AnunciosModule,
     UsuariosModule,
+    EventosModule,
   ],
   controllers: [AppController],
 })

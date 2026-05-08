@@ -59,6 +59,17 @@ model Announcement {
   @@map("announcements")
 }
 
+model Event {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  capacity    Int
+  eventDate   DateTime @map("event_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("events")
+}
+
 enum SessionStatus {
   SCHEDULED
   MODIFIED
@@ -96,4 +107,3 @@ model User {
 
   @@map("users")
 }
-

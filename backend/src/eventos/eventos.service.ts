@@ -80,14 +80,21 @@ export class EventosService {
     const actual = await this.findOne(id);
 
     const name = this.normalizarTexto(dto.name) ?? actual.name;
-    const description = this.normalizarTexto(dto.description) ?? actual.description;
+    const description =
+      this.normalizarTexto(dto.description) ?? actual.description;
 
     const hasDatePart =
-      dto.day !== undefined || dto.month !== undefined || dto.year !== undefined;
+      dto.day !== undefined ||
+      dto.month !== undefined ||
+      dto.year !== undefined;
     let eventDate = actual.eventDate;
 
     if (hasDatePart) {
-      if (dto.day === undefined || dto.month === undefined || dto.year === undefined) {
+      if (
+        dto.day === undefined ||
+        dto.month === undefined ||
+        dto.year === undefined
+      ) {
         throw new BadRequestException(
           'Para editar la fecha debes indicar dia, mes y anio',
         );

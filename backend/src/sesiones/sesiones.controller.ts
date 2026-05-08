@@ -14,12 +14,23 @@ import { SesionesService } from './sesiones.service';
 import { ListarSesionesDto } from './dto/listar-sesiones.dto';
 import { UpdateSesionDto } from './dto/update-sesion.dto';
 import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
+import { CreateSesionDto } from './dto/create.sesion.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminRoleGuard } from '../auth/admin-role.guard';
 
 @Controller('sesiones')
 export class SesionesController {
   constructor(private readonly sesionesService: SesionesService) {}
+
+  /**
+   * Crear una sesión concreta
+   * Solo ADMIN puede crear
+   */
+  @Post()
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
+  create(@Body() dto: CreateSesionDto) {
+    return this.sesionesService.create(dto);
+  }
 
   /**
    * Listar todas las sesiones

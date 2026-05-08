@@ -477,6 +477,34 @@
   gap: 18px 28px;
 }
 
+.form-section {
+  border-bottom: 1px solid #dfdfdf;
+  padding-bottom: 18px;
+}
+
+.form-section h3 {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.checkbox-row input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

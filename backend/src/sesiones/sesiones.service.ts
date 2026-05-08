@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ListarSesionesDto } from './dto/listar-sesiones.dto';
 import { UpdateSesionDto } from './dto/update-sesion.dto';
 import { GenerarSesionesDto } from './dto/generar-sesiones.dto';
+import { CreateSesionDto } from './dto/create.sesion.dto';
 
 @Injectable()
 export class SesionesService {
@@ -23,6 +24,85 @@ export class SesionesService {
     const inicio = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
     const fin = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
     return { inicio, fin };
+  }
+
+  async create(dto: CreateSesionDto) {
+    const horario = await this.prisma.schedule.findUnique({
+      where: { id: dto.scheduleId },
+    });
+
+    if (!horario) {
+      throw new NotFoundException('Horario no encontrado');
+    }
+
+    if (dto.startTime >= dto.endTime) {
+      throw new ConflictException(
+        'La hora de inicio debe ser menor que la de fin',
+      );
+    }
+
+    const sessionDate = new Date(`${dto.date}T00:00:00.000Z`);
+
+    if (dto.instructor) {
+      const conflictoInstructor = await this.prisma.session.findFirst({
+        where: {
+          date: sessionDate,
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+          instructor: dto.instructor,
+        },
+      });
+
+      if (conflictoInstructor) {
+        throw new ConflictException(
+          'El instructor ya está asignado a esa franja en ese día',
+        );
+      }
+    }
+
+    const sesionExistente = await this.prisma.session.findFirst({
+      where: {
+        scheduleId: dto.scheduleId,
+        date: sessionDate,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+      },
+    });
+
+    if (sesionExistente) {
+      throw new ConflictException(
+        'Ya existe una sesión para ese horario en esa fecha y franja',
+      );
+    }
+
+    try {
+      return await this.prisma.session.create({
+        data: {
+          scheduleId: dto.scheduleId,
+          date: sessionDate,
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+          instructor: dto.instructor || null,
+          status: SessionStatus.SCHEDULED,
+        },
+        include: {
+          schedule: {
+            include: {
+              class: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Ya existe una sesión con esos datos');
+      }
+
+      throw error;
+    }
   }
 
   async findAll(query: ListarSesionesDto) {

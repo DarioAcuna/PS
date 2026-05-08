@@ -48,20 +48,6 @@
         </div>
 
         <div class="form-group">
-          <label for="discipline">Disciplina</label>
-          <select
-            id="discipline"
-            name="discipline"
-            [(ngModel)]="filters.discipline"
-          >
-            <option value="">Todas</option>
-            <option *ngFor="let discipline of disciplineOptions" [value]="discipline">
-              {{ discipline }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
           <label for="level">Nivel</label>
           <select id="level" name="level" [(ngModel)]="filters.level">
             <option value="">Todos</option>
@@ -140,8 +126,6 @@
             </p>
 
             <span>
-              {{ gymClass.discipline || 'Sin disciplina' }}
-              ·
               {{ gymClass.level || 'Sin nivel' }}
               ·
               {{ gymClass.instructor || 'Sin instructor' }}
@@ -182,57 +166,6 @@
         <p>No hay clases que coincidan con los filtros.</p>
       </div>
     </section>
-
-    <section class="content-card" *ngIf="selectedClass">
-      <div class="content-header classes-header">
-        <h2>Administrar clase</h2>
-
-        <button type="button" class="admin-button secondary" (click)="closeClassDetail()">
-          Cerrar
-        </button>
-      </div>
-
-      <div class="selected-class-title">
-        <h3>{{ selectedClass.name }}</h3>
-        <p>
-          {{ selectedClass.discipline || 'Sin disciplina' }}
-          ·
-          {{ selectedClass.level || 'Sin nivel' }}
-        </p>
-      </div>
-
-      <div class="detail-grid">
-        <div class="detail-column">
-          <h3>Horarios asignados</h3>
-
-          <div class="detail-list" *ngIf="selectedClass.horarios.length > 0">
-            <article class="detail-item" *ngFor="let horario of selectedClass.horarios">
-              <strong>{{ getHorarioText(horario) }}</strong>
-              <span>{{ getInstructorFromHorario(horario) || 'Sin instructor' }}</span>
-            </article>
-          </div>
-
-          <p class="state-message" *ngIf="selectedClass.horarios.length === 0">
-            Esta clase no tiene horarios asignados.
-          </p>
-        </div>
-
-        <div class="detail-column">
-          <h3>Próximas sesiones</h3>
-
-          <div class="detail-list" *ngIf="selectedClass.upcomingSessions.length > 0">
-            <article class="detail-item" *ngFor="let sesion of selectedClass.upcomingSessions">
-              <strong>{{ buildSesionSubtitle(sesion) }}</strong>
-              <span>{{ getSessionInstructor(sesion) || 'Sin instructor' }}</span>
-            </article>
-          </div>
-
-          <p class="state-message" *ngIf="selectedClass.upcomingSessions.length === 0">
-            Esta clase no tiene próximas sesiones.
-          </p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <div class="modal-backdrop" *ngIf="classModalOpen" (click)="closeClassModal()">
@@ -244,7 +177,7 @@
             {{
               classModalMode === 'create'
                 ? 'Crear una nueva clase para el gimnasio'
-                : 'Editar información y revisar horarios/sesiones'
+                : 'Editar información de la clase'
             }}
           </p>
         </div>
@@ -255,7 +188,10 @@
       </div>
 
       <form class="class-form" (ngSubmit)="saveClass()">
-        <div class="form-grid">
+        <div class="form-section">
+          <h3>Datos de la clase</h3>
+
+          <div class="form-grid">
           <div class="form-group">
             <label for="className">Nombre</label>
             <input
@@ -269,41 +205,126 @@
           </div>
 
           <div class="form-group">
-            <label for="classDiscipline">Disciplina</label>
-            <input
-              id="classDiscipline"
-              name="classDiscipline"
-              type="text"
-              [(ngModel)]="classForm.discipline"
-              placeholder="Ej: Jiu-Jitsu"
-            />
-          </div>
-
-          <div class="form-group">
             <label for="classLevel">Nivel</label>
             <select
               id="classLevel"
               name="classLevel"
               [(ngModel)]="classForm.level"
+              required
             >
-              <option value="">Sin nivel</option>
+              <option value="">Selecciona un nivel</option>
               <option value="Básico">Básico</option>
               <option value="Intermedio">Intermedio</option>
               <option value="Avanzado">Avanzado</option>
               <option value="Todos los niveles">Todos los niveles</option>
             </select>
           </div>
+        </div>
+        </div>
 
-          <div class="form-group">
-            <label for="classDescription">Descripción</label>
-            <textarea
-              id="classDescription"
-              name="classDescription"
-              rows="3"
-              [(ngModel)]="classForm.description"
-              placeholder="Descripción breve de la clase"
-            ></textarea>
+        <div class="form-section">
+          <h3>Horario base</h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="classDay">Día</label>
+              <select
+                id="classDay"
+                name="classDay"
+                [(ngModel)]="classForm.dayOfWeek"
+                (ngModelChange)="onClassDayChange($event)"
+                required
+              >
+                <option *ngFor="let day of weekDays" [ngValue]="day.value">
+                  {{ day.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="classCapacity">Aforo máximo</label>
+              <input
+                id="classCapacity"
+                name="classCapacity"
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="classForm.maxCapacity"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="classStartTime">Hora inicio</label>
+              <input
+                id="classStartTime"
+                name="classStartTime"
+                type="time"
+                [(ngModel)]="classForm.startTime"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="classEndTime">Hora fin</label>
+              <input
+                id="classEndTime"
+                name="classEndTime"
+                type="time"
+                [(ngModel)]="classForm.endTime"
+                required
+              />
+            </div>
           </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Sesión</h3>
+
+          <label class="checkbox-row">
+            <input
+              type="checkbox"
+              name="createSession"
+              [(ngModel)]="classForm.createSession"
+            />
+            <span>Crear sesión inicial</span>
+          </label>
+
+          <div class="form-grid" *ngIf="classForm.createSession">
+            <div class="form-group">
+              <label for="sessionDate">Fecha</label>
+              <input
+                id="sessionDate"
+                name="sessionDate"
+                type="date"
+                [(ngModel)]="classForm.sessionDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionInstructor">Instructor</label>
+              <input
+                id="sessionInstructor"
+                name="sessionInstructor"
+                type="text"
+                [(ngModel)]="classForm.instructor"
+                placeholder="Nombre del instructor"
+              />
+            </div>
+          </div>
+
+          <label
+            class="checkbox-row"
+            *ngIf="classModalMode === 'edit' && selectedClass"
+          >
+            <input
+              type="checkbox"
+              name="updateUpcomingSessions"
+              [(ngModel)]="classForm.updateUpcomingSessions"
+            />
+            <span>Actualizar próximas sesiones con este horario e instructor</span>
+          </label>
         </div>
 
         <p class="state-message error" *ngIf="classModalError">

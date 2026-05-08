@@ -227,7 +227,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
     }
 
     if (tabId === 'eventos') {
-      void this.router.navigate(['/panel-admin']);
+      void this.router.navigate(['/eventos']);
       return;
     }
 

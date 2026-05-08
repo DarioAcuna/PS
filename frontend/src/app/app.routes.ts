@@ -7,6 +7,7 @@ import { authGuard, publicGuard } from './core/guards/auth.guard';
 import { Signup } from './features/signup/signup';
 import { MiembrosComponent } from './features/miembros/miembros';
 import { AdminClasesComponent } from './features/admin-class/admin-class';
+import { EventosComponent } from './features/eventos/eventos';
 
 export const routes: Routes = [
   {
@@ -57,6 +58,11 @@ export const routes: Routes = [
   {
     path: 'miembros',
     component: MiembrosComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'eventos',
+    component: EventosComponent,
     canActivate: [authGuard],
   },
   {

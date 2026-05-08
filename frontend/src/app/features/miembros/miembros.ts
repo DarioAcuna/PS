@@ -419,6 +419,11 @@ export class MiembrosComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (tabId === 'eventos') {
+      void this.router.navigate(['/eventos']);
+      return;
+    }
+
     void this.router.navigate(['/panel-admin']);
   }
 

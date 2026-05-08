@@ -8,7 +8,9 @@ import { SesionesService } from '../../services/sesiones/sesiones.service';
 import { SesionDetallada } from '../../services/sesiones/sesiones.models';
 import { AuthService } from '../../services/auth/auth.service';
 import { UsuariosService } from '../../services/usuarios/usuarios.service';
-import { Usuario, UsuarioEstado } from '../../services/usuarios/usuarios.models';
+import { Usuario } from '../../services/usuarios/usuarios.models';
+import { EventosService } from '../../services/eventos/eventos.service';
+import { Evento } from '../../services/eventos/eventos.models';
 
 type DashboardTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -35,6 +37,7 @@ export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly usuariosService = inject(UsuariosService);
+  private readonly eventosService = inject(EventosService);
 
   selectedTab: DashboardTab = 'dashboard';
 
@@ -48,7 +51,7 @@ export class DashboardComponent implements OnInit {
 
   activeMembers = '0';
   weeklyClasses = '0';
-  nextEvent = 'Torneo grappling';
+  nextEvent = 'Sin eventos';
 
   scheduledClasses: DashboardItem[] = [];
   loadingScheduledClasses = false;
@@ -58,14 +61,14 @@ export class DashboardComponent implements OnInit {
   loadingNewMembers = false;
   newMembersError = '';
 
-  upcomingEvents: DashboardItem[] = [
-    { name: 'Seminario BJJ', date: '22 Sep 2026' },
-    { name: 'Open Mat Especial', date: '29 Sep 2026' },
-  ];
+  upcomingEvents: DashboardItem[] = [];
+  loadingUpcomingEvents = false;
+  upcomingEventsError = '';
 
   ngOnInit(): void {
     this.cargarClasesProgramadas();
     this.cargarMiembros();
+    this.cargarEventos();
   }
 
   cargarClasesProgramadas(): void {
@@ -107,102 +110,6 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  private getWeeklyClassesCount(sesiones: SesionDetallada[]): number {
-    const { startOfWeek, endOfWeek } = this.getCurrentWeekRange();
-
-    return sesiones.filter((sesion) => {
-      const sessionDate = this.getSessionDateTime(sesion);
-      return sessionDate >= startOfWeek && sessionDate <= endOfWeek;
-    }).length;
-  }
-
-  private getCurrentWeekRange(): { startOfWeek: Date; endOfWeek: Date } {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + diffToMonday);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    return { startOfWeek, endOfWeek };
-  }
-
-  private isUpcomingSession(sesion: SesionDetallada): boolean {
-    const sessionDateTime = this.getSessionDateTime(sesion);
-    return sessionDateTime.getTime() >= new Date().getTime();
-  }
-
-  private getSessionDateTime(sesion: SesionDetallada): Date {
-    const s = sesion as any;
-
-    const rawDate = s?.date;
-    const rawStartTime = s?.startTime;
-
-    if (!rawDate || !rawStartTime) {
-      return new Date(0);
-    }
-
-    const datePart = String(rawDate).split('T')[0];
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes] = String(rawStartTime).split(':').map(Number);
-
-    return new Date(year, month - 1, day, hours, minutes || 0, 0, 0);
-  }
-
-  private mapSesionToDashboardItem(sesion: SesionDetallada): DashboardItem {
-    const s = sesion as any;
-
-    const className = s?.schedule?.class?.name || s?.schedule?.class?.nombre || 'Clase';
-
-    return {
-      name: className,
-      date: this.buildSesionSubtitle(s),
-    };
-  }
-
-  private buildSesionSubtitle(sesion: any): string {
-    const rawDate = sesion?.date || '';
-    const startTime = sesion?.startTime || '';
-    const endTime = sesion?.endTime || '';
-
-    let formattedDate = '';
-
-    if (rawDate) {
-      const parsedDate = new Date(rawDate);
-
-      if (!isNaN(parsedDate.getTime())) {
-        formattedDate = parsedDate.toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-      }
-    }
-
-    if (formattedDate && startTime && endTime) {
-      return `${formattedDate}, ${startTime} - ${endTime}`;
-    }
-
-    if (formattedDate && startTime) {
-      return `${formattedDate}, ${startTime}`;
-    }
-
-    if (startTime && endTime) {
-      return `${startTime} - ${endTime}`;
-    }
-
-    if (formattedDate) {
-      return formattedDate;
-    }
-
-    return 'Horario no disponible';
-  }
-
   selectTab(tab: string): void {
     this.selectedTab = tab as DashboardTab;
 
@@ -220,7 +127,7 @@ export class DashboardComponent implements OnInit {
         break;
 
       case 'eventos':
-        void this.router.navigate(['/panel-admin']);
+        void this.router.navigate(['/eventos']);
         break;
 
       case 'anuncios':
@@ -296,6 +203,167 @@ export class DashboardComponent implements OnInit {
       });
   }
 
+  private cargarEventos(): void {
+    this.loadingUpcomingEvents = true;
+    this.upcomingEventsError = '';
+    this.cdr.detectChanges();
+
+    this.eventosService
+      .findAll()
+      .pipe(
+        finalize(() => {
+          this.loadingUpcomingEvents = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: (eventos: Evento[]) => {
+          const eventosSeguros = Array.isArray(eventos) ? eventos : [];
+          const today = this.getStartOfToday();
+          const proximosEventos = eventosSeguros
+            .filter((evento) => this.getEventDate(evento).getTime() >= today.getTime())
+            .sort(
+              (a, b) => this.getEventDate(a).getTime() - this.getEventDate(b).getTime(),
+            );
+
+          this.nextEvent = proximosEventos[0]?.name ?? 'Sin eventos';
+          this.upcomingEvents = proximosEventos
+            .slice(0, 5)
+            .map((evento) => this.mapEventoToDashboardItem(evento));
+        },
+        error: (error) => {
+          console.error('Error al cargar eventos:', error);
+          this.nextEvent = 'Sin eventos';
+          this.upcomingEvents = [];
+          this.upcomingEventsError = 'No se pudieron cargar los eventos.';
+        },
+      });
+  }
+
+  private getWeeklyClassesCount(sesiones: SesionDetallada[]): number {
+    const { startOfWeek, endOfWeek } = this.getCurrentWeekRange();
+
+    return sesiones.filter((sesion) => {
+      const sessionDate = this.getSessionDateTime(sesion);
+      return sessionDate >= startOfWeek && sessionDate <= endOfWeek;
+    }).length;
+  }
+
+  private getCurrentWeekRange(): { startOfWeek: Date; endOfWeek: Date } {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return { startOfWeek, endOfWeek };
+  }
+
+  private isUpcomingSession(sesion: SesionDetallada): boolean {
+    const sessionDateTime = this.getSessionDateTime(sesion);
+    return sessionDateTime.getTime() >= new Date().getTime();
+  }
+
+  private getSessionDateTime(sesion: SesionDetallada): Date {
+    const s = sesion as any;
+    const rawDate = s?.date;
+    const rawStartTime = s?.startTime;
+
+    if (!rawDate || !rawStartTime) {
+      return new Date(0);
+    }
+
+    const datePart = String(rawDate).split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = String(rawStartTime).split(':').map(Number);
+
+    return new Date(year, month - 1, day, hours, minutes || 0, 0, 0);
+  }
+
+  private mapSesionToDashboardItem(sesion: SesionDetallada): DashboardItem {
+    const s = sesion as any;
+    const className = s?.schedule?.class?.name || s?.schedule?.class?.nombre || 'Clase';
+
+    return {
+      name: className,
+      date: this.buildSesionSubtitle(s),
+    };
+  }
+
+  private buildSesionSubtitle(sesion: any): string {
+    const rawDate = sesion?.date || '';
+    const startTime = sesion?.startTime || '';
+    const endTime = sesion?.endTime || '';
+    let formattedDate = '';
+
+    if (rawDate) {
+      const parsedDate = new Date(rawDate);
+
+      if (!isNaN(parsedDate.getTime())) {
+        formattedDate = parsedDate.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+      }
+    }
+
+    if (formattedDate && startTime && endTime) {
+      return `${formattedDate}, ${startTime} - ${endTime}`;
+    }
+
+    if (formattedDate && startTime) {
+      return `${formattedDate}, ${startTime}`;
+    }
+
+    if (startTime && endTime) {
+      return `${startTime} - ${endTime}`;
+    }
+
+    return formattedDate || 'Horario no disponible';
+  }
+
+  private mapEventoToDashboardItem(evento: Evento): DashboardItem {
+    return {
+      name: evento.name,
+      date: this.formatEventDate(evento.eventDate),
+    };
+  }
+
+  private getEventDate(evento: Evento): Date {
+    const datePart = String(evento.eventDate ?? '').split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+
+    return new Date(year, month - 1, day, 0, 0, 0, 0);
+  }
+
+  private formatEventDate(value: string): string {
+    const datePart = String(value ?? '').split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+    if (Number.isNaN(date.getTime())) {
+      return 'Fecha no disponible';
+    }
+
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  private getStartOfToday(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  }
+
   private buildMemberSince(createdAt: string): string {
     const createdDate = new Date(createdAt);
 
@@ -312,9 +380,9 @@ export class DashboardComponent implements OnInit {
     }
 
     if (diffDays === 1) {
-      return 'Hace 1 día';
+      return 'Hace 1 dia';
     }
 
-    return `Hace ${diffDays} días`;
+    return `Hace ${diffDays} dias`;
   }
 }

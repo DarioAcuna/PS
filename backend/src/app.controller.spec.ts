@@ -1,22 +1,39 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { PrismaService } from './prisma/prisma.service';
 
 describe('AppController', () => {
   let appController: AppController;
+  const prismaMock = {
+    clase: {
+      count: jest.fn(),
+    },
+  };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        {
+          provide: PrismaService,
+          useValue: prismaMock,
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('health', () => {
+    it('should return health status with total classes', async () => {
+      prismaMock.clase.count.mockResolvedValueOnce(3);
+
+      await expect(appController.health()).resolves.toEqual({
+        ok: true,
+        classes: 3,
+      });
     });
   });
 });

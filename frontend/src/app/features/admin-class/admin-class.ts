@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
+import { Observable, catchError, finalize, forkJoin, of, switchMap, take } from 'rxjs';
 
 import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
@@ -579,7 +579,7 @@ export class AdminClasesComponent implements OnInit {
         break;
 
       case 'eventos':
-        void this.router.navigate(['/panel-admin']);
+        void this.router.navigate(['/eventos']);
         break;
 
       case 'anuncios':
@@ -597,8 +597,17 @@ export class AdminClasesComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    void this.router.navigate(['/login']);
+    this.authService
+      .logout()
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login']);
+        },
+        error: () => {
+          void this.router.navigate(['/login']);
+        },
+      });
   }
 
   onClassDayChange(dayOfWeek: number | string): void {

@@ -91,11 +91,29 @@
         <h2>Próximos eventos</h2>
       </div>
 
-      <div class="content-list">
+      <div class="content-list" *ngIf="loadingUpcomingEvents">
+        <p class="state-message">Cargando eventos...</p>
+      </div>
+
+      <div class="content-list" *ngIf="!loadingUpcomingEvents && upcomingEventsError">
+        <p class="state-message error">{{ upcomingEventsError }}</p>
+      </div>
+
+      <div
+        class="content-list"
+        *ngIf="!loadingUpcomingEvents && !upcomingEventsError && upcomingEvents.length > 0"
+      >
         <article class="content-item" *ngFor="let event of upcomingEvents">
           <h3>{{ event.name }}</h3>
           <p>{{ event.date }}</p>
         </article>
+      </div>
+
+      <div
+        class="content-list"
+        *ngIf="!loadingUpcomingEvents && !upcomingEventsError && upcomingEvents.length === 0"
+      >
+        <p class="state-message">No hay eventos proximos.</p>
       </div>
     </section>
   </main>

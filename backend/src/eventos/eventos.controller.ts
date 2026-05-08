@@ -69,4 +69,3 @@ export class EventosController {
     return this.eventosService.remove(id);
   }
 }
-

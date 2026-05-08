@@ -9,6 +9,7 @@ import { SesionesModule } from './sesiones/sesiones.module';
 import { AnunciosModule } from './anuncios/anuncios.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { EventosModule } from './eventos/eventos.module';
 
 @Module({
   imports: [
@@ -19,18 +20,18 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     ThrottlerModule.forRoot([
       {
         name: 'short',
-        ttl: 1000,  // 1 segundo
-        limit: 3,   // máximo 3 requests por segundo (para burst de requests)
+        ttl: 1000, // 1 segundo
+        limit: 3, // máximo 3 requests por segundo (para burst de requests)
       },
       {
         name: 'medium',
-        ttl: 60000,  // 1 minuto
-        limit: 30,   // máximo 30 requests por minuto
+        ttl: 60000, // 1 minuto
+        limit: 30, // máximo 30 requests por minuto
       },
       {
         name: 'long',
         ttl: 900000, // 15 minutos
-        limit: 100,  // máximo 100 requests por 15 minutos
+        limit: 100, // máximo 100 requests por 15 minutos
       },
     ]),
     PrismaModule,
@@ -40,6 +41,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     SesionesModule,
     AnunciosModule,
     UsuariosModule,
+    EventosModule,
   ],
   controllers: [AppController],
 })

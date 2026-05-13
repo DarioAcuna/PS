@@ -28,7 +28,7 @@
           </div>
 
           <h1>{{ displayName() }}</h1>
-          <span class="belt-pill">{{ beltName() }}</span>
+          <span class="belt-pill" [ngClass]="beltClass()">{{ beltName() }}</span>
         </div>
 
         <div class="metric-grid">
@@ -59,21 +59,23 @@
           </div>
         </article>
 
-        <article class="belt-card">
+        <article class="belt-card" [ngClass]="beltClass()">
           <div class="belt-illustration" aria-hidden="true">
             <span></span>
+            <i
+              *ngFor="let stripe of getDegreeStripes(beltDegree())"
+              [style.left.px]="stripe"
+            ></i>
           </div>
 
           <div class="belt-info">
             <span>Cinturon actual</span>
             <h2>{{ beltName() }}</h2>
 
-            <label for="beltDegree">Grados</label>
-            <select id="beltDegree" [value]="beltDegree()" disabled>
-              <option *ngFor="let degree of [0, 1, 2, 3, 4]" [value]="degree">
-                {{ degree }}
-              </option>
-            </select>
+            <label>Grados</label>
+            <div class="degree-display">
+              {{ beltDegree() }}
+            </div>
           </div>
         </article>
 

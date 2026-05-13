@@ -44,6 +44,11 @@ export class PerfilComponent implements OnInit {
 
   readonly beltName = computed(() => this.user()?.belt?.trim() || 'Sin cinturon');
   readonly beltDegree = computed(() => this.user()?.beltDegree ?? 0);
+  readonly beltClass = computed(() => {
+    const belt = this.normalizeBelt(this.user()?.belt);
+
+    return `belt-${belt}`;
+  });
 
   constructor(
     private readonly authService: AuthService,
@@ -141,6 +146,12 @@ export class PerfilComponent implements OnInit {
     return `${belt} - grado ${degree}`;
   }
 
+  getDegreeStripes(degree: number): number[] {
+    const normalizedDegree = Math.min(Math.max(Number(degree) || 0, 0), 4);
+
+    return Array.from({ length: normalizedDegree }, (_, index) => 58 + index * 7);
+  }
+
   trainingSince(value?: string): string {
     if (!value) {
       return 'No disponible';
@@ -174,5 +185,31 @@ export class PerfilComponent implements OnInit {
       month: 'long',
       year: 'numeric',
     });
+  }
+
+  private normalizeBelt(value?: string | null): string {
+    const belt = String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (belt === 'azul') {
+      return 'blue';
+    }
+
+    if (belt === 'morado') {
+      return 'purple';
+    }
+
+    if (belt === 'marron') {
+      return 'brown';
+    }
+
+    if (belt === 'negro') {
+      return 'black';
+    }
+
+    return 'white';
   }
 }

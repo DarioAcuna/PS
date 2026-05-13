@@ -10,8 +10,8 @@ import {
   CreateAnuncioDto,
   UpdateAnuncioDto,
 } from '../../services/anuncios/anuncios.models';
-import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { RoleFooterComponent } from '../../shared/role-footer/role-footer';
 import { AuthService } from '../../services/auth/auth.service';
 
 type HeaderTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
@@ -24,7 +24,7 @@ interface HeaderNavItem {
 @Component({
   selector: 'app-anuncios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, RoleFooterComponent],
   templateUrl: './anuncios.html',
   styleUrl: './anuncios.css',
 })

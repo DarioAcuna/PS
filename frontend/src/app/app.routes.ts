@@ -8,6 +8,7 @@ import { Signup } from './features/signup/signup';
 import { MiembrosComponent } from './features/miembros/miembros';
 import { AdminClasesComponent } from './features/admin-class/admin-class';
 import { EventosComponent } from './features/eventos/eventos';
+import { PerfilComponent } from './features/perfil/perfil';
 
 export const routes: Routes = [
   {
@@ -37,8 +38,8 @@ export const routes: Routes = [
   },
   {
     path: 'perfil',
-    redirectTo: '/panel-admin',
-    pathMatch: 'full',
+    component: PerfilComponent,
+    canActivate: [authGuard],
   },
   {
     path: 'panel-admin',

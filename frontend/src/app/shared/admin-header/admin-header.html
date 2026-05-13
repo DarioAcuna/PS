@@ -12,6 +12,30 @@
   </nav>
 
   <div class="header-actions">
+    <ng-container *ngIf="canPreviewAsUser">
+      <span class="preview-label" *ngIf="isPreviewingAsUser">
+        Como lo veria el usuario
+      </span>
+
+      <button
+        *ngIf="!isPreviewingAsUser"
+        type="button"
+        class="header-btn"
+        (click)="showUserPreview()"
+      >
+        Vista usuario
+      </button>
+
+      <button
+        *ngIf="isPreviewingAsUser"
+        type="button"
+        class="header-btn"
+        (click)="showAdminPreview()"
+      >
+        Volver vista admin
+      </button>
+    </ng-container>
+
     <button type="button" class="header-btn" (click)="onGoHome()">
       Vista Inicio
     </button>

@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, forkJoin, of, switchMap, take } from 'rxjs';
 
-import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { RoleFooterComponent } from '../../shared/role-footer/role-footer';
 
 import { AuthService } from '../../services/auth/auth.service';
 
@@ -71,7 +71,7 @@ interface ClassView {
 @Component({
   selector: 'app-clases',
   standalone: true,
-  imports: [CommonModule, FormsModule, FooterComponent, AdminHeaderComponent],
+  imports: [CommonModule, FormsModule, RoleFooterComponent, AdminHeaderComponent],
   templateUrl: './admin-class.html',
   styleUrl: './admin-class.css',
 })

@@ -1,9 +1,10 @@
-import { Body, Controller, Post, UseGuards, Response } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseGuards, Response } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Response as ExpressResponse } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -46,6 +47,12 @@ export class AuthController {
   @Throttle({ long: { limit: 3, ttl: 900000 } })
   async register(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async profile(@Request() req: { user: { sub: number } }) {
+    return this.authService.getProfile(req.user.sub);
   }
 
   /**

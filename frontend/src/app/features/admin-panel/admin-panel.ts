@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize, take } from 'rxjs';
-import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { RoleFooterComponent } from '../../shared/role-footer/role-footer';
 import { SesionesService } from '../../services/sesiones/sesiones.service';
 import { SesionDetallada } from '../../services/sesiones/sesiones.models';
 import { AuthService } from '../../services/auth/auth.service';
@@ -27,7 +27,7 @@ interface DashboardItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FooterComponent, AdminHeaderComponent],
+  imports: [CommonModule, RoleFooterComponent, AdminHeaderComponent],
   templateUrl: './admin-panel.html',
   styleUrl: './admin-panel.css',
 })

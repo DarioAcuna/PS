@@ -1,8 +1,14 @@
 export interface User {
   id: number;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   role: string;
+  belt?: string | null;
+  beltDegree?: number | null;
+  status?: string;
+  createdAt?: string;
 }
 
 export interface LoginResponse {

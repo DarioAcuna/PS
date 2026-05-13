@@ -11,8 +11,8 @@ import {
   UpdateEventoDto,
 } from '../../services/eventos/eventos.models';
 import { EventosService } from '../../services/eventos/eventos.service';
-import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { RoleFooterComponent } from '../../shared/role-footer/role-footer';
 
 type HeaderTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -24,7 +24,7 @@ interface HeaderNavItem {
 @Component({
   selector: 'app-eventos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, RoleFooterComponent],
   templateUrl: './eventos.html',
   styleUrl: './eventos.css',
 })

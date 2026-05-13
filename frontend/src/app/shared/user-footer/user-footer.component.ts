@@ -1,21 +1,11 @@
 import { Component } from '@angular/core';
-
-type FooterTab = 'reservas' | 'perfil' | 'pago';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-footer',
+  standalone: true,
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './user-footer.component.html',
   styleUrls: ['./user-footer.component.css'],
 })
-export class FooterComponent {
-  activeTab: FooterTab = 'reservas';
-
-  setActiveTab(tab: FooterTab): void {
-    this.activeTab = tab;
-
-    // Si luego quieres navegar:
-    // this.router.navigate(['/reservas']);
-    // this.router.navigate(['/perfil']);
-    // this.router.navigate(['/pago']);
-  }
-}
+export class FooterComponent {}

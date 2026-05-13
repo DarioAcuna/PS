@@ -10,6 +10,7 @@ import { AnunciosModule } from './anuncios/anuncios.module';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { EventosModule } from './eventos/eventos.module';
+import { ReservasModule } from './reservas/reservas.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { EventosModule } from './eventos/eventos.module';
     AnunciosModule,
     UsuariosModule,
     EventosModule,
+    ReservasModule,
   ],
   controllers: [AppController],
 })

@@ -43,10 +43,26 @@ model Session {
   createdAt    DateTime     @default(now()) @map("created_at")
 
   schedule     Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  reservations Reservation[]
 
   @@unique([scheduleId, date])
   @@unique([date, startTime, endTime, instructor])
   @@map("sessions")
+}
+
+model Reservation {
+  id        Int      @id @default(autoincrement())
+  sessionId Int      @map("session_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@index([userId])
+  @@map("reservations")
 }
 
 model Announcement {
@@ -104,6 +120,7 @@ model User {
   beltDegree Int?       @map("belt_degree")
   status     UserStatus @default(ACTIVO)
   createdAt  DateTime   @default(now()) @map("created_at")
+  reservations Reservation[]
 
   @@map("users")
 }

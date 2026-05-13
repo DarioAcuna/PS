@@ -102,6 +102,31 @@ export class ReservasService {
     });
   }
 
+  async listForSession(sessionId: number) {
+    await this.getSessionWithSchedule(sessionId);
+
+    return this.prisma.reservation.findMany({
+      where: { sessionId },
+      orderBy: [{ createdAt: 'asc' }],
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+            belt: true,
+            beltDegree: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
+
+
   async countForSession(sessionId: number) {
     await this.getSessionWithSchedule(sessionId);
 

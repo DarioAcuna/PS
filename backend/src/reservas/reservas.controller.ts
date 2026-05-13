@@ -80,6 +80,15 @@ export class ReservasController {
   }
 
   /**
+   * Listar participantes de una sesion
+   */
+  @Get('sesion/:sessionId')
+  @UseGuards(JwtAuthGuard)
+  findBySession(@Param('sessionId', ParseIntPipe) sessionId: number) {
+    return this.reservasService.listForSession(sessionId);
+  }
+
+  /**
    * Cancelar reserva del usuario en una sesion
    */
   @Delete('sesion/:sessionId')

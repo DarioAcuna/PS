@@ -9,6 +9,7 @@ import { MiembrosComponent } from './features/miembros/miembros';
 import { AdminClasesComponent } from './features/admin-class/admin-class';
 import { EventosComponent } from './features/eventos/eventos';
 import { PerfilComponent } from './features/perfil/perfil';
+import { HorariosComponent } from './features/horarios/horarios';
 
 export const routes: Routes = [
   {
@@ -33,12 +34,17 @@ export const routes: Routes = [
   },
   {
     path: 'reservas',
-    redirectTo: '/panel-admin',
+    redirectTo: '/horarios',
     pathMatch: 'full',
   },
   {
     path: 'perfil',
     component: PerfilComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'horarios',
+    component: HorariosComponent,
     canActivate: [authGuard],
   },
   {

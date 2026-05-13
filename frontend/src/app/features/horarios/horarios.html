@@ -1,0 +1,121 @@
+<div class="schedule-page">
+  <app-admin-header
+    *ngIf="isAdmin()"
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="schedule-main">
+    <h1>Clases</h1>
+
+    <section class="filters-panel">
+      <label class="filter-field">
+        <span>Clase</span>
+        <select
+          [ngModel]="selectedClass()"
+          (ngModelChange)="selectedClass.set($event)"
+        >
+          <option value="">Todas</option>
+          <option *ngFor="let option of classOptions()" [value]="option">
+            {{ option }}
+          </option>
+        </select>
+      </label>
+
+      <label class="filter-field date-field">
+        <span>Dia</span>
+        <input
+          type="date"
+          [ngModel]="selectedDate()"
+          (ngModelChange)="selectedDate.set($event); loadDay()"
+        />
+      </label>
+    </section>
+
+    <p class="state-message" *ngIf="loading()">Cargando clases...</p>
+    <p class="state-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+    <section class="classes-list" *ngIf="!loading()">
+      <article class="class-card" *ngFor="let session of filteredSessions()">
+        <div class="class-top">
+          <div class="class-avatar" aria-hidden="true">
+            {{ initials(instructorName(session)) }}
+          </div>
+
+          <div class="class-info">
+            <strong>{{ session.startTime }} - {{ session.endTime }}</strong>
+            <h2>{{ className(session) }}</h2>
+            <p *ngIf="classLevel(session)">{{ classLevel(session) }}</p>
+            <p>{{ instructorName(session) }}</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="reserve-btn"
+          [class.cancel]="isReserved(session.id)"
+          [disabled]="actionSessionId() === session.id || (!isReserved(session.id) && freeSlots(session) === 0)"
+          (click)="reserve(session)"
+        >
+          {{
+            actionSessionId() === session.id
+              ? 'Actualizando...'
+              : isReserved(session.id)
+                ? 'Cancelar reserva'
+                : freeSlots(session) === 0
+                  ? 'Sin plazas'
+                  : 'Reservar clase'
+          }}
+        </button>
+
+        <div class="capacity-row">
+          <button type="button" class="participants-btn" (click)="toggleParticipants(session.id)">
+            {{
+              isExpanded(session.id)
+                ? 'Ocultar participantes'
+                : 'Ver participantes'
+            }}
+            ({{ participantCount(session.id) }}/{{ capacity(session) }})
+          </button>
+
+          <span>{{ freeSlots(session) }} libres</span>
+        </div>
+
+        <div class="participants-panel" *ngIf="isExpanded(session.id)">
+          <p class="state-message" *ngIf="loadingParticipants() === session.id">
+            Cargando participantes...
+          </p>
+
+          <ng-container *ngIf="loadingParticipants() !== session.id">
+            <p
+              class="state-message"
+              *ngIf="(participantsBySession()[session.id] || []).length === 0"
+            >
+              No hay participantes todavia.
+            </p>
+
+            <div
+              class="participant-row"
+              *ngFor="let reservation of participantsBySession()[session.id] || []"
+            >
+              <span>{{ initials(participantName(reservation)) }}</span>
+              <div>
+                <strong>{{ participantName(reservation) }}</strong>
+                <small>{{ reservation.user?.belt || 'Sin cinturon' }}</small>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </article>
+
+      <p class="empty-state" *ngIf="filteredSessions().length === 0">
+        No hay clases para ese dia.
+      </p>
+    </section>
+  </main>
+
+  <app-role-footer></app-role-footer>
+</div>

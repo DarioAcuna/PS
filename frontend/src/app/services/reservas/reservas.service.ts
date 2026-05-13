@@ -2,14 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api/api.config';
-import {
-  ConteoReservas,
-  CreateReservaDto,
-  ListarReservasDto,
-  Reserva,
-  ReservaConSesion,
-  ReservaDetalle,
-} from './reservas.models';
+import { Reserva, ReservaContador, ReservaDetallada } from './reservas.models';
 
 @Injectable({ providedIn: 'root' })
 export class ReservasService {
@@ -17,40 +10,12 @@ export class ReservasService {
   private readonly endpoint = `${API_BASE_URL}/reservas`;
   private readonly authOptions = { withCredentials: true };
 
-  create(payload: CreateReservaDto): Observable<Reserva> {
-    return this.http.post<Reserva>(this.endpoint, payload, this.authOptions);
-  }
-
-  findAll(query?: ListarReservasDto): Observable<ReservaDetalle[]> {
-    let params = new HttpParams();
-
-    if (query?.sessionId) {
-      params = params.set('sessionId', query.sessionId.toString());
-    }
-
-    if (query?.userId) {
-      params = params.set('userId', query.userId.toString());
-    }
-
-    return this.http.get<ReservaDetalle[]>(this.endpoint, {
-      ...this.authOptions,
-      params,
-    });
-  }
-
-  findMine(): Observable<ReservaConSesion[]> {
-    return this.http.get<ReservaConSesion[]>(
-      `${this.endpoint}/mis`,
+  create(sessionId: number): Observable<Reserva> {
+    return this.http.post<Reserva>(
+      this.endpoint,
+      { sessionId },
       this.authOptions,
     );
-  }
-
-  count(sessionId: number): Observable<ConteoReservas> {
-    const params = new HttpParams().set('sessionId', sessionId.toString());
-    return this.http.get<ConteoReservas>(`${this.endpoint}/contador`, {
-      ...this.authOptions,
-      params,
-    });
   }
 
   cancel(sessionId: number): Observable<Reserva> {
@@ -60,8 +25,29 @@ export class ReservasService {
     );
   }
 
-  remove(id: number): Observable<Reserva> {
-    return this.http.delete<Reserva>(`${this.endpoint}/${id}`, this.authOptions);
+  findMine(): Observable<ReservaDetallada[]> {
+    return this.http.get<ReservaDetallada[]>(
+      `${this.endpoint}/mis`,
+      this.authOptions,
+    );
+  }
+
+  countForSession(sessionId: number): Observable<ReservaContador> {
+    const params = new HttpParams().set('sessionId', sessionId);
+
+    return this.http.get<ReservaContador>(
+      `${this.endpoint}/contador`,
+      {
+        ...this.authOptions,
+        params,
+      },
+    );
+  }
+
+  findBySession(sessionId: number): Observable<ReservaDetallada[]> {
+    return this.http.get<ReservaDetallada[]>(
+      `${this.endpoint}/sesion/${sessionId}`,
+      this.authOptions,
+    );
   }
 }
-

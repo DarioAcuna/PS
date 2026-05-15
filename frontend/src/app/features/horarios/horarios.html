@@ -46,11 +46,12 @@
           </div>
 
           <div class="class-info">
-            <strong>{{ session.startTime }} - {{ session.endTime }}</strong>
             <h2>{{ className(session) }}</h2>
-            <p *ngIf="classLevel(session)">{{ classLevel(session) }}</p>
-            <p>{{ instructorName(session) }}</p>
+            <strong>{{ session.startTime }} - {{ session.endTime }}</strong>
           </div>
+
+          <p class="instructor-name">{{ instructorName(session) }}</p>
+          <p class="class-level" *ngIf="classLevel(session)">{{ classLevel(session) }}</p>
         </div>
 
         <button
@@ -72,42 +73,9 @@
         </button>
 
         <div class="capacity-row">
-          <button type="button" class="participants-btn" (click)="toggleParticipants(session.id)">
-            {{
-              isExpanded(session.id)
-                ? 'Ocultar participantes'
-                : 'Ver participantes'
-            }}
-            ({{ participantCount(session.id) }}/{{ capacity(session) }})
+          <button type="button" class="participants-btn" (click)="openParticipants(session.id)">
+            Ver participantes ({{ participantCount(session.id) }}/{{ capacity(session) }})
           </button>
-
-          <span>{{ freeSlots(session) }} libres</span>
-        </div>
-
-        <div class="participants-panel" *ngIf="isExpanded(session.id)">
-          <p class="state-message" *ngIf="loadingParticipants() === session.id">
-            Cargando participantes...
-          </p>
-
-          <ng-container *ngIf="loadingParticipants() !== session.id">
-            <p
-              class="state-message"
-              *ngIf="(participantsBySession()[session.id] || []).length === 0"
-            >
-              No hay participantes todavia.
-            </p>
-
-            <div
-              class="participant-row"
-              *ngFor="let reservation of participantsBySession()[session.id] || []"
-            >
-              <span>{{ initials(participantName(reservation)) }}</span>
-              <div>
-                <strong>{{ participantName(reservation) }}</strong>
-                <small>{{ reservation.user?.belt || 'Sin cinturon' }}</small>
-              </div>
-            </div>
-          </ng-container>
         </div>
       </article>
 
@@ -116,6 +84,45 @@
       </p>
     </section>
   </main>
+
+  <div
+    class="participants-modal"
+    *ngIf="participantsModalSessionId() as sessionId"
+    (click)="closeParticipants()"
+  >
+    <div class="participants-modal-card" (click)="$event.stopPropagation()">
+      <header>
+        <h2>Participantes</h2>
+        <button type="button" class="close-btn" (click)="closeParticipants()">Cerrar</button>
+      </header>
+
+      <p class="state-message" *ngIf="loadingParticipants() === sessionId">
+        Cargando participantes...
+      </p>
+
+      <ng-container *ngIf="loadingParticipants() !== sessionId">
+        <p
+          class="state-message"
+          *ngIf="(participantsBySession()[sessionId] || []).length === 0"
+        >
+          No hay participantes todavia.
+        </p>
+
+        <div class="participants-list">
+          <div
+            class="participant-row"
+            *ngFor="let reservation of participantsBySession()[sessionId] || []"
+          >
+            <span>{{ initials(participantName(reservation)) }}</span>
+            <div class="participant-name">
+              <strong>{{ participantName(reservation) }}</strong>
+              <small>{{ reservation.user?.belt || 'Sin cinturon' }}</small>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
 
   <app-role-footer></app-role-footer>
 </div>

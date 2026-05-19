@@ -162,10 +162,6 @@ export class EventosComponent implements OnInit, OnDestroy {
     });
   }
 
-  viewEvent(evento: Evento): void {
-    this.selectedEvent.set(evento);
-  }
-
   clearForm(): void {
     const original = this.originalEvent();
 

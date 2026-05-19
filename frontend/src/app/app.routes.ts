@@ -10,6 +10,7 @@ import { AdminClasesComponent } from './features/admin-class/admin-class';
 import { EventosComponent } from './features/eventos/eventos';
 import { PerfilComponent } from './features/perfil/perfil';
 import { HorariosComponent } from './features/horarios/horarios';
+import { PagoComponent } from './features/pago/pago';
 
 export const routes: Routes = [
   {
@@ -45,6 +46,11 @@ export const routes: Routes = [
   {
     path: 'horarios',
     component: HorariosComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'pago',
+    component: PagoComponent,
     canActivate: [authGuard],
   },
   {

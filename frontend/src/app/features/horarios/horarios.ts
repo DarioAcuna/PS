@@ -40,7 +40,7 @@ export class HorariosComponent implements OnInit {
   readonly myReservationSessionIds = signal<Set<number>>(new Set());
   readonly reservationCounts = signal<Record<number, number>>({});
   readonly participantsBySession = signal<Record<number, ReservaDetallada[]>>({});
-  readonly expandedSessionIds = signal<Set<number>>(new Set());
+  readonly participantsModalSessionId = signal<number | null>(null);
   readonly loading = signal(false);
   readonly loadingParticipants = signal<number | null>(null);
   readonly actionSessionId = signal<number | null>(null);
@@ -85,7 +85,7 @@ export class HorariosComponent implements OnInit {
     this.sessions.set([]);
     this.reservationCounts.set({});
     this.participantsBySession.set({});
-    this.expandedSessionIds.set(new Set());
+    this.participantsModalSessionId.set(null);
 
     forkJoin({
       sessions: this.sesionesService.findAll({ date: this.selectedDate() }),
@@ -150,22 +150,13 @@ export class HorariosComponent implements OnInit {
       });
   }
 
-  toggleParticipants(sessionId: number): void {
-    const expanded = new Set(this.expandedSessionIds());
-
-    if (expanded.has(sessionId)) {
-      expanded.delete(sessionId);
-      this.expandedSessionIds.set(expanded);
-      return;
-    }
-
-    expanded.add(sessionId);
-    this.expandedSessionIds.set(expanded);
+  openParticipants(sessionId: number): void {
+    this.participantsModalSessionId.set(sessionId);
     this.loadParticipants(sessionId);
   }
 
-  isExpanded(sessionId: number): boolean {
-    return this.expandedSessionIds().has(sessionId);
+  closeParticipants(): void {
+    this.participantsModalSessionId.set(null);
   }
 
   isReserved(sessionId: number): boolean {
@@ -304,7 +295,7 @@ export class HorariosComponent implements OnInit {
   }
 
   private refreshParticipantsIfOpen(sessionId: number): void {
-    if (this.isExpanded(sessionId)) {
+    if (this.participantsModalSessionId() === sessionId) {
       this.loadParticipants(sessionId);
     }
   }

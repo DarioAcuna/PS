@@ -14,8 +14,8 @@ import { HorariosComponent } from './features/horarios/horarios';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [authGuard],
-    component: DashboardComponent,
+    redirectTo: '/horarios',
+    pathMatch: 'full',
   },
   {
     path: 'login',
@@ -29,7 +29,7 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    redirectTo: '/panel-admin',
+    redirectTo: '/horarios',
     pathMatch: 'full',
   },
   {

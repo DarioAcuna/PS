@@ -44,7 +44,7 @@ interface ClassForm {
   startTime: string;
   endTime: string;
   maxCapacity: number;
-  instructor: string;
+  instructorId: number | null;
 }
 
 interface ClassView {
@@ -94,17 +94,30 @@ interface GanttTimeSlot {
 }
 
 interface GanttItem {
+  sessionId: number;
+  sessionDateLabel: string;
   dayValue: number;
   startTime: string;
   endTime: string;
   className: string;
   level: string;
   instructor: string;
+  instructorRaw: string;
+  instructorId: number | null;
   maxCapacity: number;
   top: number;
   height: number;
   widthPercent: number;
   leftPercent: number;
+}
+
+interface SessionEditForm {
+  name: string;
+  level: string;
+  maxCapacity: number;
+  startTime: string;
+  endTime: string;
+  instructorId: number | null;
 }
 
 @Component({
@@ -171,6 +184,11 @@ export class AdminClasesComponent implements OnInit {
   classModalMode: 'create' | 'edit' = 'create';
   savingClass = false;
   classModalError = '';
+  sessionEditModalOpen = false;
+  savingSessionEdit = false;
+  sessionEditError = '';
+  editingSessionItem: GanttItem | null = null;
+  sessionEditForm: SessionEditForm = this.getEmptySessionEditForm();
 
   classForm: ClassForm = this.getEmptyClassForm();
 
@@ -302,7 +320,7 @@ export class AdminClasesComponent implements OnInit {
       .map((horario) => this.getHorarioDayValue(horario))
       .filter((day): day is number => day !== null && !Number.isNaN(day));
     const uniqueDays = Array.from(new Set(dayValues));
-    const instructor = gymClass.instructor || '';
+    const instructorId = this.resolveInstructorIdByName(gymClass.instructor || '');
 
     this.classForm = {
       name: gymClass.name || '',
@@ -311,7 +329,7 @@ export class AdminClasesComponent implements OnInit {
       startTime: horarios[0]?.startTime ?? '18:00',
       endTime: horarios[0]?.endTime ?? '19:00',
       maxCapacity: Number(horarios[0]?.maxCapacity ?? 20),
-      instructor,
+      instructorId,
     };
 
     this.cdr.detectChanges();
@@ -340,7 +358,7 @@ export class AdminClasesComponent implements OnInit {
     const level = this.classForm.level.trim();
     const startTime = this.classForm.startTime.trim();
     const endTime = this.classForm.endTime.trim();
-    const instructor = this.classForm.instructor.trim();
+    const instructorId = this.classForm.instructorId;
 
     if (!name) {
       this.classModalError = 'El nombre de la clase es obligatorio.';
@@ -354,7 +372,7 @@ export class AdminClasesComponent implements OnInit {
       return;
     }
 
-    if (!instructor) {
+    if (typeof instructorId !== 'number') {
       this.classModalError = 'El instructor es obligatorio.';
       this.cdr.detectChanges();
       return;
@@ -738,12 +756,15 @@ export class AdminClasesComponent implements OnInit {
   }
 
   private buildCreateSesionPayload(scheduleId: number, date: string): CreateSesionDto {
+    const instructorName = this.getInstructorNameById(this.classForm.instructorId).trim();
     return {
       scheduleId,
       date,
       startTime: this.classForm.startTime.trim(),
       endTime: this.classForm.endTime.trim(),
-      instructor: this.classForm.instructor.trim(),
+      instructor: instructorName || undefined,
+      instructorId: this.classForm.instructorId ?? undefined,
+      maxCapacity: Number(this.classForm.maxCapacity),
     };
   }
 
@@ -760,6 +781,12 @@ export class AdminClasesComponent implements OnInit {
   private getSessionInstructor(sesion: SesionDetallada): string {
     const s = sesion as any;
     return String(s?.instructor ?? '').trim();
+  }
+
+  private getSessionInstructorId(sesion: SesionDetallada): number | null {
+    const s = sesion as any;
+    const parsed = Number(s?.instructorId ?? s?.instructor_id ?? NaN);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   private formatInstructorName(name: string): string {
@@ -802,6 +829,203 @@ export class AdminClasesComponent implements OnInit {
 
   getGanttItemsForDay(dayValue: number): GanttItem[] {
     return this.ganttItemsByDay.get(dayValue) ?? [];
+  }
+
+  openSessionEdit(item: GanttItem): void {
+    this.sessionEditModalOpen = true;
+    this.savingSessionEdit = false;
+    this.sessionEditError = '';
+    this.editingSessionItem = { ...item };
+    this.sessionEditForm = {
+      name: item.className || '',
+      level: item.level || '',
+      maxCapacity: Number(item.maxCapacity ?? 0),
+      startTime: item.startTime,
+      endTime: item.endTime,
+      instructorId: item.instructorId ?? this.resolveInstructorIdByName(item.instructorRaw || ''),
+    };
+    this.cdr.detectChanges();
+  }
+
+  closeSessionEditModal(): void {
+    if (this.savingSessionEdit) {
+      return;
+    }
+
+    this.sessionEditModalOpen = false;
+    this.savingSessionEdit = false;
+    this.sessionEditError = '';
+    this.editingSessionItem = null;
+    this.sessionEditForm = this.getEmptySessionEditForm();
+    this.cdr.detectChanges();
+  }
+
+  saveSessionEdit(): void {
+    this.sessionEditError = '';
+
+    if (!this.editingSessionItem) {
+      this.sessionEditError = 'No hay una sesión seleccionada para editar.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const startTime = this.sessionEditForm.startTime.trim();
+    const endTime = this.sessionEditForm.endTime.trim();
+    const instructorId = this.sessionEditForm.instructorId;
+    const name = this.sessionEditForm.name.trim();
+    const level = this.sessionEditForm.level.trim();
+
+    if (!name) {
+      this.sessionEditError = 'El nombre de la clase es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!level) {
+      this.sessionEditError = 'El nivel de la clase es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!startTime || !endTime) {
+      this.sessionEditError = 'La hora de inicio y fin son obligatorias.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (startTime >= endTime) {
+      this.sessionEditError = 'La hora de inicio debe ser menor que la de fin.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (typeof instructorId !== 'number') {
+      this.sessionEditError = 'El instructor es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const maxCapacity = Number(this.sessionEditForm.maxCapacity);
+    if (!Number.isFinite(maxCapacity) || maxCapacity < 1) {
+      this.sessionEditError = 'La capacidad debe ser mayor que 0.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const instructorName = this.getInstructorNameById(instructorId).trim();
+    if (!instructorName) {
+      this.sessionEditError = 'El instructor seleccionado no es válido.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.savingSessionEdit = true;
+    this.cdr.detectChanges();
+
+    const payload: UpdateSesionDto = {
+      className: name,
+      classLevel: level,
+      startTime,
+      endTime,
+      instructor: instructorName,
+      instructorId,
+      maxCapacity,
+      status: 'MODIFIED',
+    };
+
+    this.sesionesService
+      .update(this.editingSessionItem.sessionId, payload)
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.savingSessionEdit = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.sessionEditModalOpen = false;
+          this.sessionEditError = '';
+          this.editingSessionItem = null;
+          this.sessionEditForm = this.getEmptySessionEditForm();
+          this.loadPageData();
+        },
+        error: (error) => {
+          console.error('Error al actualizar sesión puntual:', error);
+          const backendMessage = Array.isArray(error?.error?.message)
+            ? error.error.message.join(', ')
+            : error?.error?.message;
+          this.sessionEditError = backendMessage || 'No se pudo actualizar la sesión.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  deleteSessionForDay(): void {
+    this.sessionEditError = '';
+
+    if (!this.editingSessionItem) {
+      this.sessionEditError = 'No hay una sesión seleccionada para eliminar.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const confirmed = confirm('¿Seguro que quieres eliminar esta clase solo para este día?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.savingSessionEdit = true;
+    this.cdr.detectChanges();
+
+    this.sesionesService
+      .remove(this.editingSessionItem.sessionId)
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.savingSessionEdit = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.sessionEditModalOpen = false;
+          this.sessionEditError = '';
+          this.editingSessionItem = null;
+          this.sessionEditForm = this.getEmptySessionEditForm();
+          this.loadPageData();
+        },
+        error: (error) => {
+          console.error('Error al eliminar sesión puntual:', error);
+          const backendMessage = Array.isArray(error?.error?.message)
+            ? error.error.message.join(', ')
+            : error?.error?.message;
+          this.sessionEditError = backendMessage || 'No se pudo eliminar la sesión.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  levelTone(level: string): 'basic' | 'intermediate' | 'advanced' | '' {
+    const normalized = String(level ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+
+    if (normalized.includes('avanz')) {
+      return 'advanced';
+    }
+
+    if (normalized.includes('inter')) {
+      return 'intermediate';
+    }
+
+    if (normalized.includes('basic')) {
+      return 'basic';
+    }
+
+    return '';
   }
 
   private buildWeekSchedule(): void {
@@ -928,13 +1152,17 @@ export class AdminClasesComponent implements OnInit {
         const schedule = scheduleById.get(scheduleId);
 
         tempItems.push({
+          sessionId: sesion.id,
+          sessionDateLabel: this.formatSessionDateLabel(this.getSessionDateTime(sesion)),
           dayValue,
           startTime: this.getSessionStartTime(sesion),
           endTime: this.getSessionEndTime(sesion),
           className: this.getSessionClassName(sesion) || 'Clase',
           level: this.getSessionClassLevel(sesion),
           instructor: this.formatInstructorName(this.getSessionInstructor(sesion)),
-          maxCapacity: Number((schedule as any)?.maxCapacity ?? 0),
+          instructorRaw: this.getSessionInstructor(sesion),
+          instructorId: this.getSessionInstructorId(sesion),
+          maxCapacity: Number((sesion as any)?.maxCapacity ?? (schedule as any)?.maxCapacity ?? 0),
           top: edgePadding + (startMinutes - this.ganttStartMinutes) * pixelsPerMinute,
           height: Math.max((endMinutes - startMinutes) * pixelsPerMinute, 16),
           widthPercent: 100,
@@ -989,12 +1217,16 @@ export class AdminClasesComponent implements OnInit {
 
       for (const item of group) {
         normalized.push({
+          sessionId: item.sessionId,
+          sessionDateLabel: item.sessionDateLabel,
           dayValue: item.dayValue,
           startTime: item.startTime,
           endTime: item.endTime,
           className: item.className,
           level: item.level,
           instructor: item.instructor,
+          instructorRaw: item.instructorRaw,
+          instructorId: item.instructorId,
           maxCapacity: item.maxCapacity,
           top: item.top,
           height: item.height,
@@ -1048,7 +1280,18 @@ export class AdminClasesComponent implements OnInit {
       startTime: '18:00',
       endTime: '19:00',
       maxCapacity: 20,
-      instructor: '',
+      instructorId: null,
+    };
+  }
+
+  private getEmptySessionEditForm(): SessionEditForm {
+    return {
+      name: '',
+      level: '',
+      maxCapacity: 0,
+      startTime: '',
+      endTime: '',
+      instructorId: null,
     };
   }
 
@@ -1095,10 +1338,13 @@ export class AdminClasesComponent implements OnInit {
   }
 
   private updateUpcomingSessions(upcomingSessions: SesionDetallada[]): Observable<unknown> {
+    const instructorName = this.getInstructorNameById(this.classForm.instructorId).trim();
     const payload: UpdateSesionDto = {
       startTime: this.classForm.startTime.trim(),
       endTime: this.classForm.endTime.trim(),
-      instructor: this.classForm.instructor.trim(),
+      instructor: instructorName || undefined,
+      instructorId: this.classForm.instructorId ?? undefined,
+      maxCapacity: Number(this.classForm.maxCapacity),
       status: 'MODIFIED',
     };
 
@@ -1191,6 +1437,19 @@ export class AdminClasesComponent implements OnInit {
     const [hours, minutes] = String(rawStartTime).split(':').map(Number);
 
     return new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
+  }
+
+  private formatSessionDateLabel(date: Date): string {
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    return new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
   }
 
   private getHorarioClassId(horario: Horario): number {
@@ -1314,6 +1573,28 @@ export class AdminClasesComponent implements OnInit {
   getUsuarioDisplayName(usuario: Usuario): string {
     const fullName = [usuario.firstName, usuario.lastName].filter(Boolean).join(' ').trim();
     return fullName || usuario.name || usuario.email;
+  }
+
+  private getInstructorNameById(instructorId: number | null): string {
+    if (typeof instructorId !== 'number') {
+      return '';
+    }
+
+    const profesor = this.profesores.find((item) => item.id === instructorId);
+    return profesor ? this.getUsuarioDisplayName(profesor) : '';
+  }
+
+  private resolveInstructorIdByName(name: string): number | null {
+    const target = String(name ?? '').trim();
+    if (!target) {
+      return null;
+    }
+
+    const match = this.profesores.find(
+      (profesor) => this.getUsuarioDisplayName(profesor).trim() === target,
+    );
+
+    return match?.id ?? null;
   }
 
   private sortDays(days: number[]): number[] {

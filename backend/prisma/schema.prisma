@@ -39,6 +39,8 @@ model Session {
   startTime    String        @map("start_time")
   endTime      String        @map("end_time")
   instructor   String?
+  instructorId Int?          @map("instructor_id")
+  maxCapacity  Int?          @map("max_capacity")
   status       SessionStatus @default(SCHEDULED) @map("status")
   className    String        @map("class_name")
   classLevel   String?       @map("class_level")
@@ -48,7 +50,7 @@ model Session {
   reservations Reservation[]
 
   @@unique([scheduleId, date])
-  @@unique([date, startTime, endTime, instructor])
+  @@unique([date, startTime, endTime, instructorId])
   @@map("sessions")
 }
 

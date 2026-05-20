@@ -135,7 +135,8 @@ export class ReservasService {
       where: { sessionId },
     });
 
-    if (currentCount >= session.schedule.maxCapacity) {
+    const sessionCapacity = Number((session as any).maxCapacity ?? session.schedule.maxCapacity);
+    if (currentCount >= sessionCapacity) {
       throw new ConflictException('No hay cupo disponible para esta sesion');
     }
 
@@ -258,4 +259,3 @@ export class ReservasService {
     return this.prisma.reservation.delete({ where: { id: reserva.id } });
   }
 }
-

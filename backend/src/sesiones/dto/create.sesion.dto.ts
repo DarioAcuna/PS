@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsInt,
+  Min,
   IsOptional,
   IsString,
   Matches,
@@ -24,4 +25,15 @@ export class CreateSesionDto {
   @IsOptional()
   @IsString()
   instructor?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  instructorId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  maxCapacity?: number;
 }

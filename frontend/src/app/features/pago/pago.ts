@@ -76,11 +76,18 @@ export class PagoComponent implements OnInit {
 
   ngOnInit(): void {
     const result = this.route.snapshot.queryParamMap.get('resultado');
+    const sessionId = this.route.snapshot.queryParamMap.get('session_id');
+
+    if (result === 'success' && sessionId) {
+      this.resultMessage.set(
+        'Pago de prueba completado. Actualizando tu cuota...',
+      );
+      this.confirmCheckoutSession(sessionId);
+      return;
+    }
 
     if (result === 'success') {
-      this.resultMessage.set(
-        'Pago de prueba completado. En produccion se confirmaria con webhook.',
-      );
+      this.resultMessage.set('Pago de prueba completado.');
     }
 
     if (result === 'cancel') {
@@ -128,6 +135,19 @@ export class PagoComponent implements OnInit {
     this.authService.logout().subscribe({
       next: () => this.router.navigate(['/login']),
       error: () => this.router.navigate(['/login']),
+    });
+  }
+
+  private confirmCheckoutSession(sessionId: string): void {
+    this.pagosService.confirmCheckoutSession({ sessionId }).subscribe({
+      next: ({ planName, monthlyClassLimit }) => {
+        this.resultMessage.set(
+          `Cuota activada: ${planName}. Tienes ${monthlyClassLimit} clases al mes.`,
+        );
+      },
+      error: (error) => {
+        this.errorMessage.set(this.getCheckoutErrorMessage(error));
+      },
     });
   }
 

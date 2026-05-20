@@ -7,3 +7,13 @@ export interface CheckoutSessionRequest {
 export interface CheckoutSessionResponse {
   url: string;
 }
+
+export interface ConfirmCheckoutSessionRequest {
+  sessionId: string;
+}
+
+export interface ConfirmCheckoutSessionResponse {
+  planId: PaymentPlanId;
+  planName: string;
+  monthlyClassLimit: number;
+}

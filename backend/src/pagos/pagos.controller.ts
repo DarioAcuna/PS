@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ConfirmCheckoutSessionDto } from './dto/confirm-checkout-session.dto';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { PagosService } from './pagos.service';
 
@@ -35,6 +36,24 @@ export class PagosController {
     }
 
     return this.pagosService.createCheckoutSession(dto.planId, {
+      id: userId,
+      email: req.user?.email,
+    });
+  }
+
+  @Post('confirm-checkout-session')
+  @UseGuards(JwtAuthGuard)
+  confirmCheckoutSession(
+    @Body() dto: ConfirmCheckoutSessionDto,
+    @Req() req: AuthRequest,
+  ) {
+    const userId = req.user?.sub;
+
+    if (!userId) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
+
+    return this.pagosService.confirmCheckoutSession(dto.sessionId, {
       id: userId,
       email: req.user?.email,
     });

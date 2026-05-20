@@ -9,6 +9,8 @@ import * as bcrypt from 'bcryptjs';
 import { UserRole, UserStatus } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsuarioEstado, UsuarioTipo } from '../usuarios/dto/usuario.enums';
+import { PAYMENT_PLANS } from '../pagos/payment-plans';
+import type { PaymentPlanId } from '../pagos/payment-plans';
 
 @Injectable()
 export class AuthService {
@@ -118,6 +120,9 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -130,6 +135,8 @@ export class AuthService {
         belt: true,
         beltDegree: true,
         status: true,
+        membershipPlan: true,
+        membershipStartedAt: true,
         createdAt: true,
       },
     });
@@ -138,6 +145,29 @@ export class AuthService {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    return user;
+    const plan = user.membershipPlan
+      ? PAYMENT_PLANS[user.membershipPlan as PaymentPlanId]
+      : undefined;
+    const usedClasses = await this.prisma.reservation.count({
+      where: {
+        userId,
+        session: {
+          date: {
+            gte: monthStart,
+            lt: nextMonthStart,
+          },
+        },
+      },
+    });
+
+    return {
+      ...user,
+      membership: {
+        planId: plan?.id ?? null,
+        planName: plan?.name ?? 'Sin cuota',
+        monthlyClassLimit: plan?.monthlyClassLimit ?? 0,
+        usedClasses,
+      },
+    };
   }
 }

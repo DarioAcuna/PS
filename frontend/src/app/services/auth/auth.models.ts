@@ -8,6 +8,14 @@ export interface User {
   belt?: string | null;
   beltDegree?: number | null;
   status?: string;
+  membershipPlan?: string | null;
+  membershipStartedAt?: string | null;
+  membership?: {
+    planId: string | null;
+    planName: string;
+    monthlyClassLimit: number;
+    usedClasses: number;
+  };
   createdAt?: string;
 }
 

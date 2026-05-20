@@ -2,9 +2,11 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
+import { PrismaService } from '../prisma/prisma.service';
 import { PAYMENT_PLANS } from './payment-plans';
 import type { PaymentPlanId } from './payment-plans';
 
@@ -18,7 +20,10 @@ export class PagosService {
   private stripe?: InstanceType<typeof Stripe>;
   private readonly frontendUrl: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:4200';
   }
@@ -68,6 +73,50 @@ export class PagosService {
     });
 
     return { url: session.url };
+  }
+
+  async confirmCheckoutSession(sessionId: string, user: CheckoutUser) {
+    const stripe = this.getStripeClient();
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription'],
+    });
+
+    if (session.client_reference_id !== String(user.id)) {
+      throw new UnauthorizedException('La sesion de pago no pertenece al usuario');
+    }
+
+    const planId = session.metadata?.planId as PaymentPlanId | undefined;
+    const plan = planId ? PAYMENT_PLANS[planId] : undefined;
+
+    if (!plan) {
+      throw new NotFoundException('Cuota no encontrada en la sesion de pago');
+    }
+
+    if (session.payment_status !== 'paid' || session.status !== 'complete') {
+      throw new UnauthorizedException('El pago todavia no esta completado');
+    }
+
+    const subscriptionId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id;
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        membershipPlan: plan.id,
+        membershipStartedAt: new Date(),
+        stripeCustomerId:
+          typeof session.customer === 'string' ? session.customer : session.customer?.id,
+        stripeSubscriptionId: subscriptionId,
+      },
+    });
+
+    return {
+      planId: plan.id,
+      planName: plan.name,
+      monthlyClassLimit: plan.monthlyClassLimit,
+    };
   }
 
   private getStripeClient(): InstanceType<typeof Stripe> {

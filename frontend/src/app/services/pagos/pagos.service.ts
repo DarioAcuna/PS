@@ -5,6 +5,8 @@ import { API_BASE_URL } from '../../core/api/api.config';
 import {
   CheckoutSessionRequest,
   CheckoutSessionResponse,
+  ConfirmCheckoutSessionRequest,
+  ConfirmCheckoutSessionResponse,
 } from './pagos.models';
 
 @Injectable({ providedIn: 'root' })
@@ -17,6 +19,16 @@ export class PagosService {
   ): Observable<CheckoutSessionResponse> {
     return this.http.post<CheckoutSessionResponse>(
       `${this.endpoint}/checkout-session`,
+      payload,
+      { withCredentials: true },
+    );
+  }
+
+  confirmCheckoutSession(
+    payload: ConfirmCheckoutSessionRequest,
+  ): Observable<ConfirmCheckoutSessionResponse> {
+    return this.http.post<ConfirmCheckoutSessionResponse>(
+      `${this.endpoint}/confirm-checkout-session`,
       payload,
       { withCredentials: true },
     );

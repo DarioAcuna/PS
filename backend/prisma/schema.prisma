@@ -123,6 +123,10 @@ model User {
   belt       String?
   beltDegree Int?       @map("belt_degree")
   status     UserStatus @default(ACTIVO)
+  membershipPlan String? @map("membership_plan")
+  membershipStartedAt DateTime? @map("membership_started_at")
+  stripeCustomerId String? @map("stripe_customer_id")
+  stripeSubscriptionId String? @map("stripe_subscription_id")
   createdAt  DateTime   @default(now()) @map("created_at")
   reservations Reservation[]
 

@@ -44,6 +44,21 @@ export class PerfilComponent implements OnInit {
 
   readonly beltName = computed(() => this.user()?.belt?.trim() || 'Sin cinturon');
   readonly beltDegree = computed(() => this.user()?.beltDegree ?? 0);
+  readonly membership = computed(() => this.user()?.membership);
+  readonly planName = computed(() => this.membership()?.planName ?? 'Sin cuota');
+  readonly usedClasses = computed(() => this.membership()?.usedClasses ?? 0);
+  readonly monthlyClassLimit = computed(
+    () => this.membership()?.monthlyClassLimit ?? 0,
+  );
+  readonly attendanceProgress = computed(() => {
+    const limit = this.monthlyClassLimit();
+
+    if (limit <= 0) {
+      return 0;
+    }
+
+    return Math.min((this.usedClasses() / limit) * 100, 100);
+  });
   readonly beltClass = computed(() => {
     const belt = this.normalizeBelt(this.user()?.belt);
 

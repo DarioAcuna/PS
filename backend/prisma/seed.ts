@@ -69,6 +69,8 @@ async function main() {
         endTime: '19:30',
         instructor: 'Álvaro',
         status: SessionStatus.SCHEDULED,
+        className: clase1.name,
+        classLevel: clase1.level ?? null,
       },
       {
         scheduleId: horario2.id,
@@ -77,6 +79,8 @@ async function main() {
         endTime: '21:00',
         instructor: 'Javier',
         status: SessionStatus.SCHEDULED,
+        className: clase2.name,
+        classLevel: clase2.level ?? null,
       },
     ],
   });

@@ -67,7 +67,7 @@ export class HorariosComponent implements OnInit {
   readonly isAdmin = computed(() => this.authService.isAdmin());
   readonly classOptions = computed(() => {
     const names = this.sessions()
-      .map((session) => session.schedule?.class?.name)
+      .map((session) => this.classNameValue(session))
       .filter(Boolean) as string[];
 
     return [...new Set(names)].sort((a, b) => a.localeCompare(b));
@@ -80,7 +80,7 @@ export class HorariosComponent implements OnInit {
         return true;
       }
 
-      return session.schedule?.class?.name === selectedClass;
+      return this.classNameValue(session) === selectedClass;
     });
   });
   readonly visibleScheduleItems = computed<ScheduleDisplayItem[]>(() => {
@@ -254,11 +254,11 @@ export class HorariosComponent implements OnInit {
   }
 
   className(session: SesionDetallada): string {
-    return session.schedule?.class?.name || 'Clase';
+    return this.classNameValue(session) || 'Clase';
   }
 
   classLevel(session: SesionDetallada): string {
-    return session.schedule?.class?.level || '';
+    return session.classLevel ?? session.schedule?.class?.level ?? '';
   }
 
   instructorName(session: SesionDetallada): string {
@@ -416,5 +416,9 @@ export class HorariosComponent implements OnInit {
 
   private getDateKey(value: string): string {
     return String(value ?? '').split('T')[0];
+  }
+
+  private classNameValue(session: SesionDetallada): string {
+    return session.className ?? session.schedule?.class?.name ?? '';
   }
 }

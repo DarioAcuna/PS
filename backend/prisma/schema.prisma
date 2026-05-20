@@ -40,6 +40,8 @@ model Session {
   endTime      String        @map("end_time")
   instructor   String?
   status       SessionStatus @default(SCHEDULED) @map("status")
+  className    String        @map("class_name")
+  classLevel   String?       @map("class_level")
   createdAt    DateTime     @default(now()) @map("created_at")
 
   schedule     Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Restrict)

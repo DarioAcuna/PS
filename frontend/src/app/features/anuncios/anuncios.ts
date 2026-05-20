@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { AnunciosService } from '../../services/anuncios/anuncios.service';
@@ -30,6 +30,11 @@ interface HeaderNavItem {
 })
 export class AnunciosComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
+  private readonly dateFormatter = new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 
   readonly anuncios = signal<Anuncio[]>([]);
   readonly isLoading = signal(false);
@@ -38,6 +43,24 @@ export class AnunciosComponent implements OnInit, OnDestroy {
   readonly successMessage = signal('');
   readonly editingId = signal<number | null>(null);
   readonly originalAnuncio = signal<Anuncio | null>(null);
+  readonly isPreviewingAsUser = signal(false);
+  readonly isAdminUser = computed(() => this.authService.isAdmin());
+  readonly showAdminManagement = computed(() => this.isAdminUser() && !this.isPreviewingAsUser());
+  readonly orderedAnuncios = computed(() =>
+    [...this.anuncios()].sort(
+      (left, right) => new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime(),
+    ),
+  );
+  readonly visibleAnuncios = computed(() => {
+    const anuncios = this.orderedAnuncios();
+
+    if (this.showAdminManagement()) {
+      return anuncios;
+    }
+
+    return anuncios.filter((anuncio) => anuncio.isActive);
+  });
+  readonly latestVisibleAnuncio = computed(() => this.visibleAnuncios()[0] ?? null);
   readonly activeCount = computed(() => this.anuncios().filter((anuncio) => anuncio.isActive).length);
   readonly inactiveCount = computed(() => this.anuncios().length - this.activeCount());
   readonly selectedTab: HeaderTab = 'anuncios';
@@ -55,6 +78,7 @@ export class AnunciosComponent implements OnInit, OnDestroy {
     private readonly anunciosService: AnunciosService,
     private readonly authService: AuthService,
     private readonly formBuilder: FormBuilder,
+    private readonly route: ActivatedRoute,
     private readonly router: Router,
   ) {
     this.anuncioForm = this.formBuilder.nonNullable.group({
@@ -66,6 +90,9 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.isSaving.set(false);
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      this.isPreviewingAsUser.set(params.get('vista') === 'usuario');
+    });
     this.loadAnuncios();
   }
 
@@ -199,6 +226,26 @@ export class AnunciosComponent implements OnInit, OnDestroy {
 
   trackById(_: number, anuncio: Anuncio): number {
     return anuncio.id;
+  }
+
+  formatPublishedAt(value: string): string {
+    const publishedDate = new Date(value);
+
+    if (Number.isNaN(publishedDate.getTime())) {
+      return value;
+    }
+
+    return this.dateFormatter.format(publishedDate);
+  }
+
+  publicStats(): { count: number; latestTitle: string; latestDate: string } {
+    const latest = this.latestVisibleAnuncio();
+
+    return {
+      count: this.visibleAnuncios().length,
+      latestTitle: latest?.title ?? 'Sin anuncios publicados',
+      latestDate: latest ? this.formatPublishedAt(latest.publishedAt) : 'Sin fecha',
+    };
   }
 
   goToHome(): void {

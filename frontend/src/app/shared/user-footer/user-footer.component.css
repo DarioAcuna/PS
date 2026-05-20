@@ -13,10 +13,10 @@
 }
 
 .footer-inner {
-  width: min(100%, 390px);
+  width: min(100%, 480px);
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
 }
 

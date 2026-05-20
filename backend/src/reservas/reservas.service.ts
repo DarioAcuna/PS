@@ -23,8 +23,21 @@ export class ReservasService {
     return session;
   }
 
+  private hasSessionStarted(session: { date: Date; startTime: string }): boolean {
+    const date = session.date.toISOString().slice(0, 10);
+    const startAt = new Date(`${date}T${session.startTime}:00`);
+
+    return startAt <= new Date();
+  }
+
   async create(sessionId: number, userId: number) {
     const session = await this.getSessionWithSchedule(sessionId);
+
+    if (this.hasSessionStarted(session)) {
+      throw new ConflictException(
+        'No puedes reservar una clase que ya ha empezado o ya ha pasado',
+      );
+    }
 
     const existing = await this.prisma.reservation.findUnique({
       where: { sessionId_userId: { sessionId, userId } },

@@ -171,6 +171,13 @@ export class HorariosComponent implements OnInit {
     return Math.max(this.capacity(session) - this.participantCount(session.id), 0);
   }
 
+  hasSessionStarted(session: SesionDetallada): boolean {
+    const date = session.date.slice(0, 10);
+    const startAt = new Date(`${date}T${session.startTime}:00`);
+
+    return startAt <= new Date();
+  }
+
   capacity(session: SesionDetallada): number {
     return Number(session.schedule?.maxCapacity ?? 0);
   }

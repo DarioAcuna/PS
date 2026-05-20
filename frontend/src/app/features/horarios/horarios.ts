@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { forkJoin, of, take } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { AuthService } from '../../services/auth/auth.service';
+import { Evento } from '../../services/eventos/eventos.models';
+import { EventosService } from '../../services/eventos/eventos.service';
 import { ReservasService } from '../../services/reservas/reservas.service';
 import { ReservaDetallada } from '../../services/reservas/reservas.models';
 import { SesionesService } from '../../services/sesiones/sesiones.service';
@@ -17,6 +19,19 @@ type HeaderTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 interface HeaderNavItem {
   id: HeaderTab;
   label: string;
+}
+
+interface ScheduleDisplayItem {
+  id: string;
+  type: 'class' | 'event';
+  startTime: string;
+  endTime?: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  capacity: number;
+  session?: SesionDetallada;
+  event?: Evento;
 }
 
 @Component({
@@ -37,6 +52,7 @@ export class HorariosComponent implements OnInit {
   ];
 
   readonly sessions = signal<SesionDetallada[]>([]);
+  readonly events = signal<Evento[]>([]);
   readonly myReservationSessionIds = signal<Set<number>>(new Set());
   readonly reservationCounts = signal<Record<number, number>>({});
   readonly participantsBySession = signal<Record<number, ReservaDetallada[]>>({});
@@ -67,11 +83,62 @@ export class HorariosComponent implements OnInit {
       return session.schedule?.class?.name === selectedClass;
     });
   });
+  readonly visibleScheduleItems = computed<ScheduleDisplayItem[]>(() => {
+    const sessions = this.filteredSessions();
+    const events = this.getEventsForSelectedDate();
+    const replacementEvents = new Map<number, Evento>();
+    const items: ScheduleDisplayItem[] = [];
+
+    for (const session of sessions) {
+      const replacementEvent = events.find((event) =>
+        this.timeRangesOverlap(
+          session.startTime,
+          session.endTime,
+          event.startTime,
+          event.endTime,
+        ),
+      );
+
+      if (replacementEvent) {
+        replacementEvents.set(replacementEvent.id, replacementEvent);
+        continue;
+      }
+
+      items.push({
+        id: `class-${session.id}`,
+        type: 'class',
+        startTime: session.startTime,
+        endTime: session.endTime,
+        title: this.className(session),
+        subtitle: this.instructorName(session),
+        description: this.classLevel(session),
+        capacity: this.capacity(session),
+        session,
+      });
+    }
+
+    for (const event of replacementEvents.values()) {
+      items.push({
+        id: `event-${event.id}`,
+        type: 'event',
+        startTime: event.startTime,
+        endTime: event.endTime,
+        title: event.name,
+        subtitle: 'Evento',
+        description: event.description,
+        capacity: event.capacity,
+        event,
+      });
+    }
+
+    return items.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  });
 
   constructor(
     private readonly authService: AuthService,
     private readonly sesionesService: SesionesService,
     private readonly reservasService: ReservasService,
+    private readonly eventosService: EventosService,
     private readonly router: Router,
   ) {}
 
@@ -83,12 +150,14 @@ export class HorariosComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set('');
     this.sessions.set([]);
+    this.events.set([]);
     this.reservationCounts.set({});
     this.participantsBySession.set({});
     this.participantsModalSessionId.set(null);
 
     forkJoin({
       sessions: this.sesionesService.findAll({ date: this.selectedDate() }),
+      events: this.eventosService.findAll(),
       mine: this.reservasService.findMine().pipe(catchError(() => of([] as ReservaDetallada[]))),
     })
       .pipe(
@@ -98,8 +167,9 @@ export class HorariosComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: ({ sessions, mine }) => {
+        next: ({ sessions, events, mine }) => {
           const safeSessions = Array.isArray(sessions) ? sessions : [];
+          const safeEvents = Array.isArray(events) ? events : [];
           const myIds = new Set(
             mine
               .map((reservation) => reservation.sessionId ?? reservation.session?.id)
@@ -107,6 +177,7 @@ export class HorariosComponent implements OnInit {
           );
 
           this.sessions.set(safeSessions);
+          this.events.set(safeEvents);
           this.myReservationSessionIds.set(myIds);
           this.loadCounts(safeSessions);
         },
@@ -326,5 +397,24 @@ export class HorariosComponent implements OnInit {
     const day = String(now.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
+  }
+
+  private getEventsForSelectedDate(): Evento[] {
+    return this.events().filter(
+      (event) => this.getDateKey(event.eventDate) === this.selectedDate(),
+    );
+  }
+
+  private timeRangesOverlap(
+    startA: string,
+    endA: string,
+    startB: string,
+    endB: string,
+  ): boolean {
+    return startA < endB && startB < endA;
+  }
+
+  private getDateKey(value: string): string {
+    return String(value ?? '').split('T')[0];
   }
 }

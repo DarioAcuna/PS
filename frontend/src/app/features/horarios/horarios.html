@@ -39,22 +39,29 @@
     <p class="state-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
     <section class="classes-list" *ngIf="!loading()">
-      <article class="class-card" *ngFor="let session of filteredSessions()">
+      <article
+        class="class-card"
+        [class.event-card]="item.type === 'event'"
+        *ngFor="let item of visibleScheduleItems()"
+      >
         <div class="class-top">
           <div class="class-avatar" aria-hidden="true">
-            {{ initials(instructorName(session)) }}
+            {{ initials(item.subtitle) }}
           </div>
 
           <div class="class-info">
-            <h2>{{ className(session) }}</h2>
-            <strong>{{ session.startTime }} - {{ session.endTime }}</strong>
+            <h2>{{ item.title }}</h2>
+            <strong>
+              {{ item.startTime }}{{ item.endTime ? ' - ' + item.endTime : '' }}
+            </strong>
           </div>
 
-          <p class="instructor-name">{{ instructorName(session) }}</p>
-          <p class="class-level" *ngIf="classLevel(session)">{{ classLevel(session) }}</p>
+          <p class="instructor-name">{{ item.subtitle }}</p>
+          <p class="class-level" *ngIf="item.description">{{ item.description }}</p>
         </div>
 
         <button
+          *ngIf="item.session as session"
           type="button"
           class="reserve-btn"
           [class.cancel]="isReserved(session.id)"
@@ -77,14 +84,18 @@
           }}
         </button>
 
-        <div class="capacity-row">
+        <div class="capacity-row" *ngIf="item.session as session">
           <button type="button" class="participants-btn" (click)="openParticipants(session.id)">
             Ver participantes ({{ participantCount(session.id) }}/{{ capacity(session) }})
           </button>
         </div>
+
+        <div class="capacity-row" *ngIf="item.type === 'event'">
+          <span>Capacidad {{ item.capacity }}</span>
+        </div>
       </article>
 
-      <p class="empty-state" *ngIf="filteredSessions().length === 0">
+      <p class="empty-state" *ngIf="visibleScheduleItems().length === 0">
         No hay clases para ese dia.
       </p>
     </section>

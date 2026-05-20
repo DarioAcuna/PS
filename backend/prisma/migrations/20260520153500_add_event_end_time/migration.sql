@@ -1,0 +1,2 @@
+ALTER TABLE "events"
+ADD COLUMN "end_time" TEXT NOT NULL DEFAULT '23:59';

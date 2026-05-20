@@ -92,6 +92,20 @@ h1 {
   text-align: center;
 }
 
+.event-card {
+  border-color: #111111;
+}
+
+.event-card .class-avatar {
+  background: #111111;
+  color: #ffffff;
+}
+
+.event-card .class-level {
+  line-height: 1.25;
+  text-transform: none;
+}
+
 .class-top {
   display: grid;
   grid-template-columns: 90px 1fr;

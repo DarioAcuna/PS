@@ -16,6 +16,18 @@ export class EventosService {
     return clean?.length ? clean : undefined;
   }
 
+  private normalizarHora(value?: string) {
+    return value?.trim() || '00:00';
+  }
+
+  private validarRangoHorario(startTime: string, endTime: string) {
+    if (startTime >= endTime) {
+      throw new BadRequestException(
+        'La hora de inicio debe ser menor que la hora final',
+      );
+    }
+  }
+
   private buildEventDate(day: number, month: number, year: number) {
     const date = new Date(Date.UTC(year, month - 1, day));
     const isValid =
@@ -43,6 +55,10 @@ export class EventosService {
     }
 
     const eventDate = this.buildEventDate(dto.day, dto.month, dto.year);
+    const startTime = this.normalizarHora(dto.startTime);
+    const endTime = this.normalizarHora(dto.endTime || '23:59');
+
+    this.validarRangoHorario(startTime, endTime);
 
     if (dto.capacity < 1) {
       throw new BadRequestException('La capacidad debe ser mayor que cero');
@@ -53,6 +69,8 @@ export class EventosService {
         name,
         description,
         eventDate,
+        startTime,
+        endTime,
         capacity: dto.capacity,
       },
     });
@@ -104,6 +122,12 @@ export class EventosService {
     }
 
     const capacity = dto.capacity ?? actual.capacity;
+    const startTime = dto.startTime
+      ? this.normalizarHora(dto.startTime)
+      : actual.startTime;
+    const endTime = dto.endTime ? this.normalizarHora(dto.endTime) : actual.endTime;
+
+    this.validarRangoHorario(startTime, endTime);
 
     if (capacity < 1) {
       throw new BadRequestException('La capacidad debe ser mayor que cero');
@@ -115,6 +139,8 @@ export class EventosService {
         name,
         description,
         eventDate,
+        startTime,
+        endTime,
         capacity,
       },
     });

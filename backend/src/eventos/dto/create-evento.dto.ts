@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, Matches, Max, Min } from 'class-validator';
 
 export class CreateEventoDto {
   @IsString()
@@ -27,4 +27,10 @@ export class CreateEventoDto {
   @IsInt()
   @Min(1)
   capacity: number;
+
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
+  startTime: string;
+
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
+  endTime: string;
 }

@@ -4,6 +4,8 @@ export interface Evento {
   description: string;
   capacity: number;
   eventDate: string;
+  startTime: string;
+  endTime: string;
   createdAt: string;
 }
 
@@ -13,6 +15,8 @@ export interface CreateEventoDto {
   day: number;
   month: number;
   year: number;
+  startTime: string;
+  endTime: string;
   capacity: number;
 }
 
@@ -22,6 +26,8 @@ export interface UpdateEventoDto {
   day?: number;
   month?: number;
   year?: number;
+  startTime?: string;
+  endTime?: string;
   capacity?: number;
 }
 

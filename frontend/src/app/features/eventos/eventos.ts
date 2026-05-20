@@ -75,6 +75,8 @@ export class EventosComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required, Validators.maxLength(120)]],
       description: ['', [Validators.required, Validators.maxLength(2000)]],
       eventDate: [this.getTodayInputDate(), [Validators.required]],
+      startTime: ['18:00', [Validators.required]],
+      endTime: ['19:00', [Validators.required]],
       capacity: [20, [Validators.required, Validators.min(1)]],
     });
   }
@@ -144,6 +146,8 @@ export class EventosComponent implements OnInit, OnDestroy {
       name: '',
       description: '',
       eventDate: this.getTodayInputDate(),
+      startTime: '18:00',
+      endTime: '19:00',
       capacity: 20,
     });
   }
@@ -158,6 +162,8 @@ export class EventosComponent implements OnInit, OnDestroy {
       name: evento.name,
       description: evento.description,
       eventDate: this.toInputDate(evento.eventDate),
+      startTime: evento.startTime,
+      endTime: evento.endTime,
       capacity: evento.capacity,
     });
   }
@@ -170,6 +176,8 @@ export class EventosComponent implements OnInit, OnDestroy {
         name: original.name,
         description: original.description,
         eventDate: this.toInputDate(original.eventDate),
+        startTime: original.startTime,
+        endTime: original.endTime,
         capacity: original.capacity,
       });
       this.errorMessage.set('');
@@ -340,6 +348,8 @@ export class EventosComponent implements OnInit, OnDestroy {
     const name = raw.name.trim();
     const description = raw.description.trim();
     const [year, month, day] = raw.eventDate.split('-').map(Number);
+    const startTime = raw.startTime.trim();
+    const endTime = raw.endTime.trim();
     const capacity = Number(raw.capacity);
 
     if (!name || !description) {
@@ -349,6 +359,21 @@ export class EventosComponent implements OnInit, OnDestroy {
 
     if (!year || !month || !day) {
       this.errorMessage.set('La fecha del evento no es valida.');
+      return null;
+    }
+
+    if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(startTime)) {
+      this.errorMessage.set('La hora del evento no es valida.');
+      return null;
+    }
+
+    if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(endTime)) {
+      this.errorMessage.set('La hora final del evento no es valida.');
+      return null;
+    }
+
+    if (startTime >= endTime) {
+      this.errorMessage.set('La hora de inicio debe ser menor que la hora final.');
       return null;
     }
 
@@ -363,6 +388,8 @@ export class EventosComponent implements OnInit, OnDestroy {
       day,
       month,
       year,
+      startTime,
+      endTime,
       capacity,
     };
   }

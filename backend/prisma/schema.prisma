@@ -81,6 +81,8 @@ model Event {
   description String
   capacity    Int
   eventDate   DateTime @map("event_date")
+  startTime   String   @default("00:00") @map("start_time")
+  endTime     String   @default("23:59") @map("end_time")
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("events")

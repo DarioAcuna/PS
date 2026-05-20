@@ -48,6 +48,16 @@
           </div>
 
           <div class="form-field">
+            <label for="eventStartTime">Hora inicio</label>
+            <input id="eventStartTime" type="time" formControlName="startTime" />
+          </div>
+
+          <div class="form-field">
+            <label for="eventEndTime">Hora final</label>
+            <input id="eventEndTime" type="time" formControlName="endTime" />
+          </div>
+
+          <div class="form-field">
             <label for="eventCapacity">Capacidad</label>
             <input id="eventCapacity" type="number" min="1" step="1" formControlName="capacity" />
           </div>
@@ -84,6 +94,7 @@
         <p>{{ event.description }}</p>
         <div class="detail-meta">
           <span>{{ formatDate(event.eventDate) }}</span>
+          <span>{{ event.startTime }} - {{ event.endTime }}</span>
           <span>Capacidad: {{ event.capacity }}</span>
         </div>
       </article>
@@ -104,7 +115,7 @@
           <div class="item-row">
             <div>
               <h3>{{ event.name }}</h3>
-              <p>{{ formatDate(event.eventDate) }}</p>
+              <p>{{ formatDate(event.eventDate) }} - {{ event.startTime }} a {{ event.endTime }}</p>
             </div>
 
             <span class="state-pill">Capacidad {{ event.capacity }}</span>

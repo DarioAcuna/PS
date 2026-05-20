@@ -24,6 +24,32 @@ interface DashboardItem {
   date: string;
 }
 
+interface WeekDaySchedule {
+  dayValue: number;
+  label: string;
+  date: Date;
+  dateLabel: string;
+}
+
+interface GanttTimeSlot {
+  label: string;
+  minutes: number;
+  top: number;
+}
+
+interface GanttItem {
+  dayValue: number;
+  startTime: string;
+  endTime: string;
+  className: string;
+  level: string;
+  instructor: string;
+  top: number;
+  height: number;
+  widthPercent: number;
+  leftPercent: number;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -53,9 +79,28 @@ export class DashboardComponent implements OnInit {
   weeklyClasses = '0';
   nextEvent = 'Sin eventos';
 
-  scheduledClasses: DashboardItem[] = [];
   loadingScheduledClasses = false;
   scheduledClassesError = '';
+
+  readonly weekDays = [
+    { value: 1, label: 'Lunes' },
+    { value: 2, label: 'Martes' },
+    { value: 3, label: 'Miercoles' },
+    { value: 4, label: 'Jueves' },
+    { value: 5, label: 'Viernes' },
+    { value: 6, label: 'Sabado' },
+    { value: 0, label: 'Domingo' },
+  ];
+  weekScheduleDays: WeekDaySchedule[] = [];
+  ganttTimeSlots: GanttTimeSlot[] = [];
+  ganttTotalHeight = 0;
+  weekScheduleMonthLabel = '';
+  weekScheduleRangeLabel = '';
+  private ganttItemsByDay = new Map<number, GanttItem[]>();
+  private ganttStartMinutes = 8 * 60;
+  private ganttEndMinutes = 20 * 60;
+  private scheduleWeekOffset = 0;
+  private allSessions: SesionDetallada[] = [];
 
   newMembers: DashboardItem[] = [];
   loadingNewMembers = false;
@@ -87,23 +132,18 @@ export class DashboardComponent implements OnInit {
       .subscribe({
         next: (sesiones: SesionDetallada[]) => {
           const sesionesSeguras = Array.isArray(sesiones) ? sesiones : [];
+          this.allSessions = sesionesSeguras;
 
           this.weeklyClasses = this.getWeeklyClassesCount(sesionesSeguras).toString();
-
-          this.scheduledClasses = sesionesSeguras
-            .filter((sesion) => this.isUpcomingSession(sesion))
-            .sort(
-              (a, b) => this.getSessionDateTime(a).getTime() - this.getSessionDateTime(b).getTime(),
-            )
-            .map((sesion) => this.mapSesionToDashboardItem(sesion))
-            .slice(0, 5);
+          this.buildWeekSchedule();
 
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Error al cargar sesiones:', error);
           this.scheduledClassesError = 'No se pudieron cargar las clases programadas.';
-          this.scheduledClasses = [];
+          this.allSessions = [];
+          this.buildWeekSchedule();
           this.weeklyClasses = '0';
           this.cdr.detectChanges();
         },
@@ -265,11 +305,6 @@ export class DashboardComponent implements OnInit {
     return { startOfWeek, endOfWeek };
   }
 
-  private isUpcomingSession(sesion: SesionDetallada): boolean {
-    const sessionDateTime = this.getSessionDateTime(sesion);
-    return sessionDateTime.getTime() >= new Date().getTime();
-  }
-
   private getSessionDateTime(sesion: SesionDetallada): Date {
     const s = sesion as any;
     const rawDate = s?.date;
@@ -284,50 +319,6 @@ export class DashboardComponent implements OnInit {
     const [hours, minutes] = String(rawStartTime).split(':').map(Number);
 
     return new Date(year, month - 1, day, hours, minutes || 0, 0, 0);
-  }
-
-  private mapSesionToDashboardItem(sesion: SesionDetallada): DashboardItem {
-    const s = sesion as any;
-    const className =
-      s?.className || s?.schedule?.class?.name || s?.schedule?.class?.nombre || 'Clase';
-
-    return {
-      name: className,
-      date: this.buildSesionSubtitle(s),
-    };
-  }
-
-  private buildSesionSubtitle(sesion: any): string {
-    const rawDate = sesion?.date || '';
-    const startTime = sesion?.startTime || '';
-    const endTime = sesion?.endTime || '';
-    let formattedDate = '';
-
-    if (rawDate) {
-      const parsedDate = new Date(rawDate);
-
-      if (!isNaN(parsedDate.getTime())) {
-        formattedDate = parsedDate.toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-      }
-    }
-
-    if (formattedDate && startTime && endTime) {
-      return `${formattedDate}, ${startTime} - ${endTime}`;
-    }
-
-    if (formattedDate && startTime) {
-      return `${formattedDate}, ${startTime}`;
-    }
-
-    if (startTime && endTime) {
-      return `${startTime} - ${endTime}`;
-    }
-
-    return formattedDate || 'Horario no disponible';
   }
 
   private mapEventoToDashboardItem(evento: Evento): DashboardItem {
@@ -385,5 +376,263 @@ export class DashboardComponent implements OnInit {
     }
 
     return `Hace ${diffDays} dias`;
+  }
+
+  getGanttItemsForDay(dayValue: number): GanttItem[] {
+    return this.ganttItemsByDay.get(dayValue) ?? [];
+  }
+
+  previousWeek(): void {
+    this.scheduleWeekOffset -= 1;
+    this.buildWeekSchedule();
+    this.cdr.detectChanges();
+  }
+
+  nextWeek(): void {
+    this.scheduleWeekOffset += 1;
+    this.buildWeekSchedule();
+    this.cdr.detectChanges();
+  }
+
+  private buildWeekSchedule(): void {
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + this.scheduleWeekOffset * 7);
+    const weekStart = this.getStartOfWeek(baseDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    this.weekScheduleMonthLabel = this.formatMonthYear(weekStart);
+    this.weekScheduleRangeLabel = this.formatWeekRange(weekStart, weekEnd);
+
+    this.weekScheduleDays = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + index);
+      const dayValue = date.getDay();
+      const label = this.weekDays.find((day) => day.value === dayValue)?.label ?? '';
+
+      return {
+        dayValue,
+        label,
+        date,
+        dateLabel: String(date.getDate()).padStart(2, '0'),
+      };
+    });
+
+    const weekSessions = this.allSessions.filter((sesion) => {
+      const sessionDate = this.getSessionDateTime(sesion);
+      return sessionDate.getTime() >= weekStart.getTime() && sessionDate.getTime() <= weekEnd.getTime();
+    });
+
+    this.buildGanttLayout(weekSessions);
+  }
+
+  private buildGanttLayout(weekSessions: SesionDetallada[]): void {
+    const pixelsPerMinute = 2;
+    const edgePadding = 12;
+    let minStart = Number.POSITIVE_INFINITY;
+    let maxEnd = Number.NEGATIVE_INFINITY;
+    const sessionsByDay = new Map<number, SesionDetallada[]>();
+
+    for (const sesion of weekSessions) {
+      const sessionDate = this.getSessionDateTime(sesion);
+      const dayValue = sessionDate.getDay();
+      const startMinutes = this.timeToMinutes(this.getSessionStartTime(sesion));
+      const endMinutes = this.timeToMinutes(this.getSessionEndTime(sesion));
+
+      if (!Number.isNaN(startMinutes) && !Number.isNaN(endMinutes)) {
+        minStart = Math.min(minStart, startMinutes);
+        maxEnd = Math.max(maxEnd, endMinutes);
+      }
+
+      const list = sessionsByDay.get(dayValue) ?? [];
+      list.push(sesion);
+      sessionsByDay.set(dayValue, list);
+    }
+
+    if (!Number.isFinite(minStart) || !Number.isFinite(maxEnd)) {
+      this.ganttStartMinutes = 0;
+      this.ganttEndMinutes = 0;
+      this.ganttTotalHeight = 0;
+      this.ganttTimeSlots = [];
+      this.ganttItemsByDay = new Map<number, GanttItem[]>();
+      return;
+    }
+
+    this.ganttStartMinutes = Math.floor(minStart / 60) * 60;
+    this.ganttEndMinutes = Math.ceil(maxEnd / 60) * 60;
+    if (this.ganttEndMinutes <= this.ganttStartMinutes) {
+      this.ganttEndMinutes = this.ganttStartMinutes + 60;
+    }
+
+    this.ganttTotalHeight =
+      (this.ganttEndMinutes - this.ganttStartMinutes) * pixelsPerMinute + edgePadding * 2;
+    this.ganttTimeSlots = [];
+
+    for (let minutes = this.ganttStartMinutes; minutes <= this.ganttEndMinutes; minutes += 60) {
+      const hours = Math.floor(minutes / 60);
+      const mins = String(minutes % 60).padStart(2, '0');
+      this.ganttTimeSlots.push({
+        label: `${String(hours).padStart(2, '0')}:${mins}`,
+        minutes,
+        top: edgePadding + (minutes - this.ganttStartMinutes) * pixelsPerMinute,
+      });
+    }
+
+    this.ganttItemsByDay = new Map<number, GanttItem[]>();
+
+    for (const [dayValue, daySessions] of sessionsByDay.entries()) {
+      const sorted = [...daySessions].sort(
+        (a, b) => this.timeToMinutes(this.getSessionStartTime(a)) - this.timeToMinutes(this.getSessionStartTime(b)),
+      );
+
+      const laneEnds: number[] = [];
+      const tempItems: Array<GanttItem & { laneIndex: number; startMinutes: number; endMinutes: number }> = [];
+
+      for (const sesion of sorted) {
+        const startMinutes = this.timeToMinutes(this.getSessionStartTime(sesion));
+        const endMinutes = this.timeToMinutes(this.getSessionEndTime(sesion));
+        let laneIndex = laneEnds.findIndex((end) => startMinutes >= end);
+        if (laneIndex === -1) {
+          laneIndex = laneEnds.length;
+          laneEnds.push(endMinutes);
+        } else {
+          laneEnds[laneIndex] = endMinutes;
+        }
+
+        tempItems.push({
+          dayValue,
+          startTime: this.getSessionStartTime(sesion),
+          endTime: this.getSessionEndTime(sesion),
+          className: this.getSessionClassName(sesion) || 'Clase',
+          level: this.getSessionClassLevel(sesion),
+          instructor: this.getSessionInstructor(sesion),
+          top: edgePadding + (startMinutes - this.ganttStartMinutes) * pixelsPerMinute,
+          height: Math.max((endMinutes - startMinutes) * pixelsPerMinute, 16),
+          widthPercent: 100,
+          leftPercent: 0,
+          laneIndex,
+          startMinutes,
+          endMinutes,
+        });
+      }
+
+      this.ganttItemsByDay.set(dayValue, this.normalizeGanttOverlapGroups(tempItems));
+    }
+  }
+
+  private normalizeGanttOverlapGroups(
+    items: Array<GanttItem & { laneIndex: number; startMinutes: number; endMinutes: number }>,
+  ): GanttItem[] {
+    if (items.length === 0) {
+      return [];
+    }
+
+    const sorted = [...items].sort((a, b) => a.startMinutes - b.startMinutes);
+    const groups: Array<typeof sorted> = [];
+    let current: typeof sorted = [];
+    let currentEnd = Number.NEGATIVE_INFINITY;
+
+    for (const item of sorted) {
+      if (current.length === 0 || item.startMinutes < currentEnd) {
+        current.push(item);
+        currentEnd = Math.max(currentEnd, item.endMinutes);
+      } else {
+        groups.push(current);
+        current = [item];
+        currentEnd = item.endMinutes;
+      }
+    }
+
+    if (current.length > 0) {
+      groups.push(current);
+    }
+
+    const normalized: GanttItem[] = [];
+    for (const group of groups) {
+      const laneCount = Math.max(...group.map((item) => item.laneIndex + 1), 1);
+      const width = 100 / laneCount;
+
+      for (const item of group) {
+        normalized.push({
+          dayValue: item.dayValue,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          className: item.className,
+          level: item.level,
+          instructor: item.instructor,
+          top: item.top,
+          height: item.height,
+          widthPercent: width,
+          leftPercent: width * item.laneIndex,
+        });
+      }
+    }
+
+    return normalized;
+  }
+
+  private getSessionStartTime(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.startTime ?? s?.horaInicio ?? s?.inicio ?? '').trim();
+  }
+
+  private getSessionEndTime(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.endTime ?? s?.horaFin ?? s?.fin ?? '').trim();
+  }
+
+  private getSessionClassName(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(
+      s?.className ??
+      s?.class?.name ??
+      s?.clase?.name ??
+      s?.schedule?.class?.name ??
+      s?.schedule?.clase?.name ??
+      '',
+    );
+  }
+
+  private getSessionClassLevel(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.classLevel ?? s?.class?.level ?? s?.clase?.level ?? '');
+  }
+
+  private getSessionInstructor(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.instructor ?? '').trim();
+  }
+
+  private timeToMinutes(value: string): number {
+    const [hours, minutes] = String(value ?? '').split(':').map(Number);
+    return (hours || 0) * 60 + (minutes || 0);
+  }
+
+  private getStartOfWeek(date: Date): Date {
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const start = new Date(date);
+    start.setDate(date.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+
+  private formatMonthYear(date: Date): string {
+    return new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(date);
+  }
+
+  private formatWeekRange(start: Date, end: Date): string {
+    const sameMonth = start.getMonth() === end.getMonth();
+    const monthFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long' });
+    const startMonth = monthFormatter.format(start);
+    const endMonth = monthFormatter.format(end);
+    const year = start.getFullYear();
+
+    if (sameMonth) {
+      return `${start.getDate()} - ${end.getDate()} ${startMonth} ${year}`;
+    }
+
+    return `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth} ${year}`;
   }
 }

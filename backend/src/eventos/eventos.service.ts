@@ -62,15 +62,42 @@ export class EventosService {
     );
   }
 
+  private getCurrentWeekRange() {
+    const now = new Date();
+    const day = now.getDay();
+    const daysFromMonday = day === 0 ? 6 : day - 1;
+    const start = new Date(now);
+
+    start.setDate(now.getDate() - daysFromMonday);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+
+    return { start, end };
+  }
+
+  private assertDateIsInCurrentWeek(date: Date) {
+    const { start, end } = this.getCurrentWeekRange();
+
+    if (date < start || date >= end) {
+      throw new ConflictException('Solo puedes reservar eventos de esta semana');
+    }
+  }
+
   private async assertUserCanReserveEvent(
     userId: number,
     event: { eventDate: Date; startTime: string },
   ) {
-    if (this.getEventStartAt(event) <= new Date()) {
+    const eventStartAt = this.getEventStartAt(event);
+
+    if (eventStartAt <= new Date()) {
       throw new ConflictException(
         'No puedes reservar un evento que ya ha empezado o ya ha pasado',
       );
     }
+
+    this.assertDateIsInCurrentWeek(eventStartAt);
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -88,7 +115,7 @@ export class EventosService {
       user.membershipStartedAt,
     );
 
-    if (this.getEventStartAt(event) >= membershipExpiresAt) {
+    if (eventStartAt >= membershipExpiresAt) {
       throw new ConflictException(
         'No puedes reservar eventos posteriores a la caducidad de tu cuota',
       );

@@ -31,8 +31,16 @@
     </section>
 
     <section class="content-card">
-      <div class="content-header">
-        <h2>Clases programadas</h2>
+      <div class="content-header schedule-header">
+        <div>
+          <h2>Clases programadas</h2>
+          <p>{{ weekScheduleMonthLabel }} · {{ weekScheduleRangeLabel }}</p>
+        </div>
+
+        <div class="schedule-nav">
+          <button type="button" class="nav-week-btn" (click)="previousWeek()"><</button>
+          <button type="button" class="nav-week-btn" (click)="nextWeek()">></button>
+        </div>
       </div>
 
       <div class="content-list" *ngIf="loadingScheduledClasses">
@@ -43,21 +51,50 @@
         <p class="state-message error">{{ scheduledClassesError }}</p>
       </div>
 
-      <div
-        class="content-list"
-        *ngIf="!loadingScheduledClasses && !scheduledClassesError && scheduledClasses.length > 0"
-      >
-        <article class="content-item" *ngFor="let gymClass of scheduledClasses">
-          <h3>{{ gymClass.name }}</h3>
-          <p>{{ gymClass.date }}</p>
-        </article>
-      </div>
+      <div class="gantt-grid" *ngIf="!loadingScheduledClasses && !scheduledClassesError">
+        <div class="content-list" *ngIf="ganttTimeSlots.length === 0">
+          <p class="state-message">No hay clases programadas en esta semana.</p>
+        </div>
 
-      <div
-        class="content-list"
-        *ngIf="!loadingScheduledClasses && !scheduledClassesError && scheduledClasses.length === 0"
-      >
-        <p class="state-message">No hay clases programadas.</p>
+        <ng-container *ngIf="ganttTimeSlots.length > 0">
+          <div class="gantt-header-row">
+            <div class="gantt-time-header">Hora</div>
+            <div class="gantt-day-header" *ngFor="let day of weekScheduleDays">
+              <div class="gantt-day-name">{{ day.label }}</div>
+              <div class="gantt-day-date">{{ day.dateLabel }}</div>
+            </div>
+          </div>
+
+          <div class="gantt-body">
+            <div class="gantt-time-column" [style.height.px]="ganttTotalHeight">
+              <div class="gantt-time-label" *ngFor="let slot of ganttTimeSlots" [style.top.px]="slot.top">
+                {{ slot.label }}
+              </div>
+            </div>
+
+            <div class="gantt-day-column" *ngFor="let day of weekScheduleDays">
+              <div class="gantt-day-canvas" [style.height.px]="ganttTotalHeight">
+                <div class="gantt-grid-line" *ngFor="let slot of ganttTimeSlots" [style.top.px]="slot.top"></div>
+
+                <div
+                  class="gantt-item"
+                  *ngFor="let item of getGanttItemsForDay(day.dayValue)"
+                  [style.top.px]="item.top"
+                  [style.height.px]="item.height"
+                  [style.width.%]="item.widthPercent"
+                  [style.left.%]="item.leftPercent"
+                >
+                  <strong>{{ item.className }}</strong>
+                  <span>{{ item.level || 'Nivel por definir' }}</span>
+                  <small>{{ item.instructor || 'Sin instructor' }}</small>
+                  <em>{{ item.startTime }} - {{ item.endTime }}</em>
+                </div>
+
+                <div class="gantt-empty" *ngIf="getGanttItemsForDay(day.dayValue).length === 0">-</div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
       </div>
     </section>
 
@@ -86,36 +123,6 @@
       </div>
     </section>
 
-    <section class="content-card">
-      <div class="content-header">
-        <h2>Próximos eventos</h2>
-      </div>
-
-      <div class="content-list" *ngIf="loadingUpcomingEvents">
-        <p class="state-message">Cargando eventos...</p>
-      </div>
-
-      <div class="content-list" *ngIf="!loadingUpcomingEvents && upcomingEventsError">
-        <p class="state-message error">{{ upcomingEventsError }}</p>
-      </div>
-
-      <div
-        class="content-list"
-        *ngIf="!loadingUpcomingEvents && !upcomingEventsError && upcomingEvents.length > 0"
-      >
-        <article class="content-item" *ngFor="let event of upcomingEvents">
-          <h3>{{ event.name }}</h3>
-          <p>{{ event.date }}</p>
-        </article>
-      </div>
-
-      <div
-        class="content-list"
-        *ngIf="!loadingUpcomingEvents && !upcomingEventsError && upcomingEvents.length === 0"
-      >
-        <p class="state-message">No hay eventos proximos.</p>
-      </div>
-    </section>
   </main>
 
   <app-role-footer></app-role-footer>

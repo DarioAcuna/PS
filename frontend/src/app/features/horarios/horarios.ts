@@ -86,7 +86,7 @@ export class HorariosComponent implements OnInit {
   readonly visibleScheduleItems = computed<ScheduleDisplayItem[]>(() => {
     const sessions = this.filteredSessions();
     const events = this.getEventsForSelectedDate();
-    const replacementEvents = new Map<number, Evento>();
+    const overlapEventIds = new Set<number>();
     const items: ScheduleDisplayItem[] = [];
 
     for (const session of sessions) {
@@ -100,7 +100,7 @@ export class HorariosComponent implements OnInit {
       );
 
       if (replacementEvent) {
-        replacementEvents.set(replacementEvent.id, replacementEvent);
+        overlapEventIds.add(replacementEvent.id);
         continue;
       }
 
@@ -117,7 +117,8 @@ export class HorariosComponent implements OnInit {
       });
     }
 
-    for (const event of replacementEvents.values()) {
+    for (const event of events) {
+
       items.push({
         id: `event-${event.id}`,
         type: 'event',
@@ -411,11 +412,29 @@ export class HorariosComponent implements OnInit {
     startB: string,
     endB: string,
   ): boolean {
-    return startA < endB && startB < endA;
+    const startAMin = this.timeToMinutes(startA);
+    const endAMin = this.timeToMinutes(endA);
+    const startBMin = this.timeToMinutes(startB);
+    const endBMin = this.timeToMinutes(endB);
+
+    return startAMin < endBMin && startBMin < endAMin;
+  }
+
+  private timeToMinutes(value: string): number {
+    const [hours, minutes] = String(value ?? '').split(':').map(Number);
+    return (hours || 0) * 60 + (minutes || 0);
   }
 
   private getDateKey(value: string): string {
-    return String(value ?? '').split('T')[0];
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return String(value ?? '').split('T')[0];
+    }
+
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private classNameValue(session: SesionDetallada): string {

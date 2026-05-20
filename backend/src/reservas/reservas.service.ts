@@ -49,6 +49,29 @@ export class ReservasService {
     return new Date(`${date}T${session.startTime}:00`);
   }
 
+  private getCurrentWeekRange() {
+    const now = new Date();
+    const day = now.getDay();
+    const daysFromMonday = day === 0 ? 6 : day - 1;
+    const start = new Date(now);
+
+    start.setDate(now.getDate() - daysFromMonday);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+
+    return { start, end };
+  }
+
+  private assertDateIsInCurrentWeek(date: Date) {
+    const { start, end } = this.getCurrentWeekRange();
+
+    if (date < start || date >= end) {
+      throw new ConflictException('Solo puedes reservar clases de esta semana');
+    }
+  }
+
   private async assertUserHasAvailableAttendance(
     userId: number,
     session: { date: Date; startTime: string },
@@ -73,6 +96,8 @@ export class ReservasService {
       user.membershipStartedAt,
     );
     const sessionStartAt = this.getSessionStartAt(session);
+
+    this.assertDateIsInCurrentWeek(sessionStartAt);
 
     if (sessionStartAt >= membershipExpiresAt) {
       throw new ConflictException(
@@ -247,6 +272,14 @@ export class ReservasService {
   }
 
   async cancelForUser(sessionId: number, userId: number) {
+    const session = await this.getSessionWithSchedule(sessionId);
+
+    if (this.hasSessionStarted(session)) {
+      throw new ConflictException(
+        'No puedes cancelar la asistencia de una clase ya impartida',
+      );
+    }
+
     const reserva = await this.prisma.reservation.findUnique({
       where: { sessionId_userId: { sessionId, userId } },
     });

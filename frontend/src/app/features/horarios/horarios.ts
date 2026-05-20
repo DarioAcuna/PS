@@ -229,20 +229,15 @@ export class HorariosComponent implements OnInit {
     const isReserved = this.isReserved(session.id);
 
     if (!isReserved) {
-      if (!this.hasActivePlan()) {
-        this.noticeMessage.set('Necesitas una cuota activa para reservar clases.');
-        return;
-      }
+      const notice = this.getReservationRestrictionNotice({
+        startsAt: this.getSessionStartAt(session),
+        capacity: this.capacity(session),
+        reservedCount: this.participantCount(session.id),
+        type: 'clase',
+      });
 
-      if (this.isSessionAfterMembershipExpiration(session)) {
-        this.noticeMessage.set(
-          'No puedes reservar clases posteriores a la caducidad de tu cuota.',
-        );
-        return;
-      }
-
-      if (!this.hasAvailableAttendance()) {
-        this.noticeMessage.set('No te quedan asistencias disponibles en tu cuota.');
+      if (notice) {
+        this.noticeMessage.set(notice);
         return;
       }
     }
@@ -269,7 +264,7 @@ export class HorariosComponent implements OnInit {
           this.refreshParticipantsIfOpen(session.id);
         },
         error: (error) => {
-          this.errorMessage.set(
+          this.noticeMessage.set(
             error?.error?.message || 'No se pudo actualizar la reserva.',
           );
         },
@@ -383,6 +378,10 @@ export class HorariosComponent implements OnInit {
     return this.getSessionStartAt(session) >= new Date(expiresAt);
   }
 
+  isSessionOutsideCurrentWeek(session: SesionDetallada): boolean {
+    return !this.isDateInCurrentWeek(this.getSessionStartAt(session));
+  }
+
   isEventAfterMembershipExpiration(event: Evento): boolean {
     const expiresAt = this.membershipExpiresAt();
 
@@ -391,6 +390,10 @@ export class HorariosComponent implements OnInit {
     }
 
     return this.getEventStartAt(event) >= new Date(expiresAt);
+  }
+
+  isEventOutsideCurrentWeek(event: Evento): boolean {
+    return !this.isDateInCurrentWeek(this.getEventStartAt(event));
   }
 
   capacity(session: SesionDetallada): number {
@@ -600,6 +603,10 @@ export class HorariosComponent implements OnInit {
       return `No hay cupo disponible para este ${options.type}.`;
     }
 
+    if (!this.isDateInCurrentWeek(options.startsAt)) {
+      return `Solo puedes reservar ${options.type === 'clase' ? 'clases' : 'eventos'} de esta semana.`;
+    }
+
     if (!this.hasActivePlan()) {
       return `Necesitas una cuota activa para reservar ${options.type === 'clase' ? 'clases' : 'eventos'}.`;
     }
@@ -671,6 +678,21 @@ export class HorariosComponent implements OnInit {
   private getSessionStartAt(session: SesionDetallada): Date {
     const date = session.date.slice(0, 10);
     return new Date(`${date}T${session.startTime}:00`);
+  }
+
+  private isDateInCurrentWeek(date: Date): boolean {
+    const now = new Date();
+    const day = now.getDay();
+    const daysFromMonday = day === 0 ? 6 : day - 1;
+    const start = new Date(now);
+
+    start.setDate(now.getDate() - daysFromMonday);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+
+    return date >= start && date < end;
   }
 
   private getEventStartAt(event: Evento): Date {

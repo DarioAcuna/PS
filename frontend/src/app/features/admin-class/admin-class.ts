@@ -87,6 +87,26 @@ interface ScheduleItem {
   maxCapacity: number;
 }
 
+interface GanttTimeSlot {
+  label: string;
+  minutes: number;
+  top: number;
+}
+
+interface GanttItem {
+  dayValue: number;
+  startTime: string;
+  endTime: string;
+  className: string;
+  level: string;
+  instructor: string;
+  maxCapacity: number;
+  top: number;
+  height: number;
+  widthPercent: number;
+  leftPercent: number;
+}
+
 @Component({
   selector: 'app-clases',
   standalone: true,
@@ -140,7 +160,11 @@ export class AdminClasesComponent implements OnInit {
   weekScheduleSlots: ScheduleSlot[] = [];
   weekScheduleMonthLabel = '';
   weekScheduleRangeLabel = '';
-  private scheduleItemsByKey = new Map<string, ScheduleItem[]>();
+  ganttTimeSlots: GanttTimeSlot[] = [];
+  ganttTotalHeight = 0;
+  private ganttItemsByDay = new Map<number, GanttItem[]>();
+  private ganttStartMinutes = 8 * 60;
+  private ganttEndMinutes = 20 * 60;
   private scheduleWeekOffset = 0;
 
   classModalOpen = false;
@@ -738,6 +762,15 @@ export class AdminClasesComponent implements OnInit {
     return String(s?.instructor ?? '').trim();
   }
 
+  private formatInstructorName(name: string): string {
+    const trimmed = String(name ?? '').trim();
+    if (!trimmed) {
+      return '';
+    }
+    const [first] = trimmed.split(/\s+/);
+    return first ?? trimmed;
+  }
+
   private getSessionStartTime(sesion: SesionDetallada): string {
     const s = sesion as any;
     return String(s?.startTime ?? s?.horaInicio ?? s?.inicio ?? '').trim();
@@ -767,9 +800,8 @@ export class AdminClasesComponent implements OnInit {
     return withInstructor ? this.getSessionInstructor(withInstructor) : '';
   }
 
-  getScheduleItems(dayValue: number, slot: ScheduleSlot): ScheduleItem[] {
-    const key = this.getScheduleKey(dayValue, slot.startTime, slot.endTime);
-    return this.scheduleItemsByKey.get(key) ?? [];
+  getGanttItemsForDay(dayValue: number): GanttItem[] {
+    return this.ganttItemsByDay.get(dayValue) ?? [];
   }
 
   private buildWeekSchedule(): void {
@@ -802,54 +834,177 @@ export class AdminClasesComponent implements OnInit {
       scheduleById.set(this.getHorarioId(horario), horario);
     }
 
-    const slotMap = new Map<string, ScheduleSlot>();
-    this.scheduleItemsByKey = new Map<string, ScheduleItem[]>();
-
-    for (const sesion of this.sesiones) {
+    const weekSessions = this.sesiones.filter((sesion) => {
       const sessionDate = this.getSessionDateTime(sesion);
-      if (sessionDate.getTime() < weekStart.getTime() || sessionDate.getTime() > weekEnd.getTime()) {
-        continue;
-      }
+      return sessionDate.getTime() >= weekStart.getTime() && sessionDate.getTime() <= weekEnd.getTime();
+    });
 
-      const dayValue = sessionDate.getDay();
-      const startTime = this.getSessionStartTime(sesion);
-      const endTime = this.getSessionEndTime(sesion);
-
-      if (!startTime || !endTime) {
-        continue;
-      }
-
-      const slotKey = `${startTime}-${endTime}`;
-      if (!slotMap.has(slotKey)) {
-        slotMap.set(slotKey, { startTime, endTime });
-      }
-
-      const scheduleId = this.getSessionScheduleId(sesion);
-      const schedule = scheduleById.get(scheduleId);
-
-      const item: ScheduleItem = {
-        dayValue,
-        startTime,
-        endTime,
-        className: this.getSessionClassName(sesion) || 'Clase',
-        level: this.getSessionClassLevel(sesion),
-        instructor: this.getSessionInstructor(sesion),
-        maxCapacity: Number((schedule as any)?.maxCapacity ?? 0),
-      };
-
-      const cellKey = this.getScheduleKey(dayValue, startTime, endTime);
-      const items = this.scheduleItemsByKey.get(cellKey) ?? [];
-      items.push(item);
-      this.scheduleItemsByKey.set(cellKey, items);
-    }
-
-    this.weekScheduleSlots = Array.from(slotMap.values()).sort(
-      (a, b) => this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime),
-    );
+    this.buildGanttLayout(weekSessions, scheduleById);
   }
 
-  private getScheduleKey(dayValue: number, startTime: string, endTime: string): string {
-    return `${dayValue}|${startTime}|${endTime}`;
+  private buildGanttLayout(
+    weekSessions: SesionDetallada[],
+    scheduleById: Map<number, Horario>,
+  ): void {
+    const pixelsPerMinute = 2;
+    const edgePadding = 12;
+
+    let minStart = Number.POSITIVE_INFINITY;
+    let maxEnd = Number.NEGATIVE_INFINITY;
+
+    const sessionsByDay = new Map<number, SesionDetallada[]>();
+
+    for (const sesion of weekSessions) {
+      const sessionDate = this.getSessionDateTime(sesion);
+      const dayValue = sessionDate.getDay();
+      const startMinutes = this.timeToMinutes(this.getSessionStartTime(sesion));
+      const endMinutes = this.timeToMinutes(this.getSessionEndTime(sesion));
+
+      if (!Number.isNaN(startMinutes) && !Number.isNaN(endMinutes)) {
+        minStart = Math.min(minStart, startMinutes);
+        maxEnd = Math.max(maxEnd, endMinutes);
+      }
+
+      const list = sessionsByDay.get(dayValue) ?? [];
+      list.push(sesion);
+      sessionsByDay.set(dayValue, list);
+    }
+
+    if (!Number.isFinite(minStart) || !Number.isFinite(maxEnd)) {
+      this.ganttStartMinutes = 0;
+      this.ganttEndMinutes = 0;
+      this.ganttTotalHeight = 0;
+      this.ganttTimeSlots = [];
+      this.ganttItemsByDay = new Map<number, GanttItem[]>();
+      return;
+    }
+
+    this.ganttStartMinutes = Math.floor(minStart / 60) * 60;
+    this.ganttEndMinutes = Math.ceil(maxEnd / 60) * 60;
+    if (this.ganttEndMinutes <= this.ganttStartMinutes) {
+      this.ganttEndMinutes = this.ganttStartMinutes + 60;
+    }
+
+    this.ganttTotalHeight =
+      (this.ganttEndMinutes - this.ganttStartMinutes) * pixelsPerMinute + edgePadding * 2;
+    this.ganttTimeSlots = [];
+
+    for (let minutes = this.ganttStartMinutes; minutes <= this.ganttEndMinutes; minutes += 60) {
+      const hours = Math.floor(minutes / 60);
+      const mins = String(minutes % 60).padStart(2, '0');
+      this.ganttTimeSlots.push({
+        label: `${String(hours).padStart(2, '0')}:${mins}`,
+        minutes,
+        top: edgePadding + (minutes - this.ganttStartMinutes) * pixelsPerMinute,
+      });
+    }
+
+    this.ganttItemsByDay = new Map<number, GanttItem[]>();
+
+    for (const [dayValue, daySessions] of sessionsByDay.entries()) {
+      const sorted = [...daySessions].sort(
+        (a, b) =>
+          this.timeToMinutes(this.getSessionStartTime(a)) -
+          this.timeToMinutes(this.getSessionStartTime(b)),
+      );
+
+      const laneEnds: number[] = [];
+      const tempItems: Array<
+        GanttItem & { laneIndex: number; startMinutes: number; endMinutes: number }
+      > = [];
+
+      for (const sesion of sorted) {
+        const startMinutes = this.timeToMinutes(this.getSessionStartTime(sesion));
+        const endMinutes = this.timeToMinutes(this.getSessionEndTime(sesion));
+        let laneIndex = laneEnds.findIndex((end) => startMinutes >= end);
+        if (laneIndex === -1) {
+          laneIndex = laneEnds.length;
+          laneEnds.push(endMinutes);
+        } else {
+          laneEnds[laneIndex] = endMinutes;
+        }
+
+        const scheduleId = this.getSessionScheduleId(sesion);
+        const schedule = scheduleById.get(scheduleId);
+
+        tempItems.push({
+          dayValue,
+          startTime: this.getSessionStartTime(sesion),
+          endTime: this.getSessionEndTime(sesion),
+          className: this.getSessionClassName(sesion) || 'Clase',
+          level: this.getSessionClassLevel(sesion),
+          instructor: this.formatInstructorName(this.getSessionInstructor(sesion)),
+          maxCapacity: Number((schedule as any)?.maxCapacity ?? 0),
+          top: edgePadding + (startMinutes - this.ganttStartMinutes) * pixelsPerMinute,
+          height: Math.max((endMinutes - startMinutes) * pixelsPerMinute, 16),
+          widthPercent: 100,
+          leftPercent: 0,
+          laneIndex,
+          startMinutes,
+          endMinutes,
+        });
+      }
+
+      const normalized = this.normalizeGanttOverlapGroups(tempItems);
+      this.ganttItemsByDay.set(dayValue, normalized);
+    }
+  }
+
+  private normalizeGanttOverlapGroups(
+    items: Array<
+      GanttItem & { laneIndex: number; startMinutes: number; endMinutes: number }
+    >,
+  ): GanttItem[] {
+    if (items.length === 0) {
+      return [];
+    }
+
+    const sorted = [...items].sort((a, b) => a.startMinutes - b.startMinutes);
+    const groups: Array<typeof sorted> = [];
+    let current: typeof sorted = [];
+    let currentEnd = Number.NEGATIVE_INFINITY;
+
+    for (const item of sorted) {
+      if (current.length === 0 || item.startMinutes < currentEnd) {
+        current.push(item);
+        currentEnd = Math.max(currentEnd, item.endMinutes);
+      } else {
+        groups.push(current);
+        current = [item];
+        currentEnd = item.endMinutes;
+      }
+    }
+
+    if (current.length > 0) {
+      groups.push(current);
+    }
+
+    const normalized: GanttItem[] = [];
+    for (const group of groups) {
+      const laneCount = Math.max(
+        ...group.map((item) => item.laneIndex + 1),
+        1,
+      );
+      const width = 100 / laneCount;
+
+      for (const item of group) {
+        normalized.push({
+          dayValue: item.dayValue,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          className: item.className,
+          level: item.level,
+          instructor: item.instructor,
+          maxCapacity: item.maxCapacity,
+          top: item.top,
+          height: item.height,
+          widthPercent: width,
+          leftPercent: width * item.laneIndex,
+        });
+      }
+    }
+
+    return normalized;
   }
 
   private getStartOfWeek(date: Date): Date {

@@ -49,7 +49,7 @@ describe('HorariosService', () => {
     });
   });
 
-  it('permite crear un segundo horario en la misma franja', async () => {
+  it('permite crear un segundo horario solapado en la misma franja', async () => {
     prisma.schedule.count.mockResolvedValueOnce(1);
     prisma.schedule.create.mockResolvedValueOnce({ id: 2 });
 
@@ -64,7 +64,7 @@ describe('HorariosService', () => {
     ).resolves.toMatchObject({ id: 2 });
   });
 
-  it('rechaza crear un tercer horario en la misma franja', async () => {
+  it('rechaza crear un tercer horario solapado en la misma franja', async () => {
     prisma.schedule.count.mockResolvedValueOnce(2);
 
     await expect(
@@ -76,5 +76,20 @@ describe('HorariosService', () => {
         maxCapacity: 20,
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('permite crear horario contiguo cuando no hay solape', async () => {
+    prisma.schedule.count.mockResolvedValueOnce(0);
+    prisma.schedule.create.mockResolvedValueOnce({ id: 3 });
+
+    await expect(
+      service.create({
+        classId: 1,
+        dayOfWeek: 2,
+        startTime: '19:00',
+        endTime: '20:00',
+        maxCapacity: 20,
+      }),
+    ).resolves.toMatchObject({ id: 3 });
   });
 });

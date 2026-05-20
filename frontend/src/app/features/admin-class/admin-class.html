@@ -32,31 +32,56 @@
         </div>
       </div>
 
-      <div class="schedule-grid" *ngIf="weekScheduleDays.length > 0">
-        <div class="schedule-row schedule-header-row">
-          <div class="schedule-time-cell">Hora</div>
-          <div class="schedule-day-cell" *ngFor="let day of weekScheduleDays">
-            <div class="schedule-day-name">{{ day.label }}</div>
-            <div class="schedule-day-date">{{ day.dateLabel }}</div>
+      <div class="gantt-grid" *ngIf="weekScheduleDays.length > 0">
+        <div class="gantt-header-row">
+          <div class="gantt-time-header">Hora</div>
+          <div class="gantt-day-header" *ngFor="let day of weekScheduleDays">
+            <div class="gantt-day-name">{{ day.label }}</div>
+            <div class="gantt-day-date">{{ day.dateLabel }}</div>
           </div>
         </div>
 
-        <div class="schedule-row" *ngFor="let slot of weekScheduleSlots">
-          <div class="schedule-time-cell">{{ slot.startTime }} - {{ slot.endTime }}</div>
-          <div class="schedule-day-cell" *ngFor="let day of weekScheduleDays">
-            <ng-container *ngIf="getScheduleItems(day.dayValue, slot) as items">
-              <div class="schedule-block" *ngFor="let item of items">
+        <div class="gantt-body">
+          <div class="gantt-time-column" [style.height.px]="ganttTotalHeight">
+            <div
+              class="gantt-time-label"
+              *ngFor="let slot of ganttTimeSlots"
+              [style.top.px]="slot.top"
+            >
+              {{ slot.label }}
+            </div>
+          </div>
+
+          <div class="gantt-day-column" *ngFor="let day of weekScheduleDays">
+            <div class="gantt-day-canvas" [style.height.px]="ganttTotalHeight">
+              <div
+                class="gantt-grid-line"
+                *ngFor="let slot of ganttTimeSlots"
+                [style.top.px]="slot.top"
+              ></div>
+
+              <div
+                class="gantt-item"
+                *ngFor="let item of getGanttItemsForDay(day.dayValue)"
+                [style.top.px]="item.top"
+                [style.height.px]="item.height"
+                [style.width.%]="item.widthPercent"
+                [style.left.%]="item.leftPercent"
+              >
                 <strong>{{ item.className }}</strong>
                 <span>{{ item.level || 'Nivel por definir' }}</span>
                 <small>{{ item.instructor || 'Sin instructor' }}</small>
+                <em>{{ item.startTime }} - {{ item.endTime }}</em>
               </div>
-              <div class="schedule-empty" *ngIf="items.length === 0">—</div>
-            </ng-container>
-          </div>
-        </div>
 
-        <div class="schedule-empty-week" *ngIf="weekScheduleSlots.length === 0">
-          No hay horarios configurados para esta semana.
+              <div
+                class="gantt-empty"
+                *ngIf="getGanttItemsForDay(day.dayValue).length === 0"
+              >
+                —
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

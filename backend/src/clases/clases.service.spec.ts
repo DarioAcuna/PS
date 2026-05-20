@@ -19,9 +19,16 @@ describe('ClasesService', () => {
       deleteMany: jest.Mock<Promise<unknown>, [unknown]>;
     };
     session: {
+      findMany: jest.Mock<Promise<{ id: number }[]>, [unknown]>;
       deleteMany: jest.Mock<Promise<unknown>, [unknown]>;
     };
-    $transaction: jest.Mock<Promise<unknown>, [(tx: PrismaMock) => Promise<unknown>]>;
+    reservation: {
+      deleteMany: jest.Mock<Promise<unknown>, [unknown]>;
+    };
+    $transaction: jest.Mock<
+      Promise<unknown>,
+      [(tx: PrismaMock) => Promise<unknown>]
+    >;
   };
 
   const prisma: PrismaMock = {
@@ -40,6 +47,10 @@ describe('ClasesService', () => {
       deleteMany: jest.fn<Promise<unknown>, [unknown]>(),
     },
     session: {
+      findMany: jest.fn<Promise<{ id: number }[]>, [unknown]>(),
+      deleteMany: jest.fn<Promise<unknown>, [unknown]>(),
+    },
+    reservation: {
       deleteMany: jest.fn<Promise<unknown>, [unknown]>(),
     },
     $transaction: jest.fn<Promise<unknown>, [(tx: PrismaMock) => Promise<unknown>]>(),
@@ -96,6 +107,8 @@ describe('ClasesService', () => {
       level: 'Beginner',
     });
     prisma.schedule.findMany.mockResolvedValueOnce([{ id: 10 }, { id: 11 }]);
+    prisma.session.findMany.mockResolvedValueOnce([{ id: 20 }, { id: 21 }]);
+    prisma.reservation.deleteMany.mockResolvedValueOnce({ count: 2 });
     prisma.session.deleteMany.mockResolvedValueOnce({ count: 3 });
     prisma.schedule.deleteMany.mockResolvedValueOnce({ count: 2 });
     prisma.clase.delete.mockResolvedValueOnce({
@@ -106,6 +119,9 @@ describe('ClasesService', () => {
 
     await expect(service.remove(1)).resolves.toMatchObject({ id: 1 });
 
+    expect(prisma.reservation.deleteMany).toHaveBeenCalledWith({
+      where: { sessionId: { in: [20, 21] } },
+    });
     expect(prisma.session.deleteMany).toHaveBeenCalledWith({
       where: { scheduleId: { in: [10, 11] } },
     });

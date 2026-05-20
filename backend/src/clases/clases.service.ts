@@ -136,6 +136,27 @@ export class ClasesService {
       const scheduleIds = horarios.map((horario) => horario.id);
 
       if (scheduleIds.length > 0) {
+        const sesiones = await tx.session.findMany({
+          where: {
+            scheduleId: {
+              in: scheduleIds,
+            },
+          },
+          select: { id: true },
+        });
+
+        const sessionIds = sesiones.map((sesion) => sesion.id);
+
+        if (sessionIds.length > 0) {
+          await tx.reservation.deleteMany({
+            where: {
+              sessionId: {
+                in: sessionIds,
+              },
+            },
+          });
+        }
+
         await tx.session.deleteMany({
           where: {
             scheduleId: {

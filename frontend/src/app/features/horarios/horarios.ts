@@ -251,7 +251,7 @@ export class HorariosComponent implements OnInit {
   }
 
   capacity(session: SesionDetallada): number {
-    return Number(session.schedule?.maxCapacity ?? 0);
+    return Number((session as any)?.maxCapacity ?? session.schedule?.maxCapacity ?? 0);
   }
 
   className(session: SesionDetallada): string {

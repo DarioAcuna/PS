@@ -75,6 +75,15 @@
                 <span>{{ item.level || 'Nivel por definir' }}</span>
                 <small>{{ item.instructor || 'Sin instructor' }}</small>
                 <em>{{ item.startTime }} - {{ item.endTime }}</em>
+                <button
+                  type="button"
+                  class="gantt-edit-btn"
+                  (click)="openSessionEdit(item)"
+                  aria-label="Editar sesión"
+                  title="Editar sesión"
+                >
+                  ✎
+                </button>
               </div>
 
               <div
@@ -221,13 +230,13 @@
               <select
                 id="classInstructor"
                 name="classInstructor"
-                [(ngModel)]="classForm.instructor"
+                [(ngModel)]="classForm.instructorId"
                 required
               >
-                <option value="">Selecciona un profesor</option>
+                <option [ngValue]="null">Selecciona un profesor</option>
                 <option
                   *ngFor="let profesor of profesores"
-                  [value]="getUsuarioDisplayName(profesor)"
+                  [ngValue]="profesor.id"
                 >
                   {{ getUsuarioDisplayName(profesor) }}
                 </option>
@@ -320,6 +329,152 @@
             [disabled]="savingClass"
           >
             {{ savingClass ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div
+    class="modal-backdrop"
+    *ngIf="sessionEditModalOpen"
+    (click)="closeSessionEditModal()"
+  >
+    <section class="class-modal session-edit-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>Editar sesión</h2>
+          <p *ngIf="editingSessionItem">
+            {{ editingSessionItem.className }} · {{ editingSessionItem.sessionDateLabel }}
+          </p>
+        </div>
+
+        <button type="button" class="modal-close" (click)="closeSessionEditModal()">
+          ✕
+        </button>
+      </div>
+
+      <form class="class-form" (ngSubmit)="saveSessionEdit()">
+        <div class="form-section">
+          <h3>Datos de la clase</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="sessionClassName">Nombre</label>
+              <input
+                id="sessionClassName"
+                name="sessionClassName"
+                type="text"
+                [(ngModel)]="sessionEditForm.name"
+                placeholder="Ej: Jiu-Jitsu Básico"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionClassLevel">Nivel</label>
+              <select
+                id="sessionClassLevel"
+                name="sessionClassLevel"
+                [(ngModel)]="sessionEditForm.level"
+                required
+              >
+                <option value="">Selecciona un nivel</option>
+                <option value="Básico">Básico</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+                <option value="Todos los niveles">Todos los niveles</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sessionInstructor">Instructor</label>
+              <select
+                id="sessionInstructor"
+                name="sessionInstructor"
+                [(ngModel)]="sessionEditForm.instructorId"
+                required
+              >
+                <option [ngValue]="null">Selecciona un profesor</option>
+                <option
+                  *ngFor="let profesor of profesores"
+                  [ngValue]="profesor.id"
+                >
+                  {{ getUsuarioDisplayName(profesor) }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Horario semanal</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="sessionCapacity">Capacidad</label>
+              <input
+                id="sessionCapacity"
+                name="sessionCapacity"
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="sessionEditForm.maxCapacity"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionStartTime">Hora inicio</label>
+              <input
+                id="sessionStartTime"
+                name="sessionStartTime"
+                type="time"
+                [(ngModel)]="sessionEditForm.startTime"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionEndTime">Hora fin</label>
+              <input
+                id="sessionEndTime"
+                name="sessionEndTime"
+                type="time"
+                [(ngModel)]="sessionEditForm.endTime"
+                required
+              />
+            </div>
+
+          </div>
+        </div>
+
+        <p class="state-message error" *ngIf="sessionEditError">
+          {{ sessionEditError }}
+        </p>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="admin-button secondary"
+            (click)="closeSessionEditModal()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="admin-button danger"
+            [disabled]="savingSessionEdit"
+            (click)="deleteSessionForDay()"
+          >
+            Eliminar este día
+          </button>
+
+          <button
+            type="submit"
+            class="admin-button"
+            [disabled]="savingSessionEdit"
+          >
+            {{ savingSessionEdit ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </form>

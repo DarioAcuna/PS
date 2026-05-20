@@ -44,7 +44,22 @@ export class SesionesService {
 
     const sessionDate = new Date(`${dto.date}T00:00:00.000Z`);
 
-    if (dto.instructor) {
+    if (typeof dto.instructorId === 'number') {
+      const conflictoInstructor = await this.prisma.session.findFirst({
+        where: {
+          date: sessionDate,
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+          instructorId: dto.instructorId,
+        },
+      });
+
+      if (conflictoInstructor) {
+        throw new ConflictException(
+          'El instructor ya está asignado a esa franja en ese día',
+        );
+      }
+    } else if (dto.instructor) {
       const conflictoInstructor = await this.prisma.session.findFirst({
         where: {
           date: sessionDate,
@@ -84,6 +99,8 @@ export class SesionesService {
           startTime: dto.startTime,
           endTime: dto.endTime,
           instructor: dto.instructor || null,
+          instructorId: typeof dto.instructorId === 'number' ? dto.instructorId : null,
+          maxCapacity: Number(dto.maxCapacity ?? horario.maxCapacity),
           status: SessionStatus.SCHEDULED,
           className: horario.class.name,
           classLevel: horario.class.level ?? null,
@@ -165,6 +182,10 @@ export class SesionesService {
     const startTime = dto.startTime ?? actual.startTime;
     const endTime = dto.endTime ?? actual.endTime;
     const instructor = dto.instructor ?? actual.instructor ?? undefined;
+    const instructorId =
+      typeof dto.instructorId === 'number'
+        ? dto.instructorId
+        : (actual as any).instructorId ?? undefined;
 
     if (startTime >= endTime) {
       throw new ConflictException(
@@ -172,7 +193,23 @@ export class SesionesService {
       );
     }
 
-    if (instructor) {
+    if (typeof instructorId === 'number') {
+      const conflictoInstructor = await this.prisma.session.findFirst({
+        where: {
+          id: { not: id },
+          date: actual.date,
+          startTime,
+          endTime,
+          instructorId,
+        },
+      });
+
+      if (conflictoInstructor) {
+        throw new ConflictException(
+          'El instructor ya está asignado a esa franja en ese día',
+        );
+      }
+    } else if (instructor) {
       const conflictoInstructor = await this.prisma.session.findFirst({
         where: {
           id: { not: id },
@@ -194,9 +231,16 @@ export class SesionesService {
       return this.prisma.session.update({
         where: { id },
         data: {
+          className: dto.className ?? actual.className,
+          classLevel: dto.classLevel ?? actual.classLevel,
           startTime,
           endTime,
           instructor,
+          instructorId: typeof instructorId === 'number' ? instructorId : null,
+          maxCapacity:
+            typeof dto.maxCapacity === 'number'
+              ? dto.maxCapacity
+              : (actual as any).maxCapacity ?? null,
           status: dto.status ?? SessionStatus.MODIFIED,
         },
       });
@@ -262,6 +306,7 @@ export class SesionesService {
       date: Date;
       startTime: string;
       endTime: string;
+      maxCapacity: number;
       status: SessionStatus;
       className: string;
       classLevel: string | null;
@@ -281,6 +326,7 @@ export class SesionesService {
           date: sessionDate,
           startTime: horario.startTime,
           endTime: horario.endTime,
+          maxCapacity: horario.maxCapacity,
           status: SessionStatus.SCHEDULED,
           className: horario.class.name,
           classLevel: horario.class.level ?? null,

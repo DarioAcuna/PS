@@ -25,7 +25,11 @@ export interface Sesion {
   startTime: string;
   endTime: string;
   instructor: string | null;
+  instructorId?: number | null;
+  maxCapacity?: number | null;
   status: SessionStatus;
+  className?: string | null;
+  classLevel?: string | null;
   createdAt: string;
 }
 
@@ -43,12 +47,18 @@ export interface CreateSesionDto {
   startTime: string;
   endTime: string;
   instructor?: string;
+  instructorId?: number;
+  maxCapacity?: number;
 }
 
 export interface UpdateSesionDto {
+  className?: string;
+  classLevel?: string;
   startTime?: string;
   endTime?: string;
   instructor?: string;
+  instructorId?: number;
+  maxCapacity?: number;
   status?: SessionStatus;
 }
 

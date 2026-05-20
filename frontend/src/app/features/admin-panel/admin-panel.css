@@ -233,6 +233,18 @@
   z-index: 2;
 }
 
+.gantt-item.level-basic {
+  background: #e8f7e8;
+}
+
+.gantt-item.level-intermediate {
+  background: #fff8dc;
+}
+
+.gantt-item.level-advanced {
+  background: #ffe9e9;
+}
+
 .gantt-item strong {
   font-size: 11px;
   font-weight: 800;

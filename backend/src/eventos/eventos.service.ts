@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PAYMENT_PLANS } from '../pagos/payment-plans';
+import type { PaymentPlanId } from '../pagos/payment-plans';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
 
@@ -40,6 +43,87 @@ export class EventosService {
     }
 
     return date;
+  }
+
+  private getEventStartAt(event: { eventDate: Date; startTime: string }): Date {
+    const date = event.eventDate.toISOString().slice(0, 10);
+    return new Date(`${date}T${event.startTime}:00`);
+  }
+
+  private getMembershipExpiration(startedAt: Date): Date {
+    return new Date(
+      startedAt.getFullYear(),
+      startedAt.getMonth() + 1,
+      startedAt.getDate(),
+      startedAt.getHours(),
+      startedAt.getMinutes(),
+      startedAt.getSeconds(),
+      startedAt.getMilliseconds(),
+    );
+  }
+
+  private async assertUserCanReserveEvent(
+    userId: number,
+    event: { eventDate: Date; startTime: string },
+  ) {
+    if (this.getEventStartAt(event) <= new Date()) {
+      throw new ConflictException(
+        'No puedes reservar un evento que ya ha empezado o ya ha pasado',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { membershipPlan: true, membershipStartedAt: true },
+    });
+    const plan = user?.membershipPlan
+      ? PAYMENT_PLANS[user.membershipPlan as PaymentPlanId]
+      : undefined;
+
+    if (!plan || !user?.membershipStartedAt) {
+      throw new ConflictException('Necesitas una cuota activa para reservar eventos');
+    }
+
+    const membershipExpiresAt = this.getMembershipExpiration(
+      user.membershipStartedAt,
+    );
+
+    if (this.getEventStartAt(event) >= membershipExpiresAt) {
+      throw new ConflictException(
+        'No puedes reservar eventos posteriores a la caducidad de tu cuota',
+      );
+    }
+
+    const [usedClasses, usedEvents] = await Promise.all([
+      this.prisma.reservation.count({
+        where: {
+          userId,
+          session: {
+            date: {
+              gte: user.membershipStartedAt,
+              lt: membershipExpiresAt,
+            },
+          },
+        },
+      }),
+      this.prisma.eventReservation.count({
+        where: {
+          userId,
+          event: {
+            eventDate: {
+              gte: user.membershipStartedAt,
+              lt: membershipExpiresAt,
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (usedClasses + usedEvents >= plan.monthlyClassLimit) {
+      throw new ConflictException(
+        'No te quedan asistencias disponibles en tu cuota',
+      );
+    }
   }
 
   async create(dto: CreateEventoDto) {
@@ -152,5 +236,63 @@ export class EventosService {
     return this.prisma.event.delete({
       where: { id },
     });
+  }
+
+  async reserve(eventId: number, userId: number) {
+    const event = await this.findOne(eventId);
+
+    const existing = await this.prisma.eventReservation.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+    });
+
+    if (existing) {
+      throw new ConflictException('Ya tienes una reserva para este evento');
+    }
+
+    await this.assertUserCanReserveEvent(userId, event);
+
+    const currentCount = await this.prisma.eventReservation.count({
+      where: { eventId },
+    });
+
+    if (currentCount >= event.capacity) {
+      throw new ConflictException('No hay cupo disponible para este evento');
+    }
+
+    return this.prisma.eventReservation.create({
+      data: { eventId, userId },
+    });
+  }
+
+  async cancelReservation(eventId: number, userId: number) {
+    const reservation = await this.prisma.eventReservation.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+    });
+
+    if (!reservation) {
+      throw new NotFoundException('No tienes una reserva para este evento');
+    }
+
+    return this.prisma.eventReservation.delete({
+      where: { id: reservation.id },
+    });
+  }
+
+  async listReservationsForUser(userId: number) {
+    return this.prisma.eventReservation.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: 'desc' }],
+      include: { event: true },
+    });
+  }
+
+  async countReservations(eventId: number) {
+    await this.findOne(eventId);
+
+    const count = await this.prisma.eventReservation.count({
+      where: { eventId },
+    });
+
+    return { eventId, count };
   }
 }

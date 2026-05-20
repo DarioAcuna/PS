@@ -56,12 +56,15 @@ export class HorariosComponent implements OnInit {
   readonly events = signal<Evento[]>([]);
   readonly profile = signal<User | null>(null);
   readonly myReservationSessionIds = signal<Set<number>>(new Set());
+  readonly myReservationEventIds = signal<Set<number>>(new Set());
   readonly reservationCounts = signal<Record<number, number>>({});
+  readonly eventReservationCounts = signal<Record<number, number>>({});
   readonly participantsBySession = signal<Record<number, ReservaDetallada[]>>({});
   readonly participantsModalSessionId = signal<number | null>(null);
   readonly loading = signal(false);
   readonly loadingParticipants = signal<number | null>(null);
   readonly actionSessionId = signal<number | null>(null);
+  readonly actionEventId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly noticeMessage = signal('');
   readonly selectedDate = signal(this.getTodayInputDate());
@@ -103,7 +106,6 @@ export class HorariosComponent implements OnInit {
   readonly visibleScheduleItems = computed<ScheduleDisplayItem[]>(() => {
     const sessions = this.filteredSessions();
     const events = this.getEventsForSelectedDate();
-    const overlapEventIds = new Set<number>();
     const items: ScheduleDisplayItem[] = [];
 
     for (const session of sessions) {
@@ -117,7 +119,6 @@ export class HorariosComponent implements OnInit {
       );
 
       if (replacementEvent) {
-        overlapEventIds.add(replacementEvent.id);
         continue;
       }
 
@@ -170,6 +171,7 @@ export class HorariosComponent implements OnInit {
     this.sessions.set([]);
     this.events.set([]);
     this.reservationCounts.set({});
+    this.eventReservationCounts.set({});
     this.participantsBySession.set({});
     this.participantsModalSessionId.set(null);
 
@@ -179,6 +181,9 @@ export class HorariosComponent implements OnInit {
       profile: this.authService
         .getProfile()
         .pipe(catchError(() => of(this.authService.getCurrentUser()))),
+      eventMine: this.eventosService
+        .findMineReservations()
+        .pipe(catchError(() => of([]))),
       mine: this.reservasService.findMine().pipe(catchError(() => of([] as ReservaDetallada[]))),
     })
       .pipe(
@@ -188,7 +193,7 @@ export class HorariosComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: ({ sessions, events, profile, mine }) => {
+        next: ({ sessions, events, profile, eventMine, mine }) => {
           const safeSessions = Array.isArray(sessions) ? sessions : [];
           const safeEvents = Array.isArray(events) ? events : [];
           const myIds = new Set(
@@ -196,12 +201,19 @@ export class HorariosComponent implements OnInit {
               .map((reservation) => reservation.sessionId ?? reservation.session?.id)
               .filter((id): id is number => typeof id === 'number'),
           );
+          const myEventIds = new Set(
+            eventMine
+              .map((reservation) => reservation.eventId ?? reservation.event?.id)
+              .filter((id): id is number => typeof id === 'number'),
+          );
 
           this.sessions.set(safeSessions);
           this.events.set(safeEvents);
           this.profile.set(profile);
           this.myReservationSessionIds.set(myIds);
+          this.myReservationEventIds.set(myEventIds);
           this.loadCounts(safeSessions);
+          this.loadEventCounts(safeEvents);
         },
         error: () => {
           this.errorMessage.set('No se pudieron cargar los horarios.');
@@ -273,12 +285,65 @@ export class HorariosComponent implements OnInit {
     this.participantsModalSessionId.set(null);
   }
 
+  reserveEvent(event: Evento): void {
+    if (this.actionEventId()) {
+      return;
+    }
+
+    const isReserved = this.isEventReserved(event.id);
+
+    if (!isReserved) {
+      const notice = this.getReservationRestrictionNotice({
+        startsAt: this.getEventStartAt(event),
+        capacity: event.capacity,
+        reservedCount: this.eventParticipantCount(event.id),
+        type: 'evento',
+      });
+
+      if (notice) {
+        this.noticeMessage.set(notice);
+        return;
+      }
+    }
+
+    this.actionEventId.set(event.id);
+    this.errorMessage.set('');
+
+    const request = isReserved
+      ? this.eventosService.cancelReservation(event.id)
+      : this.eventosService.reserve(event.id);
+
+    request
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.actionEventId.set(null);
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.setEventReserved(event.id, !isReserved);
+          this.updateUsedClasses(isReserved ? -1 : 1);
+          this.refreshEventCount(event.id);
+        },
+        error: (error) => {
+          this.noticeMessage.set(
+            error?.error?.message || 'No se pudo actualizar la reserva del evento.',
+          );
+        },
+      });
+  }
+
   closeNotice(): void {
     this.noticeMessage.set('');
   }
 
   isReserved(sessionId: number): boolean {
     return this.myReservationSessionIds().has(sessionId);
+  }
+
+  isEventReserved(eventId: number): boolean {
+    return this.myReservationEventIds().has(eventId);
   }
 
   participantCount(sessionId: number): number {
@@ -289,11 +354,23 @@ export class HorariosComponent implements OnInit {
     return Math.max(this.capacity(session) - this.participantCount(session.id), 0);
   }
 
+  eventParticipantCount(eventId: number): number {
+    return this.eventReservationCounts()[eventId] ?? 0;
+  }
+
+  freeEventSlots(event: Evento): number {
+    return Math.max(event.capacity - this.eventParticipantCount(event.id), 0);
+  }
+
   hasSessionStarted(session: SesionDetallada): boolean {
     const date = session.date.slice(0, 10);
     const startAt = new Date(`${date}T${session.startTime}:00`);
 
     return startAt <= new Date();
+  }
+
+  hasEventStarted(event: Evento): boolean {
+    return this.getEventStartAt(event) <= new Date();
   }
 
   isSessionAfterMembershipExpiration(session: SesionDetallada): boolean {
@@ -304,6 +381,16 @@ export class HorariosComponent implements OnInit {
     }
 
     return this.getSessionStartAt(session) >= new Date(expiresAt);
+  }
+
+  isEventAfterMembershipExpiration(event: Evento): boolean {
+    const expiresAt = this.membershipExpiresAt();
+
+    if (!expiresAt) {
+      return false;
+    }
+
+    return this.getEventStartAt(event) >= new Date(expiresAt);
   }
 
   capacity(session: SesionDetallada): number {
@@ -393,6 +480,34 @@ export class HorariosComponent implements OnInit {
       });
   }
 
+  private loadEventCounts(events: Evento[]): void {
+    const selectedEvents = events.filter(
+      (event) => this.getDateKey(event.eventDate) === this.selectedDate(),
+    );
+
+    if (selectedEvents.length === 0) {
+      this.eventReservationCounts.set({});
+      return;
+    }
+
+    forkJoin(
+      selectedEvents.map((event) =>
+        this.eventosService.countReservations(event.id).pipe(
+          catchError(() => of({ eventId: event.id, count: 0 })),
+        ),
+      ),
+    )
+      .pipe(take(1))
+      .subscribe((counts) => {
+        this.eventReservationCounts.set(
+          counts.reduce<Record<number, number>>((acc, item) => {
+            acc[item.eventId] = item.count;
+            return acc;
+          }, {}),
+        );
+      });
+  }
+
   private refreshCount(sessionId: number): void {
     this.reservasService
       .countForSession(sessionId)
@@ -401,6 +516,18 @@ export class HorariosComponent implements OnInit {
         this.reservationCounts.set({
           ...this.reservationCounts(),
           [counter.sessionId]: counter.count,
+        });
+      });
+  }
+
+  private refreshEventCount(eventId: number): void {
+    this.eventosService
+      .countReservations(eventId)
+      .pipe(take(1), catchError(() => of({ eventId, count: 0 })))
+      .subscribe((counter) => {
+        this.eventReservationCounts.set({
+          ...this.eventReservationCounts(),
+          [counter.eventId]: counter.count,
         });
       });
   }
@@ -445,6 +572,49 @@ export class HorariosComponent implements OnInit {
     }
 
     this.myReservationSessionIds.set(reservations);
+  }
+
+  private setEventReserved(eventId: number, reserved: boolean): void {
+    const reservations = new Set(this.myReservationEventIds());
+
+    if (reserved) {
+      reservations.add(eventId);
+    } else {
+      reservations.delete(eventId);
+    }
+
+    this.myReservationEventIds.set(reservations);
+  }
+
+  private getReservationRestrictionNotice(options: {
+    startsAt: Date;
+    capacity: number;
+    reservedCount: number;
+    type: 'clase' | 'evento';
+  }): string {
+    if (options.startsAt <= new Date()) {
+      return `No puedes reservar un ${options.type} que ya ha empezado o ya ha pasado.`;
+    }
+
+    if (options.reservedCount >= options.capacity) {
+      return `No hay cupo disponible para este ${options.type}.`;
+    }
+
+    if (!this.hasActivePlan()) {
+      return `Necesitas una cuota activa para reservar ${options.type === 'clase' ? 'clases' : 'eventos'}.`;
+    }
+
+    const expiresAt = this.membershipExpiresAt();
+
+    if (expiresAt && options.startsAt >= new Date(expiresAt)) {
+      return `No puedes reservar ${options.type === 'clase' ? 'clases' : 'eventos'} posteriores a la caducidad de tu cuota.`;
+    }
+
+    if (!this.hasAvailableAttendance()) {
+      return 'No te quedan asistencias disponibles en tu cuota.';
+    }
+
+    return '';
   }
 
   private updateUsedClasses(delta: number): void {
@@ -501,6 +671,11 @@ export class HorariosComponent implements OnInit {
   private getSessionStartAt(session: SesionDetallada): Date {
     const date = session.date.slice(0, 10);
     return new Date(`${date}T${session.startTime}:00`);
+  }
+
+  private getEventStartAt(event: Evento): Date {
+    const date = this.getDateKey(event.eventDate);
+    return new Date(`${date}T${event.startTime}:00`);
   }
 
   private getDateKey(value: string): string {

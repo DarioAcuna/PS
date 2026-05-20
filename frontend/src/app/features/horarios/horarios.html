@@ -93,14 +93,44 @@
           }}
         </button>
 
+        <button
+          *ngIf="item.event as event"
+          type="button"
+          class="reserve-btn"
+          [class.cancel]="isEventReserved(event.id)"
+          [disabled]="
+            actionEventId() === event.id ||
+            (!isEventReserved(event.id) && (hasEventStarted(event) || freeEventSlots(event) === 0))
+          "
+          (click)="reserveEvent(event)"
+        >
+          {{
+            actionEventId() === event.id
+              ? 'Actualizando...'
+              : isEventReserved(event.id)
+                ? 'Cancelar reserva'
+                : hasEventStarted(event)
+                  ? 'Evento pasado'
+                : freeEventSlots(event) === 0
+                  ? 'Sin plazas'
+                : !hasActivePlan()
+                  ? 'Sin cuota'
+                : isEventAfterMembershipExpiration(event)
+                  ? 'Fuera de cuota'
+                : !hasAvailableAttendance()
+                  ? 'Sin asistencias'
+                  : 'Reservar evento'
+          }}
+        </button>
+
         <div class="capacity-row" *ngIf="item.session as session">
           <button type="button" class="participants-btn" (click)="openParticipants(session.id)">
             Ver participantes ({{ participantCount(session.id) }}/{{ capacity(session) }})
           </button>
         </div>
 
-        <div class="capacity-row" *ngIf="item.type === 'event'">
-          <span>Capacidad {{ item.capacity }}</span>
+        <div class="capacity-row" *ngIf="item.event as event">
+          <span>Reservas {{ eventParticipantCount(event.id) }}/{{ event.capacity }}</span>
         </div>
       </article>
 

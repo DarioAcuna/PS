@@ -86,8 +86,24 @@ model Event {
   startTime   String   @default("00:00") @map("start_time")
   endTime     String   @default("23:59") @map("end_time")
   createdAt   DateTime @default(now()) @map("created_at")
+  reservations EventReservation[]
 
   @@map("events")
+}
+
+model EventReservation {
+  id        Int      @id @default(autoincrement())
+  eventId   Int      @map("event_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_reservations")
 }
 
 enum SessionStatus {
@@ -129,6 +145,7 @@ model User {
   stripeSubscriptionId String? @map("stripe_subscription_id")
   createdAt  DateTime   @default(now()) @map("created_at")
   reservations Reservation[]
+  eventReservations EventReservation[]
 
   @@map("users")
 }

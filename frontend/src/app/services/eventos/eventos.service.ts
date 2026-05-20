@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api/api.config';
-import { CreateEventoDto, Evento, UpdateEventoDto } from './eventos.models';
+import {
+  CreateEventoDto,
+  Evento,
+  EventoReserva,
+  EventoReservaCounter,
+  UpdateEventoDto,
+} from './eventos.models';
 
 @Injectable({ providedIn: 'root' })
 export class EventosService {
@@ -29,5 +35,33 @@ export class EventosService {
   remove(id: number): Observable<Evento> {
     return this.http.delete<Evento>(`${this.endpoint}/${id}`, this.authOptions);
   }
-}
 
+  findMineReservations(): Observable<EventoReserva[]> {
+    return this.http.get<EventoReserva[]>(
+      `${this.endpoint}/reservas/mis`,
+      this.authOptions,
+    );
+  }
+
+  reserve(id: number): Observable<EventoReserva> {
+    return this.http.post<EventoReserva>(
+      `${this.endpoint}/${id}/reservas`,
+      {},
+      this.authOptions,
+    );
+  }
+
+  cancelReservation(id: number): Observable<EventoReserva> {
+    return this.http.delete<EventoReserva>(
+      `${this.endpoint}/${id}/reservas`,
+      this.authOptions,
+    );
+  }
+
+  countReservations(id: number): Observable<EventoReservaCounter> {
+    return this.http.get<EventoReservaCounter>(
+      `${this.endpoint}/${id}/reservas/contador`,
+      this.authOptions,
+    );
+  }
+}

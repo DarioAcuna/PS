@@ -80,19 +80,32 @@ export class ReservasService {
       );
     }
 
-    const usedClasses = await this.prisma.reservation.count({
-      where: {
-        userId,
-        session: {
-          date: {
-            gte: user.membershipStartedAt,
-            lt: membershipExpiresAt,
+    const [usedClasses, usedEvents] = await Promise.all([
+      this.prisma.reservation.count({
+        where: {
+          userId,
+          session: {
+            date: {
+              gte: user.membershipStartedAt,
+              lt: membershipExpiresAt,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.eventReservation.count({
+        where: {
+          userId,
+          event: {
+            eventDate: {
+              gte: user.membershipStartedAt,
+              lt: membershipExpiresAt,
+            },
+          },
+        },
+      }),
+    ]);
 
-    if (usedClasses >= plan.monthlyClassLimit) {
+    if (usedClasses + usedEvents >= plan.monthlyClassLimit) {
       throw new ConflictException(
         'No te quedan asistencias disponibles en tu cuota',
       );

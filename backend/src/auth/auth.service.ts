@@ -156,21 +156,33 @@ export class AuthService {
           user.membershipStartedAt.getMilliseconds(),
         )
       : null;
-    const usedClasses = await this.prisma.reservation.count({
-      where: {
-        userId,
-        ...(user.membershipStartedAt && membershipExpiresAt
-          ? {
-              session: {
-                date: {
-                  gte: user.membershipStartedAt,
-                  lt: membershipExpiresAt,
+    const [usedClasses, usedEvents] =
+      user.membershipStartedAt && membershipExpiresAt
+        ? await Promise.all([
+            this.prisma.reservation.count({
+              where: {
+                userId,
+                session: {
+                  date: {
+                    gte: user.membershipStartedAt,
+                    lt: membershipExpiresAt,
+                  },
                 },
               },
-            }
-          : { id: -1 }),
-      },
-    });
+            }),
+            this.prisma.eventReservation.count({
+              where: {
+                userId,
+                event: {
+                  eventDate: {
+                    gte: user.membershipStartedAt,
+                    lt: membershipExpiresAt,
+                  },
+                },
+              },
+            }),
+          ])
+        : [0, 0];
 
     return {
       ...user,
@@ -178,7 +190,7 @@ export class AuthService {
         planId: plan?.id ?? null,
         planName: plan?.name ?? 'Sin cuota',
         monthlyClassLimit: plan?.monthlyClassLimit ?? 0,
-        usedClasses,
+        usedClasses: usedClasses + usedEvents,
         expiresAt: membershipExpiresAt?.toISOString() ?? null,
       },
     };

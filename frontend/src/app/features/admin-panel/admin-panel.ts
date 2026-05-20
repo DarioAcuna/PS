@@ -288,7 +288,8 @@ export class DashboardComponent implements OnInit {
 
   private mapSesionToDashboardItem(sesion: SesionDetallada): DashboardItem {
     const s = sesion as any;
-    const className = s?.schedule?.class?.name || s?.schedule?.class?.nombre || 'Clase';
+    const className =
+      s?.className || s?.schedule?.class?.name || s?.schedule?.class?.nombre || 'Clase';
 
     return {
       name: className,

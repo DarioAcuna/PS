@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, catchError, finalize, forkJoin, of, switchMap, take } from 'rxjs';
+import { Observable, catchError, concat, finalize, forkJoin, of, take } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 import { RoleFooterComponent } from '../../shared/role-footer/role-footer';
@@ -500,8 +501,10 @@ export class AdminClasesComponent implements OnInit {
   private removeScheduleAndSessions(horario: Horario): Observable<unknown> {
     const scheduleId = this.getHorarioId(horario);
     const sessions = this.getSessionsForSchedule(scheduleId);
+    const upcomingSessions = sessions.filter((sesion) => this.isSessionOnOrAfterToday(sesion));
+    const pastSessions = sessions.filter((sesion) => !this.isSessionOnOrAfterToday(sesion));
 
-    const deletes = sessions.map((sesion) =>
+    const deletes = upcomingSessions.map((sesion) =>
       this.sesionesService.remove(sesion.id).pipe(
         catchError((error) => {
           console.error('Error al eliminar sesión:', error);
@@ -510,14 +513,19 @@ export class AdminClasesComponent implements OnInit {
       ),
     );
 
-    return forkJoin(deletes).pipe(
-      switchMap(() =>
-        this.horariosService.remove(scheduleId).pipe(
-          catchError((error) => {
-            console.error('Error al eliminar horario:', error);
-            return of(null);
-          }),
-        ),
+    const deleteUpcoming$ = deletes.length > 0 ? forkJoin(deletes) : of(null);
+
+    if (pastSessions.length > 0) {
+      return deleteUpcoming$;
+    }
+
+    return concat(
+      deleteUpcoming$,
+      this.horariosService.remove(scheduleId).pipe(
+        catchError((error) => {
+          console.error('Error al eliminar horario:', error);
+          return of(null);
+        }),
       ),
     );
   }
@@ -644,9 +652,9 @@ export class AdminClasesComponent implements OnInit {
 
   private buildClassViews(): ClassView[] {
     return (this.clases || []).map((gymClass) => {
-      const classHorarios = this.horarios.filter(
-        (horario) => this.getHorarioClassId(horario) === gymClass.id,
-      );
+      const classHorarios = this.horarios
+        .filter((horario) => this.getHorarioClassId(horario) === gymClass.id)
+        .filter((horario) => this.shouldDisplaySchedule(horario));
       const primaryHorario = classHorarios[0];
       const dayLabels = Array.from(
         new Set(
@@ -730,6 +738,28 @@ export class AdminClasesComponent implements OnInit {
     return String(s?.instructor ?? '').trim();
   }
 
+  private getSessionStartTime(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.startTime ?? s?.horaInicio ?? s?.inicio ?? '').trim();
+  }
+
+  private getSessionEndTime(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.endTime ?? s?.horaFin ?? s?.fin ?? '').trim();
+  }
+
+  private getSessionClassLevel(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(
+      s?.classLevel ??
+      s?.class?.level ??
+      s?.class?.nivel ??
+      s?.clase?.level ??
+      s?.clase?.nivel ??
+      '',
+    );
+  }
+
   private getInstructorFromHorario(horario: Horario): string {
     const scheduleId = this.getHorarioId(horario);
     const upcoming = this.getUpcomingSessionsForSchedule(scheduleId);
@@ -748,6 +778,7 @@ export class AdminClasesComponent implements OnInit {
     const weekStart = this.getStartOfWeek(baseDate);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
 
     this.weekScheduleMonthLabel = this.formatMonthYear(weekStart);
     this.weekScheduleRangeLabel = this.formatWeekRange(weekStart, weekEnd);
@@ -766,15 +797,25 @@ export class AdminClasesComponent implements OnInit {
       };
     });
 
+    const scheduleById = new Map<number, Horario>();
+    for (const horario of this.horarios) {
+      scheduleById.set(this.getHorarioId(horario), horario);
+    }
+
     const slotMap = new Map<string, ScheduleSlot>();
     this.scheduleItemsByKey = new Map<string, ScheduleItem[]>();
 
-    for (const horario of this.horarios) {
-      const dayValue = this.getHorarioDayValue(horario);
-      const startTime = this.getHorarioStartTime(horario);
-      const endTime = this.getHorarioEndTime(horario);
+    for (const sesion of this.sesiones) {
+      const sessionDate = this.getSessionDateTime(sesion);
+      if (sessionDate.getTime() < weekStart.getTime() || sessionDate.getTime() > weekEnd.getTime()) {
+        continue;
+      }
 
-      if (dayValue === null || !startTime || !endTime) {
+      const dayValue = sessionDate.getDay();
+      const startTime = this.getSessionStartTime(sesion);
+      const endTime = this.getSessionEndTime(sesion);
+
+      if (!startTime || !endTime) {
         continue;
       }
 
@@ -783,14 +824,17 @@ export class AdminClasesComponent implements OnInit {
         slotMap.set(slotKey, { startTime, endTime });
       }
 
+      const scheduleId = this.getSessionScheduleId(sesion);
+      const schedule = scheduleById.get(scheduleId);
+
       const item: ScheduleItem = {
         dayValue,
         startTime,
         endTime,
-        className: this.getHorarioClassName(horario) || 'Clase',
-        level: this.getHorarioClassLevel(horario),
-        instructor: this.getInstructorFromHorario(horario),
-        maxCapacity: Number((horario as any)?.maxCapacity ?? 0),
+        className: this.getSessionClassName(sesion) || 'Clase',
+        level: this.getSessionClassLevel(sesion),
+        instructor: this.getSessionInstructor(sesion),
+        maxCapacity: Number((schedule as any)?.maxCapacity ?? 0),
       };
 
       const cellKey = this.getScheduleKey(dayValue, startTime, endTime);
@@ -840,22 +884,6 @@ export class AdminClasesComponent implements OnInit {
     return (hours || 0) * 60 + (minutes || 0);
   }
 
-  private getHorarioStartTime(horario: Horario): string {
-    const h = horario as any;
-    return String(h?.startTime ?? h?.horaInicio ?? h?.inicio ?? '').trim();
-  }
-
-  private getHorarioEndTime(horario: Horario): string {
-    const h = horario as any;
-    return String(h?.endTime ?? h?.horaFin ?? h?.fin ?? '').trim();
-  }
-
-  private getHorarioClassLevel(horario: Horario): string {
-    const h = horario as any;
-    return String(
-      h?.class?.level ?? h?.class?.nivel ?? h?.clase?.level ?? h?.clase?.nivel ?? '',
-    );
-  }
 
   private getEmptyClassForm(): ClassForm {
     return {
@@ -892,12 +920,23 @@ export class AdminClasesComponent implements OnInit {
     const sessions = this.getSessionsForSchedule(scheduleId);
 
     return sessions
-      .filter((sesion) => this.isUpcomingSession(sesion))
+      .filter((sesion) => this.isSessionOnOrAfterToday(sesion))
       .sort((a, b) => this.getSessionDateTime(a).getTime() - this.getSessionDateTime(b).getTime());
   }
 
   private getSessionsForSchedule(scheduleId: number): SesionDetallada[] {
     return this.sesiones.filter((sesion) => this.getSessionScheduleId(sesion) === scheduleId);
+  }
+
+  private shouldDisplaySchedule(horario: Horario): boolean {
+    const scheduleId = this.getHorarioId(horario);
+    const sessions = this.getSessionsForSchedule(scheduleId);
+
+    if (sessions.length === 0) {
+      return true;
+    }
+
+    return sessions.some((sesion) => this.isSessionOnOrAfterToday(sesion));
   }
 
   private updateUpcomingSessions(upcomingSessions: SesionDetallada[]): Observable<unknown> {
@@ -929,12 +968,7 @@ export class AdminClasesComponent implements OnInit {
       s?.gymClassId ??
       s?.class?.id ??
       s?.clase?.id ??
-      s?.schedule?.classId ??
-      s?.schedule?.class?.id ??
-      s?.schedule?.clase?.id ??
-      s?.horario?.classId ??
-      s?.horario?.class?.id ??
-      s?.horario?.clase?.id ??
+      s?.gymClass?.id ??
       0,
     );
   }
@@ -943,6 +977,7 @@ export class AdminClasesComponent implements OnInit {
     const s = sesion as any;
 
     return String(
+      s?.className ??
       s?.class?.name ??
       s?.class?.nombre ??
       s?.clase?.name ??
@@ -961,6 +996,24 @@ export class AdminClasesComponent implements OnInit {
 
   private isUpcomingSession(sesion: SesionDetallada): boolean {
     return this.getSessionDateTime(sesion).getTime() >= new Date().getTime();
+  }
+
+  private isSessionOnOrAfterToday(sesion: SesionDetallada): boolean {
+    const sessionDate = this.getSessionDateOnly(sesion);
+    return sessionDate.getTime() >= this.getStartOfToday().getTime();
+  }
+
+  private getStartOfToday(): Date {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }
+
+  private getSessionDateOnly(sesion: SesionDetallada): Date {
+    const sessionDateTime = this.getSessionDateTime(sesion);
+    const dateOnly = new Date(sessionDateTime);
+    dateOnly.setHours(0, 0, 0, 0);
+    return dateOnly;
   }
 
   private getSessionDateTime(sesion: SesionDetallada): Date {

@@ -37,6 +37,11 @@ export class ClasesService {
     }
   }
 
+  private inicioDiaUtc() {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }
+
   async create(createClaseDto: CreateClaseDto) {
     const name = this.normalizarCampo(createClaseDto.name);
     const level = this.normalizarCampo(createClaseDto.level);
@@ -103,12 +108,29 @@ export class ClasesService {
     await this.validarCombinacionUnica(name, level, id);
 
     try {
-      return this.prisma.clase.update({
-        where: { id },
-        data: {
-          name,
-          level,
-        },
+      const todayUtc = this.inicioDiaUtc();
+
+      return await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.clase.update({
+          where: { id },
+          data: {
+            name,
+            level,
+          },
+        });
+
+        await tx.session.updateMany({
+          where: {
+            date: { gte: todayUtc },
+            schedule: { classId: id },
+          },
+          data: {
+            className: updated.name,
+            classLevel: updated.level,
+          },
+        });
+
+        return updated;
       });
     } catch (error) {
       if (

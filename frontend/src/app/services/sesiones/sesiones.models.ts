@@ -26,6 +26,8 @@ export interface Sesion {
   endTime: string;
   instructor: string | null;
   status: SessionStatus;
+  className?: string | null;
+  classLevel?: string | null;
   createdAt: string;
 }
 

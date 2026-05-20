@@ -29,6 +29,7 @@ export class SesionesService {
   async create(dto: CreateSesionDto) {
     const horario = await this.prisma.schedule.findUnique({
       where: { id: dto.scheduleId },
+      include: { class: true },
     });
 
     if (!horario) {
@@ -84,6 +85,8 @@ export class SesionesService {
           endTime: dto.endTime,
           instructor: dto.instructor || null,
           status: SessionStatus.SCHEDULED,
+          className: horario.class.name,
+          classLevel: horario.class.level ?? null,
         },
         include: {
           schedule: {
@@ -260,6 +263,8 @@ export class SesionesService {
       startTime: string;
       endTime: string;
       status: SessionStatus;
+      className: string;
+      classLevel: string | null;
     }[] = [];
 
     const ultimoDia = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
@@ -277,6 +282,8 @@ export class SesionesService {
           startTime: horario.startTime,
           endTime: horario.endTime,
           status: SessionStatus.SCHEDULED,
+          className: horario.class.name,
+          classLevel: horario.class.level ?? null,
         });
       }
     }

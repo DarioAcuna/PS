@@ -21,6 +21,7 @@ describe('ClasesService', () => {
     session: {
       findMany: jest.Mock<Promise<{ id: number }[]>, [unknown]>;
       deleteMany: jest.Mock<Promise<unknown>, [unknown]>;
+      updateMany: jest.Mock<Promise<unknown>, [unknown]>;
     };
     reservation: {
       deleteMany: jest.Mock<Promise<unknown>, [unknown]>;
@@ -49,6 +50,7 @@ describe('ClasesService', () => {
     session: {
       findMany: jest.fn<Promise<{ id: number }[]>, [unknown]>(),
       deleteMany: jest.fn<Promise<unknown>, [unknown]>(),
+      updateMany: jest.fn<Promise<unknown>, [unknown]>(),
     },
     reservation: {
       deleteMany: jest.fn<Promise<unknown>, [unknown]>(),
@@ -129,5 +131,35 @@ describe('ClasesService', () => {
       where: { id: { in: [10, 11] } },
     });
     expect(prisma.clase.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+  });
+
+  it('actualiza snapshots de sesiones futuras al editar una clase', async () => {
+    prisma.clase.findUnique.mockResolvedValueOnce({
+      id: 2,
+      name: 'BJJ',
+      level: 'Beginner',
+    });
+    prisma.clase.findFirst.mockResolvedValueOnce(null);
+    prisma.clase.update.mockResolvedValueOnce({
+      id: 2,
+      name: 'BJJ',
+      level: 'Advanced',
+    });
+    prisma.session.updateMany.mockResolvedValueOnce({ count: 3 });
+
+    await expect(
+      service.update(2, { name: 'BJJ', level: 'Advanced' }),
+    ).resolves.toMatchObject({ id: 2, level: 'Advanced' });
+
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: {
+        date: { gte: expect.any(Date) },
+        schedule: { classId: 2 },
+      },
+      data: {
+        className: 'BJJ',
+        classLevel: 'Advanced',
+      },
+    });
   });
 });

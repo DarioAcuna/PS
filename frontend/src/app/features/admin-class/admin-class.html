@@ -66,6 +66,7 @@
                 [class.level-basic]="levelTone(item.level) === 'basic'"
                 [class.level-intermediate]="levelTone(item.level) === 'intermediate'"
                 [class.level-advanced]="levelTone(item.level) === 'advanced'"
+                [class.level-all-levels]="levelTone(item.level) === 'all-levels'"
                 [style.top.px]="item.top"
                 [style.height.px]="item.height"
                 [style.width.%]="item.widthPercent"
@@ -75,6 +76,7 @@
                 <span>{{ item.level || 'Nivel por definir' }}</span>
                 <small>{{ item.instructor || 'Sin instructor' }}</small>
                 <em>{{ item.startTime }} - {{ item.endTime }}</em>
+                <small>cap: {{ item.maxCapacity || 0 }}</small>
                 <button
                   type="button"
                   class="gantt-edit-btn"

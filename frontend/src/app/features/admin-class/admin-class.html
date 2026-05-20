@@ -63,6 +63,9 @@
               <div
                 class="gantt-item"
                 *ngFor="let item of getGanttItemsForDay(day.dayValue)"
+                [class.level-basic]="levelTone(item.level) === 'basic'"
+                [class.level-intermediate]="levelTone(item.level) === 'intermediate'"
+                [class.level-advanced]="levelTone(item.level) === 'advanced'"
                 [style.top.px]="item.top"
                 [style.height.px]="item.height"
                 [style.width.%]="item.widthPercent"

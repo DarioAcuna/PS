@@ -68,8 +68,10 @@
           type="button"
           class="reserve-btn"
           [class.cancel]="isReserved(session.id)"
+          [class.completed]="isReserved(session.id) && hasSessionStarted(session)"
           [disabled]="
             actionSessionId() === session.id ||
+            (isReserved(session.id) && hasSessionStarted(session)) ||
             (!isReserved(session.id) && (hasSessionStarted(session) || freeSlots(session) === 0))
           "
           (click)="reserve(session)"
@@ -78,13 +80,17 @@
             actionSessionId() === session.id
               ? 'Actualizando...'
               : isReserved(session.id)
-                ? 'Cancelar reserva'
+                ? hasSessionStarted(session)
+                  ? 'Impartida'
+                  : 'Cancelar reserva'
                 : hasSessionStarted(session)
                   ? 'Clase pasada'
                 : freeSlots(session) === 0
                   ? 'Sin plazas'
                 : !hasActivePlan()
                   ? 'Sin cuota'
+                : isSessionOutsideCurrentWeek(session)
+                  ? 'Otra semana'
                 : isSessionAfterMembershipExpiration(session)
                   ? 'Fuera de cuota'
                 : !hasAvailableAttendance()
@@ -115,6 +121,8 @@
                   ? 'Sin plazas'
                 : !hasActivePlan()
                   ? 'Sin cuota'
+                : isEventOutsideCurrentWeek(event)
+                  ? 'Otra semana'
                 : isEventAfterMembershipExpiration(event)
                   ? 'Fuera de cuota'
                 : !hasAvailableAttendance()

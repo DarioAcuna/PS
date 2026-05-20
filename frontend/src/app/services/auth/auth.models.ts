@@ -8,6 +8,7 @@ export interface User {
   belt?: string | null;
   beltDegree?: number | null;
   status?: string;
+  totalAttendances?: number;
   membershipPlan?: string | null;
   membershipStartedAt?: string | null;
   membership?: {

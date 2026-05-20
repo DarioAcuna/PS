@@ -46,6 +46,7 @@ export class PerfilComponent implements OnInit {
   readonly beltDegree = computed(() => this.user()?.beltDegree ?? 0);
   readonly membership = computed(() => this.user()?.membership);
   readonly planName = computed(() => this.membership()?.planName ?? 'Sin cuota');
+  readonly totalAttendances = computed(() => this.user()?.totalAttendances ?? 0);
   readonly usedClasses = computed(() => this.membership()?.usedClasses ?? 0);
   readonly monthlyClassLimit = computed(
     () => this.membership()?.monthlyClassLimit ?? 0,

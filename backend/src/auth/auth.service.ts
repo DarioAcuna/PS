@@ -183,9 +183,18 @@ export class AuthService {
             }),
           ])
         : [0, 0];
+    const [totalClasses, totalEvents] = await Promise.all([
+      this.prisma.reservation.count({
+        where: { userId },
+      }),
+      this.prisma.eventReservation.count({
+        where: { userId },
+      }),
+    ]);
 
     return {
       ...user,
+      totalAttendances: totalClasses + totalEvents,
       membership: {
         planId: plan?.id ?? null,
         planName: plan?.name ?? 'Sin cuota',

@@ -1,0 +1,49 @@
+<div class="payment-page">
+  <app-admin-header
+    *ngIf="isAdmin()"
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="payment-main">
+    <section class="payment-intro">
+      <h1>Cuotas</h1>
+      <p>Elige tu cuota mensual y continua en Stripe Checkout en modo prueba.</p>
+    </section>
+
+    <p class="result-message" *ngIf="resultMessage()">{{ resultMessage() }}</p>
+    <p class="result-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+    <section class="plans-grid">
+      <article class="plan-card" *ngFor="let plan of plans">
+        <div>
+          <h2>{{ plan.title }}</h2>
+          <strong>{{ plan.price }}</strong>
+          <p>{{ plan.description }}</p>
+        </div>
+
+        <ul>
+          <li *ngFor="let feature of plan.features">{{ feature }}</li>
+        </ul>
+
+        <button
+          type="button"
+          class="pay-btn"
+          [disabled]="loadingPlanId() !== null"
+          (click)="startCheckout(plan.id)"
+        >
+          {{
+            loadingPlanId() === plan.id
+              ? 'Abriendo Stripe...'
+              : 'Pagar con Stripe'
+          }}
+        </button>
+      </article>
+    </section>
+  </main>
+
+  <app-role-footer></app-role-footer>
+</div>

@@ -59,8 +59,8 @@ export class LoginComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.isLoading = false;
           console.log('✅ Login exitoso:', response.user);
-          // Redirigir a la página principal
-          this.router.navigate(['/panel-admin']);
+          // Redirigir a la pantalla de clases
+          this.router.navigate(['/horarios']);
         },
         error: (error) => {
           this.isLoading = false;

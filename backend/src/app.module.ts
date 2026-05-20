@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { EventosModule } from './eventos/eventos.module';
 import { ReservasModule } from './reservas/reservas.module';
+import { PagosModule } from './pagos/pagos.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ReservasModule } from './reservas/reservas.module';
     UsuariosModule,
     EventosModule,
     ReservasModule,
+    PagosModule,
   ],
   controllers: [AppController],
 })

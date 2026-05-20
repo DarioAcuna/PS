@@ -382,6 +382,28 @@ export class DashboardComponent implements OnInit {
     return this.ganttItemsByDay.get(dayValue) ?? [];
   }
 
+  levelTone(level: string): 'basic' | 'intermediate' | 'advanced' | '' {
+    const normalized = String(level ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+
+    if (normalized.includes('avanz')) {
+      return 'advanced';
+    }
+
+    if (normalized.includes('inter')) {
+      return 'intermediate';
+    }
+
+    if (normalized.includes('basic')) {
+      return 'basic';
+    }
+
+    return '';
+  }
+
   previousWeek(): void {
     this.scheduleWeekOffset -= 1;
     this.buildWeekSchedule();

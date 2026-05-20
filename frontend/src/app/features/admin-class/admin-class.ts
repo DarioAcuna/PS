@@ -25,6 +25,8 @@ import {
   SesionDetallada,
   UpdateSesionDto,
 } from '../../services/sesiones/sesiones.models';
+import { UsuariosService } from '../../services/usuarios/usuarios.service';
+import { Usuario } from '../../services/usuarios/usuarios.models';
 
 type DashboardTab = 'dashboard' | 'clases' | 'miembros' | 'eventos' | 'anuncios';
 
@@ -33,25 +35,15 @@ interface NavItem {
   label: string;
 }
 
-interface ClassFilters {
-  search: string;
-  discipline: string;
-  level: string;
-  instructor: string;
-  day: string;
-}
 
 interface ClassForm {
   name: string;
   level: string;
-  dayOfWeek: number;
+  daysOfWeek: number[];
   startTime: string;
   endTime: string;
   maxCapacity: number;
   instructor: string;
-  sessionDate: string;
-  createSession: boolean;
-  updateUpcomingSessions: boolean;
 }
 
 interface ClassView {
@@ -63,9 +55,35 @@ interface ClassView {
   primarySchedule: string;
   scheduleCount: number;
   upcomingSessionCount: number;
+  maxCapacity: number;
+  dayLabel: string;
+  startTime: string;
+  endTime: string;
   horarios: Horario[];
   upcomingSessions: SesionDetallada[];
   raw: Clase;
+}
+
+interface WeekDaySchedule {
+  dayValue: number;
+  label: string;
+  date: Date;
+  dateLabel: string;
+}
+
+interface ScheduleSlot {
+  startTime: string;
+  endTime: string;
+}
+
+interface ScheduleItem {
+  dayValue: number;
+  startTime: string;
+  endTime: string;
+  className: string;
+  level: string;
+  instructor: string;
+  maxCapacity: number;
 }
 
 @Component({
@@ -79,6 +97,7 @@ export class AdminClasesComponent implements OnInit {
   private readonly clasesService = inject(ClasesService);
   private readonly horariosService = inject(HorariosService);
   private readonly sesionesService = inject(SesionesService);
+  private readonly usuariosService = inject(UsuariosService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -110,23 +129,18 @@ export class AdminClasesComponent implements OnInit {
   clases: Clase[] = [];
   horarios: Horario[] = [];
   sesiones: SesionDetallada[] = [];
+  profesores: Usuario[] = [];
 
   classViews: ClassView[] = [];
   filteredClasses: ClassView[] = [];
   selectedClass: ClassView | null = null;
 
-  disciplineOptions: string[] = [];
-  levelOptions: string[] = [];
-  instructorOptions: string[] = [];
-  dayOptions: string[] = [];
-
-  filters: ClassFilters = {
-    search: '',
-    discipline: '',
-    level: '',
-    instructor: '',
-    day: '',
-  };
+  weekScheduleDays: WeekDaySchedule[] = [];
+  weekScheduleSlots: ScheduleSlot[] = [];
+  weekScheduleMonthLabel = '';
+  weekScheduleRangeLabel = '';
+  private scheduleItemsByKey = new Map<string, ScheduleItem[]>();
+  private scheduleWeekOffset = 0;
 
   classModalOpen = false;
   classModalMode: 'create' | 'edit' = 'create';
@@ -141,6 +155,7 @@ export class AdminClasesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPageData();
+    this.loadProfesores();
   }
 
   loadPageData(): void {
@@ -213,33 +228,33 @@ export class AdminClasesComponent implements OnInit {
     });
   }
 
+  private loadProfesores(): void {
+    this.usuariosService
+      .findAll()
+      .pipe(
+        catchError((error) => {
+          console.error('Error al cargar profesores:', error);
+          return of([] as Usuario[]);
+        }),
+      )
+      .subscribe((usuarios) => {
+        const profesores = Array.isArray(usuarios) ? usuarios : [];
+        this.profesores = profesores.filter(
+          (usuario) => usuario.role === 'PROFESOR' && usuario.status === 'ACTIVO',
+        );
+        this.cdr.detectChanges();
+      });
+  }
+
   private rebuildView(): void {
     this.classViews = this.buildClassViews();
-    this.buildFilterOptions();
-    this.applyFilters();
+    this.filteredClasses = [...this.classViews];
+    this.buildWeekSchedule();
 
     if (this.selectedClass) {
       const selectedId = this.selectedClass.id;
       this.selectedClass = this.classViews.find((gymClass) => gymClass.id === selectedId) || null;
     }
-  }
-
-  searchClasses(): void {
-    this.applyFilters();
-    this.cdr.detectChanges();
-  }
-
-  clearFilters(): void {
-    this.filters = {
-      search: '',
-      discipline: '',
-      level: '',
-      instructor: '',
-      day: '',
-    };
-
-    this.applyFilters();
-    this.cdr.detectChanges();
   }
 
   createClass(): void {
@@ -257,22 +272,21 @@ export class AdminClasesComponent implements OnInit {
     this.classModalError = '';
     this.selectedClass = gymClass;
 
-    const horario = gymClass.horarios[0] as any;
-    const firstSession = gymClass.upcomingSessions[0] as any;
+    const horarios = Array.isArray(gymClass.horarios) ? gymClass.horarios : [];
+    const dayValues = horarios
+      .map((horario) => this.getHorarioDayValue(horario))
+      .filter((day): day is number => day !== null && !Number.isNaN(day));
+    const uniqueDays = Array.from(new Set(dayValues));
+    const instructor = gymClass.instructor || '';
 
     this.classForm = {
       name: gymClass.name || '',
       level: gymClass.level || '',
-      dayOfWeek: Number(horario?.dayOfWeek ?? 1),
-      startTime: horario?.startTime ?? firstSession?.startTime ?? '18:00',
-      endTime: horario?.endTime ?? firstSession?.endTime ?? '19:00',
-      maxCapacity: Number(horario?.maxCapacity ?? 20),
-      instructor: firstSession?.instructor ?? '',
-      sessionDate: firstSession?.date
-        ? String(firstSession.date).split('T')[0]
-        : this.getTodayInputDate(),
-      createSession: false,
-      updateUpcomingSessions: false,
+      daysOfWeek: uniqueDays.length > 0 ? this.sortDays(uniqueDays) : [1],
+      startTime: horarios[0]?.startTime ?? '18:00',
+      endTime: horarios[0]?.endTime ?? '19:00',
+      maxCapacity: Number(horarios[0]?.maxCapacity ?? 20),
+      instructor,
     };
 
     this.cdr.detectChanges();
@@ -301,7 +315,7 @@ export class AdminClasesComponent implements OnInit {
     const level = this.classForm.level.trim();
     const startTime = this.classForm.startTime.trim();
     const endTime = this.classForm.endTime.trim();
-    const sessionDate = this.classForm.sessionDate.trim();
+    const instructor = this.classForm.instructor.trim();
 
     if (!name) {
       this.classModalError = 'El nombre de la clase es obligatorio.';
@@ -311,6 +325,18 @@ export class AdminClasesComponent implements OnInit {
 
     if (!level) {
       this.classModalError = 'El nivel de la clase es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!instructor) {
+      this.classModalError = 'El instructor es obligatorio.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!Array.isArray(this.classForm.daysOfWeek) || this.classForm.daysOfWeek.length === 0) {
+      this.classModalError = 'Selecciona al menos un día de la semana.';
       this.cdr.detectChanges();
       return;
     }
@@ -327,24 +353,8 @@ export class AdminClasesComponent implements OnInit {
       return;
     }
 
-    if (this.classForm.createSession && !sessionDate) {
-      this.classModalError = 'La fecha de la sesión es obligatoria.';
-      this.cdr.detectChanges();
-      return;
-    }
-
-    if (
-      this.classForm.createSession &&
-      sessionDate &&
-      !this.dateMatchesDayOfWeek(sessionDate, Number(this.classForm.dayOfWeek))
-    ) {
-      this.classModalError = 'La fecha de la sesión debe coincidir con el día del horario.';
-      this.cdr.detectChanges();
-      return;
-    }
-
     if (Number(this.classForm.maxCapacity) < 1) {
-      this.classModalError = 'El aforo máximo debe ser mayor que 0.';
+      this.classModalError = 'La capacidad debe ser mayor que 0.';
       this.cdr.detectChanges();
       return;
     }
@@ -398,10 +408,20 @@ export class AdminClasesComponent implements OnInit {
   }
 
   private createFullClassFlow(): Observable<unknown> {
+    const selectedDays = this.sortDays(this.classForm.daysOfWeek);
+
     return this.clasesService.create(this.buildClassPayload() as CreateClaseDto).pipe(
       switchMap((createdClass) =>
-        this.horariosService.create(this.buildCreateHorarioPayload(createdClass.id)).pipe(
-          switchMap((createdHorario) => this.createSessionIfNeeded(createdHorario.id)),
+        forkJoin(
+          selectedDays.map((dayOfWeek) =>
+            this.horariosService
+              .create(this.buildCreateHorarioPayload(createdClass.id, dayOfWeek))
+              .pipe(
+                switchMap((createdHorario) =>
+                  this.createRecurringSessions(createdHorario.id, dayOfWeek),
+                ),
+              ),
+          ),
         ),
       ),
     );
@@ -412,100 +432,108 @@ export class AdminClasesComponent implements OnInit {
 
     return this.clasesService
       .update(selectedClass.id, this.buildClassPayload() as UpdateClaseDto)
+      .pipe(switchMap(() => this.syncSchedulesAfterUpdate(selectedClass)));
+  }
+
+  private syncSchedulesAfterUpdate(selectedClass: ClassView): Observable<unknown> {
+    const selectedDays = this.sortDays(this.classForm.daysOfWeek);
+    const existingSchedules = Array.isArray(selectedClass.horarios) ? selectedClass.horarios : [];
+    const scheduleByDay = new Map<number, Horario>();
+
+    for (const horario of existingSchedules) {
+      const dayValue = this.getHorarioDayValue(horario);
+      if (dayValue !== null && !Number.isNaN(dayValue)) {
+        scheduleByDay.set(dayValue, horario);
+      }
+    }
+
+    const ops: Observable<unknown>[] = [];
+
+    for (const horario of existingSchedules) {
+      const dayValue = this.getHorarioDayValue(horario);
+      if (dayValue === null || Number.isNaN(dayValue)) {
+        continue;
+      }
+
+      if (!selectedDays.includes(dayValue)) {
+        ops.push(this.removeScheduleAndSessions(horario));
+      }
+    }
+
+    for (const dayOfWeek of selectedDays) {
+      const existing = scheduleByDay.get(dayOfWeek);
+
+      if (existing) {
+        ops.push(this.updateScheduleAndSessions(existing, dayOfWeek));
+      } else {
+        ops.push(this.createScheduleAndSessions(selectedClass.id, dayOfWeek));
+      }
+    }
+
+    if (ops.length === 0) {
+      return of(null);
+    }
+
+    return forkJoin(ops);
+  }
+
+  private createScheduleAndSessions(classId: number, dayOfWeek: number): Observable<unknown> {
+    return this.horariosService
+      .create(this.buildCreateHorarioPayload(classId, dayOfWeek))
+      .pipe(switchMap((createdHorario) => this.createRecurringSessions(createdHorario.id, dayOfWeek)));
+  }
+
+  private updateScheduleAndSessions(horario: Horario, dayOfWeek: number): Observable<unknown> {
+    return this.horariosService
+      .update(this.getHorarioId(horario), this.buildUpdateHorarioPayload(dayOfWeek))
       .pipe(
         switchMap(() => {
-          const firstHorario = selectedClass.horarios[0];
-
-          if (firstHorario) {
-            return this.horariosService.update(
-              firstHorario.id,
-              this.buildUpdateHorarioPayload(selectedClass.id),
-            );
+          const upcomingSessions = this.getUpcomingSessionsForSchedule(this.getHorarioId(horario));
+          if (upcomingSessions.length === 0) {
+            return this.createRecurringSessions(this.getHorarioId(horario), dayOfWeek);
           }
-
-          return this.horariosService.create(
-            this.buildCreateHorarioPayload(selectedClass.id),
-          );
+          return this.updateUpcomingSessions(upcomingSessions);
         }),
-        switchMap((horario) => this.createSessionIfNeeded(horario.id)),
-        switchMap(() => this.updateUpcomingSessionsIfNeeded()),
       );
   }
 
-  private buildClassPayload(): Partial<CreateClaseDto & UpdateClaseDto> {
-    return {
-      name: this.classForm.name.trim(),
-      level: this.classForm.level.trim(),
-    };
+  private removeScheduleAndSessions(horario: Horario): Observable<unknown> {
+    const scheduleId = this.getHorarioId(horario);
+    const sessions = this.getSessionsForSchedule(scheduleId);
+
+    const deletes = sessions.map((sesion) =>
+      this.sesionesService.remove(sesion.id).pipe(
+        catchError((error) => {
+          console.error('Error al eliminar sesión:', error);
+          return of(null);
+        }),
+      ),
+    );
+
+    return forkJoin(deletes).pipe(
+      switchMap(() =>
+        this.horariosService.remove(scheduleId).pipe(
+          catchError((error) => {
+            console.error('Error al eliminar horario:', error);
+            return of(null);
+          }),
+        ),
+      ),
+    );
   }
 
-  private buildCreateHorarioPayload(classId: number): CreateHorarioDto {
-    return {
-      classId,
-      dayOfWeek: Number(this.classForm.dayOfWeek),
-      startTime: this.classForm.startTime.trim(),
-      endTime: this.classForm.endTime.trim(),
-      maxCapacity: Number(this.classForm.maxCapacity) || 20,
-    };
-  }
-
-  private buildUpdateHorarioPayload(classId: number): UpdateHorarioDto {
-    return {
-      classId,
-      dayOfWeek: Number(this.classForm.dayOfWeek),
-      startTime: this.classForm.startTime.trim(),
-      endTime: this.classForm.endTime.trim(),
-      maxCapacity: Number(this.classForm.maxCapacity) || 20,
-    };
-  }
-
-  private createSessionIfNeeded(scheduleId: number): Observable<unknown> {
-    if (!this.classForm.createSession) {
-      return of(null);
-    }
-
-    const payload: CreateSesionDto = {
-      scheduleId,
-      date: this.classForm.sessionDate.trim(),
-      startTime: this.classForm.startTime.trim(),
-      endTime: this.classForm.endTime.trim(),
-    };
-
-    const instructor = this.classForm.instructor.trim();
-
-    if (instructor) {
-      payload.instructor = instructor;
-    }
-
-    return this.sesionesService.create(payload);
-  }
-
-  private updateUpcomingSessionsIfNeeded(): Observable<unknown> {
-    if (!this.classForm.updateUpcomingSessions || !this.selectedClass) {
-      return of(null);
-    }
-
-    const upcomingSessions = this.selectedClass.upcomingSessions;
-
-    if (upcomingSessions.length === 0) {
-      return of(null);
-    }
-
-    const payload: UpdateSesionDto = {
-      startTime: this.classForm.startTime.trim(),
-      endTime: this.classForm.endTime.trim(),
-      status: 'MODIFIED',
-    };
-
-    const instructor = this.classForm.instructor.trim();
-
-    if (instructor) {
-      payload.instructor = instructor;
-    }
+  private createRecurringSessions(scheduleId: number, dayOfWeek: number): Observable<unknown> {
+    const dates = this.getNextDatesForDay(dayOfWeek, 8);
+    const payloads = dates.map((date) => this.buildCreateSesionPayload(scheduleId, date));
 
     return forkJoin(
-      upcomingSessions.map((sesion) =>
-        this.sesionesService.update(sesion.id, payload),
+      payloads.map((payload) =>
+        this.sesionesService.create(payload).pipe(
+          catchError((error) => {
+            console.error('Error al crear sesión automática:', error);
+            return of(null);
+          }),
+        ),
       ),
     );
   }
@@ -610,196 +638,351 @@ export class AdminClasesComponent implements OnInit {
       });
   }
 
-  onClassDayChange(dayOfWeek: number | string): void {
-    const selectedDay = Number(dayOfWeek);
-
-    if (!Number.isNaN(selectedDay)) {
-      this.classForm.dayOfWeek = selectedDay;
-      this.classForm.sessionDate = this.getNextInputDateForDay(selectedDay);
-    }
-  }
-
   trackByClassId(_: number, gymClass: ClassView): number {
     return gymClass.id;
   }
 
-  private getEmptyClassForm(): ClassForm {
-    const defaultDayOfWeek = 1;
+  private buildClassViews(): ClassView[] {
+    return (this.clases || []).map((gymClass) => {
+      const classHorarios = this.horarios.filter(
+        (horario) => this.getHorarioClassId(horario) === gymClass.id,
+      );
+      const primaryHorario = classHorarios[0];
+      const dayLabels = Array.from(
+        new Set(
+          classHorarios
+            .map((horario) => this.getHorarioDay(horario))
+            .filter((label) => Boolean(label)),
+        ),
+      );
+      const upcomingSessions = classHorarios.flatMap((horario) =>
+        this.getUpcomingSessionsForSchedule(this.getHorarioId(horario)),
+      );
 
+      return {
+        id: gymClass.id,
+        name: gymClass.name,
+        discipline: '',
+        level: gymClass.level ?? '',
+        instructor: primaryHorario ? this.getInstructorFromHorario(primaryHorario) : '',
+        primarySchedule: primaryHorario ? this.getHorarioText(primaryHorario) : '',
+        scheduleCount: classHorarios.length,
+        upcomingSessionCount: upcomingSessions.length,
+        maxCapacity: Number(primaryHorario?.maxCapacity ?? 0),
+        dayLabel: dayLabels.join(', '),
+        startTime: primaryHorario?.startTime ?? '',
+        endTime: primaryHorario?.endTime ?? '',
+        horarios: classHorarios,
+        upcomingSessions,
+        raw: gymClass,
+      };
+    });
+  }
+
+  private buildClassPayload(): CreateClaseDto | UpdateClaseDto {
+    return {
+      name: this.classForm.name.trim(),
+      level: this.classForm.level.trim(),
+    };
+  }
+
+  private buildCreateHorarioPayload(classId: number, dayOfWeek: number): CreateHorarioDto {
+    return {
+      classId,
+      dayOfWeek,
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      maxCapacity: Number(this.classForm.maxCapacity),
+    };
+  }
+
+  private buildUpdateHorarioPayload(dayOfWeek: number): UpdateHorarioDto {
+    return {
+      dayOfWeek,
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      maxCapacity: Number(this.classForm.maxCapacity),
+    };
+  }
+
+  private buildCreateSesionPayload(scheduleId: number, date: string): CreateSesionDto {
+    return {
+      scheduleId,
+      date,
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      instructor: this.classForm.instructor.trim(),
+    };
+  }
+
+  private getHorarioId(horario: Horario): number {
+    const h = horario as any;
+    return Number(h?.id ?? h?.scheduleId ?? 0);
+  }
+
+  private getSessionScheduleId(sesion: SesionDetallada): number {
+    const s = sesion as any;
+    return Number(s?.scheduleId ?? s?.horarioId ?? s?.schedule?.id ?? s?.horario?.id ?? 0);
+  }
+
+  private getSessionInstructor(sesion: SesionDetallada): string {
+    const s = sesion as any;
+    return String(s?.instructor ?? '').trim();
+  }
+
+  private getInstructorFromHorario(horario: Horario): string {
+    const scheduleId = this.getHorarioId(horario);
+    const upcoming = this.getUpcomingSessionsForSchedule(scheduleId);
+    const withInstructor = upcoming.find((sesion) => this.getSessionInstructor(sesion));
+    return withInstructor ? this.getSessionInstructor(withInstructor) : '';
+  }
+
+  getScheduleItems(dayValue: number, slot: ScheduleSlot): ScheduleItem[] {
+    const key = this.getScheduleKey(dayValue, slot.startTime, slot.endTime);
+    return this.scheduleItemsByKey.get(key) ?? [];
+  }
+
+  private buildWeekSchedule(): void {
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + this.scheduleWeekOffset * 7);
+    const weekStart = this.getStartOfWeek(baseDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    this.weekScheduleMonthLabel = this.formatMonthYear(weekStart);
+    this.weekScheduleRangeLabel = this.formatWeekRange(weekStart, weekEnd);
+
+    this.weekScheduleDays = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + index);
+      const dayValue = date.getDay();
+      const label = this.weekDays.find((day) => day.value === dayValue)?.label ?? '';
+
+      return {
+        dayValue,
+        label,
+        date,
+        dateLabel: String(date.getDate()).padStart(2, '0'),
+      };
+    });
+
+    const slotMap = new Map<string, ScheduleSlot>();
+    this.scheduleItemsByKey = new Map<string, ScheduleItem[]>();
+
+    for (const horario of this.horarios) {
+      const dayValue = this.getHorarioDayValue(horario);
+      const startTime = this.getHorarioStartTime(horario);
+      const endTime = this.getHorarioEndTime(horario);
+
+      if (dayValue === null || !startTime || !endTime) {
+        continue;
+      }
+
+      const slotKey = `${startTime}-${endTime}`;
+      if (!slotMap.has(slotKey)) {
+        slotMap.set(slotKey, { startTime, endTime });
+      }
+
+      const item: ScheduleItem = {
+        dayValue,
+        startTime,
+        endTime,
+        className: this.getHorarioClassName(horario) || 'Clase',
+        level: this.getHorarioClassLevel(horario),
+        instructor: this.getInstructorFromHorario(horario),
+        maxCapacity: Number((horario as any)?.maxCapacity ?? 0),
+      };
+
+      const cellKey = this.getScheduleKey(dayValue, startTime, endTime);
+      const items = this.scheduleItemsByKey.get(cellKey) ?? [];
+      items.push(item);
+      this.scheduleItemsByKey.set(cellKey, items);
+    }
+
+    this.weekScheduleSlots = Array.from(slotMap.values()).sort(
+      (a, b) => this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime),
+    );
+  }
+
+  private getScheduleKey(dayValue: number, startTime: string, endTime: string): string {
+    return `${dayValue}|${startTime}|${endTime}`;
+  }
+
+  private getStartOfWeek(date: Date): Date {
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const start = new Date(date);
+    start.setDate(date.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+
+  private formatMonthYear(date: Date): string {
+    return new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(date);
+  }
+
+  private formatWeekRange(start: Date, end: Date): string {
+    const sameMonth = start.getMonth() === end.getMonth();
+    const monthFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long' });
+    const startMonth = monthFormatter.format(start);
+    const endMonth = monthFormatter.format(end);
+    const year = start.getFullYear();
+
+    if (sameMonth) {
+      return `${start.getDate()} - ${end.getDate()} ${startMonth} ${year}`;
+    }
+
+    return `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth} ${year}`;
+  }
+
+  private timeToMinutes(value: string): number {
+    const [hours, minutes] = value.split(':').map(Number);
+    return (hours || 0) * 60 + (minutes || 0);
+  }
+
+  private getHorarioStartTime(horario: Horario): string {
+    const h = horario as any;
+    return String(h?.startTime ?? h?.horaInicio ?? h?.inicio ?? '').trim();
+  }
+
+  private getHorarioEndTime(horario: Horario): string {
+    const h = horario as any;
+    return String(h?.endTime ?? h?.horaFin ?? h?.fin ?? '').trim();
+  }
+
+  private getHorarioClassLevel(horario: Horario): string {
+    const h = horario as any;
+    return String(
+      h?.class?.level ?? h?.class?.nivel ?? h?.clase?.level ?? h?.clase?.nivel ?? '',
+    );
+  }
+
+  private getEmptyClassForm(): ClassForm {
     return {
       name: '',
       level: '',
-      dayOfWeek: defaultDayOfWeek,
+      daysOfWeek: [1],
       startTime: '18:00',
       endTime: '19:00',
       maxCapacity: 20,
       instructor: '',
-      sessionDate: this.getNextInputDateForDay(defaultDayOfWeek),
-      createSession: true,
-      updateUpcomingSessions: false,
     };
   }
 
-  private getTodayInputDate(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  }
-
-  private getNextInputDateForDay(dayOfWeek: number): string {
+  private getNextDatesForDay(dayOfWeek: number, occurrences: number): string[] {
+    const dates: string[] = [];
     const date = new Date();
     const currentDay = date.getDay();
     const daysToAdd = (dayOfWeek - currentDay + 7) % 7;
 
     date.setDate(date.getDate() + daysToAdd);
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  }
-
-  private dateMatchesDayOfWeek(dateValue: string, dayOfWeek: number): boolean {
-    const [year, month, day] = dateValue.split('-').map(Number);
-
-    if (!year || !month || !day) {
-      return false;
+    for (let index = 0; index < occurrences; index += 1) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      dates.push(`${year}-${month}-${day}`);
+      date.setDate(date.getDate() + 7);
     }
 
-    return new Date(year, month - 1, day).getDay() === dayOfWeek;
+    return dates;
   }
 
-  private buildClassViews(): ClassView[] {
-    return this.clases
-      .map((clase) => {
-        const classId = this.getClassId(clase);
-        const className = this.getClassName(clase);
+  private getUpcomingSessionsForSchedule(scheduleId: number): SesionDetallada[] {
+    const sessions = this.getSessionsForSchedule(scheduleId);
 
-        const classHorarios = this.horarios.filter((horario) => {
-          const horarioClassId = this.getHorarioClassId(horario);
-          const horarioClassName = this.getHorarioClassName(horario);
-
-          return (
-            horarioClassId === classId ||
-            this.normalize(horarioClassName) === this.normalize(className)
-          );
-        });
-
-        const classSessions = this.sesiones.filter((sesion) => {
-          const sessionClassId = this.getSessionClassId(sesion);
-          const sessionClassName = this.getSessionClassName(sesion);
-
-          return (
-            sessionClassId === classId ||
-            this.normalize(sessionClassName) === this.normalize(className)
-          );
-        });
-
-        const upcomingSessions = classSessions
-          .filter((sesion) => this.isUpcomingSession(sesion))
-          .sort(
-            (a, b) => this.getSessionDateTime(a).getTime() - this.getSessionDateTime(b).getTime(),
-          );
-
-        const instructor =
-          classHorarios.map((horario) => this.getInstructorFromHorario(horario)).find(Boolean) ||
-          upcomingSessions.map((sesion) => this.getSessionInstructor(sesion)).find(Boolean) ||
-          '';
-
-        const primarySchedule =
-          classHorarios.length > 0 ? this.getHorarioText(classHorarios[0]) : '';
-
-        return {
-          id: classId,
-          name: className,
-          discipline: this.getClassDiscipline(clase),
-          level: this.getClassLevel(clase),
-          instructor,
-          primarySchedule,
-          scheduleCount: classHorarios.length,
-          upcomingSessionCount: upcomingSessions.length,
-          horarios: classHorarios,
-          upcomingSessions,
-          raw: clase,
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return sessions
+      .filter((sesion) => this.isUpcomingSession(sesion))
+      .sort((a, b) => this.getSessionDateTime(a).getTime() - this.getSessionDateTime(b).getTime());
   }
 
-  private buildFilterOptions(): void {
-    this.disciplineOptions = this.uniqueSorted(
-      this.classViews.map((gymClass) => gymClass.discipline),
-    );
+  private getSessionsForSchedule(scheduleId: number): SesionDetallada[] {
+    return this.sesiones.filter((sesion) => this.getSessionScheduleId(sesion) === scheduleId);
+  }
 
-    this.levelOptions = this.uniqueSorted(this.classViews.map((gymClass) => gymClass.level));
+  private updateUpcomingSessions(upcomingSessions: SesionDetallada[]): Observable<unknown> {
+    const payload: UpdateSesionDto = {
+      startTime: this.classForm.startTime.trim(),
+      endTime: this.classForm.endTime.trim(),
+      instructor: this.classForm.instructor.trim(),
+      status: 'MODIFIED',
+    };
 
-    this.instructorOptions = this.uniqueSorted(
-      this.classViews.map((gymClass) => gymClass.instructor),
-    );
-
-    this.dayOptions = this.uniqueSorted(
-      this.horarios.map((horario) => this.getHorarioDay(horario)),
+    return forkJoin(
+      upcomingSessions.map((sesion) =>
+        this.sesionesService.update(sesion.id, payload).pipe(
+          catchError((error) => {
+            console.error('Error al actualizar sesión:', error);
+            return of(null);
+          }),
+        ),
+      ),
     );
   }
 
-  private applyFilters(): void {
-    const search = this.normalize(this.filters.search);
-    const discipline = this.normalize(this.filters.discipline);
-    const level = this.normalize(this.filters.level);
-    const instructor = this.normalize(this.filters.instructor);
-    const day = this.normalize(this.filters.day);
+  private getSessionClassId(sesion: SesionDetallada): number {
+    const s = sesion as any;
 
-    this.filteredClasses = this.classViews.filter((gymClass) => {
-      const classDays = gymClass.horarios.map((horario) =>
-        this.normalize(this.getHorarioDay(horario)),
-      );
-
-      const matchesSearch =
-        !search ||
-        this.normalize(gymClass.name).includes(search) ||
-        this.normalize(gymClass.discipline).includes(search) ||
-        this.normalize(gymClass.level).includes(search) ||
-        this.normalize(gymClass.instructor).includes(search);
-
-      const matchesDiscipline = !discipline || this.normalize(gymClass.discipline) === discipline;
-
-      const matchesLevel = !level || this.normalize(gymClass.level) === level;
-
-      const matchesInstructor = !instructor || this.normalize(gymClass.instructor) === instructor;
-
-      const matchesDay = !day || classDays.includes(day);
-
-      return matchesSearch && matchesDiscipline && matchesLevel && matchesInstructor && matchesDay;
-    });
+    return Number(
+      s?.classId ??
+      s?.claseId ??
+      s?.gymClassId ??
+      s?.class?.id ??
+      s?.clase?.id ??
+      s?.schedule?.classId ??
+      s?.schedule?.class?.id ??
+      s?.schedule?.clase?.id ??
+      s?.horario?.classId ??
+      s?.horario?.class?.id ??
+      s?.horario?.clase?.id ??
+      0,
+    );
   }
 
-  private getClassId(clase: Clase): number {
-    const c = clase as any;
-    return Number(c?.id ?? c?.classId ?? c?.claseId ?? 0);
+  private getSessionClassName(sesion: SesionDetallada): string {
+    const s = sesion as any;
+
+    return String(
+      s?.class?.name ??
+      s?.class?.nombre ??
+      s?.clase?.name ??
+      s?.clase?.nombre ??
+      s?.schedule?.class?.name ??
+      s?.schedule?.class?.nombre ??
+      s?.schedule?.clase?.name ??
+      s?.schedule?.clase?.nombre ??
+      s?.horario?.class?.name ??
+      s?.horario?.class?.nombre ??
+      s?.horario?.clase?.name ??
+      s?.horario?.clase?.nombre ??
+      '',
+    );
   }
 
-  private getClassName(clase: Clase): string {
-    const c = clase as any;
-    return String(c?.name ?? c?.nombre ?? c?.title ?? 'Clase');
+  private isUpcomingSession(sesion: SesionDetallada): boolean {
+    return this.getSessionDateTime(sesion).getTime() >= new Date().getTime();
   }
 
-  private getClassDiscipline(clase: Clase): string {
-    const c = clase as any;
-    return String(c?.discipline ?? c?.disciplina ?? c?.modality ?? c?.modalidad ?? '');
-  }
+  private getSessionDateTime(sesion: SesionDetallada): Date {
+    const s = sesion as any;
 
-  private getClassLevel(clase: Clase): string {
-    const c = clase as any;
-    return String(c?.level ?? c?.nivel ?? '');
-  }
+    const rawDate = s?.date ?? s?.fecha;
+    const rawStartTime = s?.startTime ?? s?.horaInicio ?? s?.inicio;
 
-  private getClassDescription(clase: Clase): string {
-    const c = clase as any;
-    return String(c?.description ?? c?.descripcion ?? '');
+    if (!rawDate) {
+      return new Date(0);
+    }
+
+    if (!rawStartTime) {
+      const parsedOnlyDate = new Date(rawDate);
+      return isNaN(parsedOnlyDate.getTime()) ? new Date(0) : parsedOnlyDate;
+    }
+
+    const datePart = String(rawDate).split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = String(rawStartTime).split(':').map(Number);
+
+    return new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
   }
 
   private getHorarioClassId(horario: Horario): number {
@@ -866,142 +1049,16 @@ export class AdminClasesComponent implements OnInit {
     return this.formatDay(rawDay);
   }
 
-  getInstructorFromHorario(horario: Horario): string {
+  private getHorarioDayValue(horario: Horario): number | null {
     const h = horario as any;
+    const rawDay = h?.dayOfWeek ?? h?.day ?? h?.dia ?? h?.weekday ?? h?.weekDay ?? null;
 
-    const instructor = h?.instructor ?? h?.coach ?? h?.profesor ?? null;
-
-    const fullName = [
-      instructor?.name ?? instructor?.nombre ?? '',
-      instructor?.surname ?? instructor?.apellido ?? instructor?.lastName ?? '',
-    ]
-      .join(' ')
-      .trim();
-
-    return String(fullName || h?.instructorName || h?.nombreInstructor || h?.coachName || '');
-  }
-
-  private getSessionClassId(sesion: SesionDetallada): number {
-    const s = sesion as any;
-
-    return Number(
-      s?.classId ??
-      s?.claseId ??
-      s?.gymClassId ??
-      s?.class?.id ??
-      s?.clase?.id ??
-      s?.schedule?.classId ??
-      s?.schedule?.class?.id ??
-      s?.schedule?.clase?.id ??
-      s?.horario?.classId ??
-      s?.horario?.class?.id ??
-      s?.horario?.clase?.id ??
-      0,
-    );
-  }
-
-  private getSessionClassName(sesion: SesionDetallada): string {
-    const s = sesion as any;
-
-    return String(
-      s?.class?.name ??
-      s?.class?.nombre ??
-      s?.clase?.name ??
-      s?.clase?.nombre ??
-      s?.schedule?.class?.name ??
-      s?.schedule?.class?.nombre ??
-      s?.schedule?.clase?.name ??
-      s?.schedule?.clase?.nombre ??
-      s?.horario?.class?.name ??
-      s?.horario?.class?.nombre ??
-      s?.horario?.clase?.name ??
-      s?.horario?.clase?.nombre ??
-      '',
-    );
-  }
-
-  getSessionInstructor(sesion: SesionDetallada): string {
-    const s = sesion as any;
-
-    const instructor =
-      s?.instructor ??
-      s?.coach ??
-      s?.profesor ??
-      s?.schedule?.instructor ??
-      s?.schedule?.coach ??
-      s?.horario?.instructor ??
-      null;
-
-    const fullName = [
-      instructor?.name ?? instructor?.nombre ?? '',
-      instructor?.surname ?? instructor?.apellido ?? instructor?.lastName ?? '',
-    ]
-      .join(' ')
-      .trim();
-
-    return String(fullName || s?.instructorName || s?.nombreInstructor || s?.coachName || '');
-  }
-
-  private isUpcomingSession(sesion: SesionDetallada): boolean {
-    return this.getSessionDateTime(sesion).getTime() >= new Date().getTime();
-  }
-
-  private getSessionDateTime(sesion: SesionDetallada): Date {
-    const s = sesion as any;
-
-    const rawDate = s?.date ?? s?.fecha;
-    const rawStartTime = s?.startTime ?? s?.horaInicio ?? s?.inicio;
-
-    if (!rawDate) {
-      return new Date(0);
+    if (rawDay === null || rawDay === undefined || rawDay === '') {
+      return null;
     }
 
-    if (!rawStartTime) {
-      const parsedOnlyDate = new Date(rawDate);
-      return isNaN(parsedOnlyDate.getTime()) ? new Date(0) : parsedOnlyDate;
-    }
-
-    const datePart = String(rawDate).split('T')[0];
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes] = String(rawStartTime).split(':').map(Number);
-
-    return new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
-  }
-
-  buildSesionSubtitle(sesion: SesionDetallada): string {
-    const s = sesion as any;
-
-    const rawDate = s?.date ?? s?.fecha ?? '';
-    const startTime = s?.startTime ?? s?.horaInicio ?? s?.inicio ?? '';
-    const endTime = s?.endTime ?? s?.horaFin ?? s?.fin ?? '';
-
-    let formattedDate = '';
-
-    if (rawDate) {
-      const parsedDate = new Date(rawDate);
-
-      if (!isNaN(parsedDate.getTime())) {
-        formattedDate = parsedDate.toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-      }
-    }
-
-    if (formattedDate && startTime && endTime) {
-      return `${formattedDate}, ${startTime} - ${endTime}`;
-    }
-
-    if (formattedDate && startTime) {
-      return `${formattedDate}, ${startTime}`;
-    }
-
-    if (startTime && endTime) {
-      return `${startTime} - ${endTime}`;
-    }
-
-    return formattedDate || 'Sesión sin fecha';
+    const parsed = Number(rawDay);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 
   private formatDay(value: unknown): string {
@@ -1036,10 +1093,24 @@ export class AdminClasesComponent implements OnInit {
     return dayMap[key] || String(value ?? '');
   }
 
-  private uniqueSorted(values: string[]): string[] {
-    return [...new Set(values.map((value) => String(value ?? '').trim()).filter(Boolean))].sort(
-      (a, b) => a.localeCompare(b),
-    );
+  toggleDaySelection(dayValue: number, checked: boolean): void {
+    const current = new Set(this.classForm.daysOfWeek);
+    if (checked) {
+      current.add(dayValue);
+    } else {
+      current.delete(dayValue);
+    }
+    this.classForm.daysOfWeek = this.sortDays(Array.from(current));
+  }
+
+  getUsuarioDisplayName(usuario: Usuario): string {
+    const fullName = [usuario.firstName, usuario.lastName].filter(Boolean).join(' ').trim();
+    return fullName || usuario.name || usuario.email;
+  }
+
+  private sortDays(days: number[]): number[] {
+    const order = new Map(this.weekDays.map((day, index) => [day.value, index]));
+    return [...days].sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
   }
 
   private normalize(value: string): string {
@@ -1048,5 +1119,17 @@ export class AdminClasesComponent implements OnInit {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  previousWeek(): void {
+    this.scheduleWeekOffset -= 1;
+    this.buildWeekSchedule();
+    this.cdr.detectChanges();
+  }
+
+  nextWeek(): void {
+    this.scheduleWeekOffset += 1;
+    this.buildWeekSchedule();
+    this.cdr.detectChanges();
   }
 }

@@ -10,87 +10,55 @@
   <main class="classes-main">
     <section class="intro-block">
       <h1>Gestión de Clases</h1>
-      <p>Administración de clases, horarios y sesiones</p>
+      <p>Crear y editar clases con horario semanal</p>
     </section>
 
-    <section class="summary-grid">
-      <article class="summary-card">
-        <span class="card-label">Clases registradas</span>
-        <h3>{{ classViews.length }}</h3>
-      </article>
+    <section class="content-card schedule-card">
+      <div class="content-header schedule-header">
+        <div>
+          <h2>Horario semanal</h2>
+          <p>
+            {{ weekScheduleMonthLabel }} · {{ weekScheduleRangeLabel }}
+          </p>
+        </div>
 
-      <article class="summary-card">
-        <span class="card-label">Horarios activos</span>
-        <h3>{{ horarios.length }}</h3>
-      </article>
-
-      <article class="summary-card">
-        <span class="card-label">Próximas sesiones</span>
-        <h3>{{ totalUpcomingSessions }}</h3>
-      </article>
-    </section>
-
-    <section class="content-card">
-      <div class="content-header">
-        <h2>Filtros</h2>
+        <div class="schedule-nav">
+          <button type="button" class="admin-button secondary" (click)="previousWeek()">
+            <
+          </button>
+          <button type="button" class="admin-button secondary" (click)="nextWeek()">
+            >
+          </button>
+        </div>
       </div>
 
-      <form class="filters-form" (ngSubmit)="searchClasses()">
-        <div class="form-group">
-          <label for="search">Buscar</label>
-          <input
-            id="search"
-            name="search"
-            type="text"
-            [(ngModel)]="filters.search"
-            placeholder="Nombre de la clase"
-          />
+      <div class="schedule-grid" *ngIf="weekScheduleDays.length > 0">
+        <div class="schedule-row schedule-header-row">
+          <div class="schedule-time-cell">Hora</div>
+          <div class="schedule-day-cell" *ngFor="let day of weekScheduleDays">
+            <div class="schedule-day-name">{{ day.label }}</div>
+            <div class="schedule-day-date">{{ day.dateLabel }}</div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="level">Nivel</label>
-          <select id="level" name="level" [(ngModel)]="filters.level">
-            <option value="">Todos</option>
-            <option *ngFor="let level of levelOptions" [value]="level">
-              {{ level }}
-            </option>
-          </select>
+        <div class="schedule-row" *ngFor="let slot of weekScheduleSlots">
+          <div class="schedule-time-cell">{{ slot.startTime }} - {{ slot.endTime }}</div>
+          <div class="schedule-day-cell" *ngFor="let day of weekScheduleDays">
+            <ng-container *ngIf="getScheduleItems(day.dayValue, slot) as items">
+              <div class="schedule-block" *ngFor="let item of items">
+                <strong>{{ item.className }}</strong>
+                <span>{{ item.level || 'Nivel por definir' }}</span>
+                <small>{{ item.instructor || 'Sin instructor' }}</small>
+              </div>
+              <div class="schedule-empty" *ngIf="items.length === 0">—</div>
+            </ng-container>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="instructor">Instructor</label>
-          <select
-            id="instructor"
-            name="instructor"
-            [(ngModel)]="filters.instructor"
-          >
-            <option value="">Todos</option>
-            <option *ngFor="let instructor of instructorOptions" [value]="instructor">
-              {{ instructor }}
-            </option>
-          </select>
+        <div class="schedule-empty-week" *ngIf="weekScheduleSlots.length === 0">
+          No hay horarios configurados para esta semana.
         </div>
-
-        <div class="form-group">
-          <label for="day">Día</label>
-          <select id="day" name="day" [(ngModel)]="filters.day">
-            <option value="">Todos</option>
-            <option *ngFor="let day of dayOptions" [value]="day">
-              {{ day }}
-            </option>
-          </select>
-        </div>
-
-        <div class="filters-actions">
-          <button type="submit" class="admin-button">
-            Buscar
-          </button>
-
-          <button type="button" class="admin-button secondary" (click)="clearFilters()">
-            Limpiar
-          </button>
-        </div>
-      </form>
+      </div>
     </section>
 
     <section class="content-card">
@@ -122,19 +90,19 @@
             <h3>{{ gymClass.name }}</h3>
 
             <p>
-              {{ gymClass.primarySchedule || 'Sin horario asignado' }}
+              {{ gymClass.dayLabel || 'Sin día' }}
+              ·
+              {{ gymClass.startTime && gymClass.endTime ? gymClass.startTime + ' - ' + gymClass.endTime : 'Sin horario' }}
             </p>
 
             <span>
-              {{ gymClass.level || 'Sin nivel' }}
+              Nivel: {{ gymClass.level || 'Sin nivel' }}
               ·
-              {{ gymClass.instructor || 'Sin instructor' }}
+              Instructor: {{ gymClass.instructor || 'Sin instructor' }}
             </span>
 
             <small>
-              Horarios: {{ gymClass.scheduleCount }}
-              ·
-              Próximas sesiones: {{ gymClass.upcomingSessionCount }}
+              Capacidad: {{ gymClass.maxCapacity || 'Sin capacidad' }}
             </small>
           </div>
 
@@ -144,7 +112,7 @@
               class="admin-button"
               (click)="manageClass(gymClass)"
             >
-              Administrar
+              Editar
             </button>
 
             <button
@@ -163,7 +131,7 @@
         class="empty-state"
         *ngIf="!loading && !errorMessage && filteredClasses.length === 0"
       >
-        <p>No hay clases que coincidan con los filtros.</p>
+        <p>No hay clases registradas.</p>
       </div>
     </section>
   </main>
@@ -172,12 +140,12 @@
     <section class="class-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>
-          <h2>{{ classModalMode === 'create' ? 'Nueva clase' : 'Administrar clase' }}</h2>
+          <h2>{{ classModalMode === 'create' ? 'Nueva clase' : 'Editar clase' }}</h2>
           <p>
             {{
               classModalMode === 'create'
-                ? 'Crear una nueva clase para el gimnasio'
-                : 'Editar información de la clase'
+                ? 'Crea una clase y genera sesiones semanales automáticamente'
+                : 'Actualiza los datos de la clase'
             }}
           </p>
         </div>
@@ -192,57 +160,74 @@
           <h3>Datos de la clase</h3>
 
           <div class="form-grid">
-          <div class="form-group">
-            <label for="className">Nombre</label>
-            <input
-              id="className"
-              name="className"
-              type="text"
-              [(ngModel)]="classForm.name"
-              placeholder="Ej: Jiu-Jitsu Básico"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="classLevel">Nivel</label>
-            <select
-              id="classLevel"
-              name="classLevel"
-              [(ngModel)]="classForm.level"
-              required
-            >
-              <option value="">Selecciona un nivel</option>
-              <option value="Básico">Básico</option>
-              <option value="Intermedio">Intermedio</option>
-              <option value="Avanzado">Avanzado</option>
-              <option value="Todos los niveles">Todos los niveles</option>
-            </select>
-          </div>
-        </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Horario base</h3>
-
-          <div class="form-grid">
             <div class="form-group">
-              <label for="classDay">Día</label>
+              <label for="className">Nombre</label>
+              <input
+                id="className"
+                name="className"
+                type="text"
+                [(ngModel)]="classForm.name"
+                placeholder="Ej: Jiu-Jitsu Básico"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="classLevel">Nivel</label>
               <select
-                id="classDay"
-                name="classDay"
-                [(ngModel)]="classForm.dayOfWeek"
-                (ngModelChange)="onClassDayChange($event)"
+                id="classLevel"
+                name="classLevel"
+                [(ngModel)]="classForm.level"
                 required
               >
-                <option *ngFor="let day of weekDays" [ngValue]="day.value">
-                  {{ day.label }}
-                </option>
+                <option value="">Selecciona un nivel</option>
+                <option value="Básico">Básico</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+                <option value="Todos los niveles">Todos los niveles</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label for="classCapacity">Aforo máximo</label>
+              <label for="classInstructor">Instructor</label>
+              <select
+                id="classInstructor"
+                name="classInstructor"
+                [(ngModel)]="classForm.instructor"
+                required
+              >
+                <option value="">Selecciona un profesor</option>
+                <option
+                  *ngFor="let profesor of profesores"
+                  [value]="getUsuarioDisplayName(profesor)"
+                >
+                  {{ getUsuarioDisplayName(profesor) }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Horario semanal</h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Días</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item" *ngFor="let day of weekDays">
+                  <input
+                    type="checkbox"
+                    [checked]="classForm.daysOfWeek.includes(day.value)"
+                    (change)="toggleDaySelection(day.value, $event.target.checked)"
+                  />
+                  <span>{{ day.label }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="classCapacity">Capacidad</label>
               <input
                 id="classCapacity"
                 name="classCapacity"
@@ -278,90 +263,9 @@
           </div>
         </div>
 
-        <div class="form-section">
-          <h3>Sesión</h3>
-
-          <label class="checkbox-row">
-            <input
-              type="checkbox"
-              name="createSession"
-              [(ngModel)]="classForm.createSession"
-            />
-            <span>Crear sesión inicial</span>
-          </label>
-
-          <div class="form-grid" *ngIf="classForm.createSession">
-            <div class="form-group">
-              <label for="sessionDate">Fecha</label>
-              <input
-                id="sessionDate"
-                name="sessionDate"
-                type="date"
-                [(ngModel)]="classForm.sessionDate"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="sessionInstructor">Instructor</label>
-              <input
-                id="sessionInstructor"
-                name="sessionInstructor"
-                type="text"
-                [(ngModel)]="classForm.instructor"
-                placeholder="Nombre del instructor"
-              />
-            </div>
-          </div>
-
-          <label
-            class="checkbox-row"
-            *ngIf="classModalMode === 'edit' && selectedClass"
-          >
-            <input
-              type="checkbox"
-              name="updateUpcomingSessions"
-              [(ngModel)]="classForm.updateUpcomingSessions"
-            />
-            <span>Actualizar próximas sesiones con este horario e instructor</span>
-          </label>
-        </div>
-
         <p class="state-message error" *ngIf="classModalError">
           {{ classModalError }}
         </p>
-
-        <div class="modal-detail-grid" *ngIf="classModalMode === 'edit' && selectedClass">
-          <div class="modal-detail-column">
-            <h3>Horarios asignados</h3>
-
-            <div class="detail-list" *ngIf="selectedClass.horarios.length > 0">
-              <article class="detail-item" *ngFor="let horario of selectedClass.horarios">
-                <strong>{{ getHorarioText(horario) }}</strong>
-                <span>{{ getInstructorFromHorario(horario) || 'Sin instructor' }}</span>
-              </article>
-            </div>
-
-            <p class="state-message" *ngIf="selectedClass.horarios.length === 0">
-              Esta clase no tiene horarios asignados.
-            </p>
-          </div>
-
-          <div class="modal-detail-column">
-            <h3>Próximas sesiones</h3>
-
-            <div class="detail-list" *ngIf="selectedClass.upcomingSessions.length > 0">
-              <article class="detail-item" *ngFor="let sesion of selectedClass.upcomingSessions">
-                <strong>{{ buildSesionSubtitle(sesion) }}</strong>
-                <span>{{ getSessionInstructor(sesion) || 'Sin instructor' }}</span>
-              </article>
-            </div>
-
-            <p class="state-message" *ngIf="selectedClass.upcomingSessions.length === 0">
-              Esta clase no tiene próximas sesiones.
-            </p>
-          </div>
-        </div>
 
         <div class="modal-actions">
           <button

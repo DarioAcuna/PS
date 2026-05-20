@@ -37,6 +37,9 @@
 
     <p class="state-message" *ngIf="loading()">Cargando clases...</p>
     <p class="state-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+    <p class="state-message" *ngIf="!loading() && hasActivePlan()">
+      Asistencias disponibles: {{ remainingAttendances() }} / {{ monthlyClassLimit() }}
+    </p>
 
     <section class="classes-list" *ngIf="!loading()">
       <article
@@ -80,6 +83,12 @@
                   ? 'Clase pasada'
                 : freeSlots(session) === 0
                   ? 'Sin plazas'
+                : !hasActivePlan()
+                  ? 'Sin cuota'
+                : isSessionAfterMembershipExpiration(session)
+                  ? 'Fuera de cuota'
+                : !hasAvailableAttendance()
+                  ? 'Sin asistencias'
                   : 'Reservar clase'
           }}
         </button>
@@ -137,6 +146,14 @@
           </div>
         </div>
       </ng-container>
+    </div>
+  </div>
+
+  <div class="notice-modal" *ngIf="noticeMessage()" (click)="closeNotice()">
+    <div class="notice-modal-card" (click)="$event.stopPropagation()">
+      <h2>Aviso</h2>
+      <p>{{ noticeMessage() }}</p>
+      <button type="button" class="reserve-btn" (click)="closeNotice()">Entendido</button>
     </div>
   </div>
 

@@ -120,9 +120,6 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -148,15 +145,30 @@ export class AuthService {
     const plan = user.membershipPlan
       ? PAYMENT_PLANS[user.membershipPlan as PaymentPlanId]
       : undefined;
+    const membershipExpiresAt = user.membershipStartedAt
+      ? new Date(
+          user.membershipStartedAt.getFullYear(),
+          user.membershipStartedAt.getMonth() + 1,
+          user.membershipStartedAt.getDate(),
+          user.membershipStartedAt.getHours(),
+          user.membershipStartedAt.getMinutes(),
+          user.membershipStartedAt.getSeconds(),
+          user.membershipStartedAt.getMilliseconds(),
+        )
+      : null;
     const usedClasses = await this.prisma.reservation.count({
       where: {
         userId,
-        session: {
-          date: {
-            gte: monthStart,
-            lt: nextMonthStart,
-          },
-        },
+        ...(user.membershipStartedAt && membershipExpiresAt
+          ? {
+              session: {
+                date: {
+                  gte: user.membershipStartedAt,
+                  lt: membershipExpiresAt,
+                },
+              },
+            }
+          : { id: -1 }),
       },
     });
 
@@ -167,6 +179,7 @@ export class AuthService {
         planName: plan?.name ?? 'Sin cuota',
         monthlyClassLimit: plan?.monthlyClassLimit ?? 0,
         usedClasses,
+        expiresAt: membershipExpiresAt?.toISOString() ?? null,
       },
     };
   }

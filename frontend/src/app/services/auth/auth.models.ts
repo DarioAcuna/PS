@@ -15,6 +15,7 @@ export interface User {
     planName: string;
     monthlyClassLimit: number;
     usedClasses: number;
+    expiresAt: string | null;
   };
   createdAt?: string;
 }

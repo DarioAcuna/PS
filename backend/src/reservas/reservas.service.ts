@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PAYMENT_PLANS } from '../pagos/payment-plans';
+import type { PaymentPlanId } from '../pagos/payment-plans';
 import { ListarReservasDto } from './dto/listar-reservas.dto';
 
 @Injectable()
@@ -30,6 +32,73 @@ export class ReservasService {
     return startAt <= new Date();
   }
 
+  private getMembershipExpiration(startedAt: Date): Date {
+    return new Date(
+      startedAt.getFullYear(),
+      startedAt.getMonth() + 1,
+      startedAt.getDate(),
+      startedAt.getHours(),
+      startedAt.getMinutes(),
+      startedAt.getSeconds(),
+      startedAt.getMilliseconds(),
+    );
+  }
+
+  private getSessionStartAt(session: { date: Date; startTime: string }): Date {
+    const date = session.date.toISOString().slice(0, 10);
+    return new Date(`${date}T${session.startTime}:00`);
+  }
+
+  private async assertUserHasAvailableAttendance(
+    userId: number,
+    session: { date: Date; startTime: string },
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { membershipPlan: true, membershipStartedAt: true },
+    });
+    const plan = user?.membershipPlan
+      ? PAYMENT_PLANS[user.membershipPlan as PaymentPlanId]
+      : undefined;
+
+    if (!plan) {
+      throw new ConflictException('Necesitas una cuota activa para reservar clases');
+    }
+
+    if (!user?.membershipStartedAt) {
+      throw new ConflictException('Necesitas una cuota activa para reservar clases');
+    }
+
+    const membershipExpiresAt = this.getMembershipExpiration(
+      user.membershipStartedAt,
+    );
+    const sessionStartAt = this.getSessionStartAt(session);
+
+    if (sessionStartAt >= membershipExpiresAt) {
+      throw new ConflictException(
+        'No puedes reservar clases posteriores a la caducidad de tu cuota',
+      );
+    }
+
+    const usedClasses = await this.prisma.reservation.count({
+      where: {
+        userId,
+        session: {
+          date: {
+            gte: user.membershipStartedAt,
+            lt: membershipExpiresAt,
+          },
+        },
+      },
+    });
+
+    if (usedClasses >= plan.monthlyClassLimit) {
+      throw new ConflictException(
+        'No te quedan asistencias disponibles en tu cuota',
+      );
+    }
+  }
+
   async create(sessionId: number, userId: number) {
     const session = await this.getSessionWithSchedule(sessionId);
 
@@ -46,6 +115,8 @@ export class ReservasService {
     if (existing) {
       throw new ConflictException('Ya tienes una reserva para esta sesion');
     }
+
+    await this.assertUserHasAvailableAttendance(userId, session);
 
     const currentCount = await this.prisma.reservation.count({
       where: { sessionId },

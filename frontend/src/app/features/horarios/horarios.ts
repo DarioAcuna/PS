@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { forkJoin, of, take } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { AuthService } from '../../services/auth/auth.service';
+import { User } from '../../services/auth/auth.models';
 import { Evento } from '../../services/eventos/eventos.models';
 import { EventosService } from '../../services/eventos/eventos.service';
 import { ReservasService } from '../../services/reservas/reservas.service';
@@ -53,6 +54,7 @@ export class HorariosComponent implements OnInit {
 
   readonly sessions = signal<SesionDetallada[]>([]);
   readonly events = signal<Evento[]>([]);
+  readonly profile = signal<User | null>(null);
   readonly myReservationSessionIds = signal<Set<number>>(new Set());
   readonly reservationCounts = signal<Record<number, number>>({});
   readonly participantsBySession = signal<Record<number, ReservaDetallada[]>>({});
@@ -61,10 +63,25 @@ export class HorariosComponent implements OnInit {
   readonly loadingParticipants = signal<number | null>(null);
   readonly actionSessionId = signal<number | null>(null);
   readonly errorMessage = signal('');
+  readonly noticeMessage = signal('');
   readonly selectedDate = signal(this.getTodayInputDate());
   readonly selectedClass = signal('');
 
   readonly isAdmin = computed(() => this.authService.isAdmin());
+  readonly monthlyClassLimit = computed(
+    () => this.profile()?.membership?.monthlyClassLimit ?? 0,
+  );
+  readonly usedClasses = computed(() => this.profile()?.membership?.usedClasses ?? 0);
+  readonly membershipExpiresAt = computed(
+    () => this.profile()?.membership?.expiresAt ?? null,
+  );
+  readonly remainingAttendances = computed(() =>
+    Math.max(this.monthlyClassLimit() - this.usedClasses(), 0),
+  );
+  readonly hasActivePlan = computed(() => this.monthlyClassLimit() > 0);
+  readonly hasAvailableAttendance = computed(
+    () => this.hasActivePlan() && this.remainingAttendances() > 0,
+  );
   readonly classOptions = computed(() => {
     const names = this.sessions()
       .map((session) => this.classNameValue(session))
@@ -159,6 +176,9 @@ export class HorariosComponent implements OnInit {
     forkJoin({
       sessions: this.sesionesService.findAll({ date: this.selectedDate() }),
       events: this.eventosService.findAll(),
+      profile: this.authService
+        .getProfile()
+        .pipe(catchError(() => of(this.authService.getCurrentUser()))),
       mine: this.reservasService.findMine().pipe(catchError(() => of([] as ReservaDetallada[]))),
     })
       .pipe(
@@ -168,7 +188,7 @@ export class HorariosComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: ({ sessions, events, mine }) => {
+        next: ({ sessions, events, profile, mine }) => {
           const safeSessions = Array.isArray(sessions) ? sessions : [];
           const safeEvents = Array.isArray(events) ? events : [];
           const myIds = new Set(
@@ -179,6 +199,7 @@ export class HorariosComponent implements OnInit {
 
           this.sessions.set(safeSessions);
           this.events.set(safeEvents);
+          this.profile.set(profile);
           this.myReservationSessionIds.set(myIds);
           this.loadCounts(safeSessions);
         },
@@ -194,6 +215,26 @@ export class HorariosComponent implements OnInit {
     }
 
     const isReserved = this.isReserved(session.id);
+
+    if (!isReserved) {
+      if (!this.hasActivePlan()) {
+        this.noticeMessage.set('Necesitas una cuota activa para reservar clases.');
+        return;
+      }
+
+      if (this.isSessionAfterMembershipExpiration(session)) {
+        this.noticeMessage.set(
+          'No puedes reservar clases posteriores a la caducidad de tu cuota.',
+        );
+        return;
+      }
+
+      if (!this.hasAvailableAttendance()) {
+        this.noticeMessage.set('No te quedan asistencias disponibles en tu cuota.');
+        return;
+      }
+    }
+
     this.actionSessionId.set(session.id);
     this.errorMessage.set('');
 
@@ -211,6 +252,7 @@ export class HorariosComponent implements OnInit {
       .subscribe({
         next: () => {
           this.setReserved(session.id, !isReserved);
+          this.updateUsedClasses(isReserved ? -1 : 1);
           this.refreshCount(session.id);
           this.refreshParticipantsIfOpen(session.id);
         },
@@ -231,6 +273,10 @@ export class HorariosComponent implements OnInit {
     this.participantsModalSessionId.set(null);
   }
 
+  closeNotice(): void {
+    this.noticeMessage.set('');
+  }
+
   isReserved(sessionId: number): boolean {
     return this.myReservationSessionIds().has(sessionId);
   }
@@ -248,6 +294,16 @@ export class HorariosComponent implements OnInit {
     const startAt = new Date(`${date}T${session.startTime}:00`);
 
     return startAt <= new Date();
+  }
+
+  isSessionAfterMembershipExpiration(session: SesionDetallada): boolean {
+    const expiresAt = this.membershipExpiresAt();
+
+    if (!expiresAt) {
+      return false;
+    }
+
+    return this.getSessionStartAt(session) >= new Date(expiresAt);
   }
 
   capacity(session: SesionDetallada): number {
@@ -391,6 +447,23 @@ export class HorariosComponent implements OnInit {
     this.myReservationSessionIds.set(reservations);
   }
 
+  private updateUsedClasses(delta: number): void {
+    const profile = this.profile();
+    const membership = profile?.membership;
+
+    if (!profile || !membership) {
+      return;
+    }
+
+    this.profile.set({
+      ...profile,
+      membership: {
+        ...membership,
+        usedClasses: Math.max(membership.usedClasses + delta, 0),
+      },
+    });
+  }
+
   private getTodayInputDate(): string {
     const now = new Date();
     const year = now.getFullYear();
@@ -423,6 +496,11 @@ export class HorariosComponent implements OnInit {
   private timeToMinutes(value: string): number {
     const [hours, minutes] = String(value ?? '').split(':').map(Number);
     return (hours || 0) * 60 + (minutes || 0);
+  }
+
+  private getSessionStartAt(session: SesionDetallada): Date {
+    const date = session.date.slice(0, 10);
+    return new Date(`${date}T${session.startTime}:00`);
   }
 
   private getDateKey(value: string): string {

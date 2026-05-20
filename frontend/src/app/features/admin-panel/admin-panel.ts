@@ -38,12 +38,14 @@ interface GanttTimeSlot {
 }
 
 interface GanttItem {
+  itemType: 'class' | 'event';
   dayValue: number;
   startTime: string;
   endTime: string;
   className: string;
   level: string;
   instructor: string;
+  maxCapacity: number;
   top: number;
   height: number;
   widthPercent: number;
@@ -101,6 +103,7 @@ export class DashboardComponent implements OnInit {
   private ganttEndMinutes = 20 * 60;
   private scheduleWeekOffset = 0;
   private allSessions: SesionDetallada[] = [];
+  private allEvents: Evento[] = [];
 
   newMembers: DashboardItem[] = [];
   loadingNewMembers = false;
@@ -266,16 +269,20 @@ export class DashboardComponent implements OnInit {
               (a, b) => this.getEventDate(a).getTime() - this.getEventDate(b).getTime(),
             );
 
+          this.allEvents = eventosSeguros;
           this.nextEvent = proximosEventos[0]?.name ?? 'Sin eventos';
           this.upcomingEvents = proximosEventos
             .slice(0, 5)
             .map((evento) => this.mapEventoToDashboardItem(evento));
+          this.buildWeekSchedule();
         },
         error: (error) => {
           console.error('Error al cargar eventos:', error);
+          this.allEvents = [];
           this.nextEvent = 'Sin eventos';
           this.upcomingEvents = [];
           this.upcomingEventsError = 'No se pudieron cargar los eventos.';
+          this.buildWeekSchedule();
         },
       });
   }
@@ -382,7 +389,7 @@ export class DashboardComponent implements OnInit {
     return this.ganttItemsByDay.get(dayValue) ?? [];
   }
 
-  levelTone(level: string): 'basic' | 'intermediate' | 'advanced' | '' {
+  levelTone(level: string): 'basic' | 'intermediate' | 'advanced' | 'all-levels' | '' {
     const normalized = String(level ?? '')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -399,6 +406,10 @@ export class DashboardComponent implements OnInit {
 
     if (normalized.includes('basic')) {
       return 'basic';
+    }
+
+    if (normalized.includes('todos los niveles') || normalized.includes('todos')) {
+      return 'all-levels';
     }
 
     return '';
@@ -445,16 +456,21 @@ export class DashboardComponent implements OnInit {
       const sessionDate = this.getSessionDateTime(sesion);
       return sessionDate.getTime() >= weekStart.getTime() && sessionDate.getTime() <= weekEnd.getTime();
     });
+    const weekEvents = this.allEvents.filter((evento) => {
+      const eventDate = this.getEventDate(evento);
+      return eventDate.getTime() >= weekStart.getTime() && eventDate.getTime() <= weekEnd.getTime();
+    });
 
-    this.buildGanttLayout(weekSessions);
+    this.buildGanttLayout(weekSessions, weekEvents);
   }
 
-  private buildGanttLayout(weekSessions: SesionDetallada[]): void {
+  private buildGanttLayout(weekSessions: SesionDetallada[], weekEvents: Evento[]): void {
     const pixelsPerMinute = 2;
     const edgePadding = 12;
     let minStart = Number.POSITIVE_INFINITY;
     let maxEnd = Number.NEGATIVE_INFINITY;
     const sessionsByDay = new Map<number, SesionDetallada[]>();
+    const eventsByDay = new Map<number, Evento[]>();
 
     for (const sesion of weekSessions) {
       const sessionDate = this.getSessionDateTime(sesion);
@@ -470,6 +486,22 @@ export class DashboardComponent implements OnInit {
       const list = sessionsByDay.get(dayValue) ?? [];
       list.push(sesion);
       sessionsByDay.set(dayValue, list);
+    }
+
+    for (const evento of weekEvents) {
+      const eventDate = this.getEventDate(evento);
+      const dayValue = eventDate.getDay();
+      const startMinutes = this.timeToMinutes(evento.startTime);
+      const endMinutes = this.timeToMinutes(evento.endTime);
+
+      if (!Number.isNaN(startMinutes) && !Number.isNaN(endMinutes)) {
+        minStart = Math.min(minStart, startMinutes);
+        maxEnd = Math.max(maxEnd, endMinutes);
+      }
+
+      const list = eventsByDay.get(dayValue) ?? [];
+      list.push(evento);
+      eventsByDay.set(dayValue, list);
     }
 
     if (!Number.isFinite(minStart) || !Number.isFinite(maxEnd)) {
@@ -503,8 +535,35 @@ export class DashboardComponent implements OnInit {
 
     this.ganttItemsByDay = new Map<number, GanttItem[]>();
 
-    for (const [dayValue, daySessions] of sessionsByDay.entries()) {
-      const sorted = [...daySessions].sort(
+    const allDayValues = new Set<number>([
+      ...Array.from(sessionsByDay.keys()),
+      ...Array.from(eventsByDay.keys()),
+    ]);
+
+    for (const dayValue of allDayValues) {
+      const daySessions = sessionsByDay.get(dayValue) ?? [];
+      const dayEvents = eventsByDay.get(dayValue) ?? [];
+      const sortedEvents = [...dayEvents].sort(
+        (a, b) => this.timeToMinutes(a.startTime) - this.timeToMinutes(b.startTime),
+      );
+
+      const overlapEventIds = new Set<number>();
+      const nonOverlappedSessions = daySessions.filter((sesion) => {
+        const sessionStart = this.getSessionStartTime(sesion);
+        const sessionEnd = this.getSessionEndTime(sesion);
+        const replacementEvent = sortedEvents.find((evento) =>
+          this.timeRangesOverlap(sessionStart, sessionEnd, evento.startTime, evento.endTime),
+        );
+
+        if (replacementEvent) {
+          overlapEventIds.add(replacementEvent.id);
+          return false;
+        }
+
+        return true;
+      });
+
+      const sorted = [...nonOverlappedSessions].sort(
         (a, b) => this.timeToMinutes(this.getSessionStartTime(a)) - this.timeToMinutes(this.getSessionStartTime(b)),
       );
 
@@ -523,12 +582,46 @@ export class DashboardComponent implements OnInit {
         }
 
         tempItems.push({
+          itemType: 'class',
           dayValue,
           startTime: this.getSessionStartTime(sesion),
           endTime: this.getSessionEndTime(sesion),
           className: this.getSessionClassName(sesion) || 'Clase',
           level: this.getSessionClassLevel(sesion),
           instructor: this.getSessionInstructor(sesion),
+          maxCapacity: Number((sesion as any)?.maxCapacity ?? (sesion as any)?.schedule?.maxCapacity ?? 0),
+          top: edgePadding + (startMinutes - this.ganttStartMinutes) * pixelsPerMinute,
+          height: Math.max((endMinutes - startMinutes) * pixelsPerMinute, 16),
+          widthPercent: 100,
+          leftPercent: 0,
+          laneIndex,
+          startMinutes,
+          endMinutes,
+        });
+      }
+
+      const visibleEvents = sortedEvents;
+
+      for (const evento of visibleEvents) {
+        const startMinutes = this.timeToMinutes(evento.startTime);
+        const endMinutes = this.timeToMinutes(evento.endTime);
+        let laneIndex = laneEnds.findIndex((end) => startMinutes >= end);
+        if (laneIndex === -1) {
+          laneIndex = laneEnds.length;
+          laneEnds.push(endMinutes);
+        } else {
+          laneEnds[laneIndex] = endMinutes;
+        }
+
+        tempItems.push({
+          itemType: 'event',
+          dayValue,
+          startTime: evento.startTime,
+          endTime: evento.endTime,
+          className: evento.name,
+          level: 'Evento',
+          instructor: 'Evento',
+          maxCapacity: Number(evento.capacity ?? 0),
           top: edgePadding + (startMinutes - this.ganttStartMinutes) * pixelsPerMinute,
           height: Math.max((endMinutes - startMinutes) * pixelsPerMinute, 16),
           widthPercent: 100,
@@ -577,12 +670,14 @@ export class DashboardComponent implements OnInit {
 
       for (const item of group) {
         normalized.push({
+          itemType: item.itemType,
           dayValue: item.dayValue,
           startTime: item.startTime,
           endTime: item.endTime,
           className: item.className,
           level: item.level,
           instructor: item.instructor,
+          maxCapacity: item.maxCapacity,
           top: item.top,
           height: item.height,
           widthPercent: width,
@@ -592,6 +687,20 @@ export class DashboardComponent implements OnInit {
     }
 
     return normalized;
+  }
+
+  private timeRangesOverlap(
+    startA: string,
+    endA: string,
+    startB: string,
+    endB: string,
+  ): boolean {
+    const startAMin = this.timeToMinutes(startA);
+    const endAMin = this.timeToMinutes(endA);
+    const startBMin = this.timeToMinutes(startB);
+    const endBMin = this.timeToMinutes(endB);
+
+    return startAMin < endBMin && startBMin < endAMin;
   }
 
   private getSessionStartTime(sesion: SesionDetallada): string {

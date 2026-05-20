@@ -1006,7 +1006,7 @@ export class AdminClasesComponent implements OnInit {
       });
   }
 
-  levelTone(level: string): 'basic' | 'intermediate' | 'advanced' | '' {
+  levelTone(level: string): 'basic' | 'intermediate' | 'advanced' | 'all-levels' | '' {
     const normalized = String(level ?? '')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -1023,6 +1023,10 @@ export class AdminClasesComponent implements OnInit {
 
     if (normalized.includes('basic')) {
       return 'basic';
+    }
+
+    if (normalized.includes('todos los niveles') || normalized.includes('todos')) {
+      return 'all-levels';
     }
 
     return '';

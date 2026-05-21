@@ -73,6 +73,19 @@ export class AuthService {
     );
   }
 
+  getProfile(): Observable<User> {
+    return this.http.get<User>(
+      `${this.API_URL}/me`,
+      { withCredentials: true }
+    )
+      .pipe(
+        tap(user => {
+          this.setCurrentUser(user);
+          this.currentUserSubject.next(user);
+        })
+      );
+  }
+
   /**
    * Cierra la sesión del usuario
    */
@@ -105,6 +118,14 @@ export class AuthService {
    */
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  isAdmin(): boolean {
+    return this.isAdminUser(this.currentUserSubject.value);
+  }
+
+  isAdminUser(user: User | null): boolean {
+    return user?.role?.toUpperCase() === 'ADMIN';
   }
 
   /**

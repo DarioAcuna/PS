@@ -10,101 +10,94 @@
   <main class="classes-main">
     <section class="intro-block">
       <h1>Gestión de Clases</h1>
-      <p>Administración de clases, horarios y sesiones</p>
+      <p>Crear y editar clases con horario semanal</p>
     </section>
 
-    <section class="summary-grid">
-      <article class="summary-card">
-        <span class="card-label">Clases registradas</span>
-        <h3>{{ classViews.length }}</h3>
-      </article>
+    <section class="content-card schedule-card">
+      <div class="content-header schedule-header">
+        <div>
+          <h2>Horario semanal</h2>
+          <p>
+            {{ weekScheduleMonthLabel }} · {{ weekScheduleRangeLabel }}
+          </p>
+        </div>
 
-      <article class="summary-card">
-        <span class="card-label">Horarios activos</span>
-        <h3>{{ horarios.length }}</h3>
-      </article>
-
-      <article class="summary-card">
-        <span class="card-label">Próximas sesiones</span>
-        <h3>{{ totalUpcomingSessions }}</h3>
-      </article>
-    </section>
-
-    <section class="content-card">
-      <div class="content-header">
-        <h2>Filtros</h2>
+        <div class="schedule-nav">
+          <button type="button" class="admin-button secondary" (click)="previousWeek()">
+            <
+          </button>
+          <button type="button" class="admin-button secondary" (click)="nextWeek()">
+            >
+          </button>
+        </div>
       </div>
 
-      <form class="filters-form" (ngSubmit)="searchClasses()">
-        <div class="form-group">
-          <label for="search">Buscar</label>
-          <input
-            id="search"
-            name="search"
-            type="text"
-            [(ngModel)]="filters.search"
-            placeholder="Nombre de la clase"
-          />
+      <div class="gantt-grid" *ngIf="weekScheduleDays.length > 0">
+        <div class="gantt-header-row">
+          <div class="gantt-time-header">Hora</div>
+          <div class="gantt-day-header" *ngFor="let day of weekScheduleDays">
+            <div class="gantt-day-name">{{ day.label }}</div>
+            <div class="gantt-day-date">{{ day.dateLabel }}</div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="discipline">Disciplina</label>
-          <select
-            id="discipline"
-            name="discipline"
-            [(ngModel)]="filters.discipline"
-          >
-            <option value="">Todas</option>
-            <option *ngFor="let discipline of disciplineOptions" [value]="discipline">
-              {{ discipline }}
-            </option>
-          </select>
-        </div>
+        <div class="gantt-body">
+          <div class="gantt-time-column" [style.height.px]="ganttTotalHeight">
+            <div
+              class="gantt-time-label"
+              *ngFor="let slot of ganttTimeSlots"
+              [style.top.px]="slot.top"
+            >
+              {{ slot.label }}
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label for="level">Nivel</label>
-          <select id="level" name="level" [(ngModel)]="filters.level">
-            <option value="">Todos</option>
-            <option *ngFor="let level of levelOptions" [value]="level">
-              {{ level }}
-            </option>
-          </select>
-        </div>
+          <div class="gantt-day-column" *ngFor="let day of weekScheduleDays">
+            <div class="gantt-day-canvas" [style.height.px]="ganttTotalHeight">
+              <div
+                class="gantt-grid-line"
+                *ngFor="let slot of ganttTimeSlots"
+                [style.top.px]="slot.top"
+              ></div>
 
-        <div class="form-group">
-          <label for="instructor">Instructor</label>
-          <select
-            id="instructor"
-            name="instructor"
-            [(ngModel)]="filters.instructor"
-          >
-            <option value="">Todos</option>
-            <option *ngFor="let instructor of instructorOptions" [value]="instructor">
-              {{ instructor }}
-            </option>
-          </select>
-        </div>
+              <div
+                class="gantt-item"
+                *ngFor="let item of getGanttItemsForDay(day.dayValue)"
+                [class.level-basic]="levelTone(item.level) === 'basic'"
+                [class.level-intermediate]="levelTone(item.level) === 'intermediate'"
+                [class.level-advanced]="levelTone(item.level) === 'advanced'"
+                [class.level-all-levels]="levelTone(item.level) === 'all-levels'"
+                [style.top.px]="item.top"
+                [style.height.px]="item.height"
+                [style.width.%]="item.widthPercent"
+                [style.left.%]="item.leftPercent"
+              >
+                <strong>{{ item.className }}</strong>
+                <span>{{ item.level || 'Nivel por definir' }}</span>
+                <small>{{ item.instructor || 'Sin instructor' }}</small>
+                <em>{{ item.startTime }} - {{ item.endTime }}</em>
+                <small>cap: {{ item.maxCapacity || 0 }}</small>
+                <button
+                  type="button"
+                  class="gantt-edit-btn"
+                  (click)="openSessionEdit(item)"
+                  aria-label="Editar sesión"
+                  title="Editar sesión"
+                >
+                  ✎
+                </button>
+              </div>
 
-        <div class="form-group">
-          <label for="day">Día</label>
-          <select id="day" name="day" [(ngModel)]="filters.day">
-            <option value="">Todos</option>
-            <option *ngFor="let day of dayOptions" [value]="day">
-              {{ day }}
-            </option>
-          </select>
+              <div
+                class="gantt-empty"
+                *ngIf="getGanttItemsForDay(day.dayValue).length === 0"
+              >
+                —
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div class="filters-actions">
-          <button type="submit" class="admin-button">
-            Buscar
-          </button>
-
-          <button type="button" class="admin-button secondary" (click)="clearFilters()">
-            Limpiar
-          </button>
-        </div>
-      </form>
+      </div>
     </section>
 
     <section class="content-card">
@@ -136,21 +129,19 @@
             <h3>{{ gymClass.name }}</h3>
 
             <p>
-              {{ gymClass.primarySchedule || 'Sin horario asignado' }}
+              {{ gymClass.dayLabel || 'Sin día' }}
+              ·
+              {{ gymClass.startTime && gymClass.endTime ? gymClass.startTime + ' - ' + gymClass.endTime : 'Sin horario' }}
             </p>
 
             <span>
-              {{ gymClass.discipline || 'Sin disciplina' }}
+              Nivel: {{ gymClass.level || 'Sin nivel' }}
               ·
-              {{ gymClass.level || 'Sin nivel' }}
-              ·
-              {{ gymClass.instructor || 'Sin instructor' }}
+              Instructor: {{ gymClass.instructor || 'Sin instructor' }}
             </span>
 
             <small>
-              Horarios: {{ gymClass.scheduleCount }}
-              ·
-              Próximas sesiones: {{ gymClass.upcomingSessionCount }}
+              Capacidad: {{ gymClass.maxCapacity || 'Sin capacidad' }}
             </small>
           </div>
 
@@ -160,7 +151,7 @@
               class="admin-button"
               (click)="manageClass(gymClass)"
             >
-              Administrar
+              Editar
             </button>
 
             <button
@@ -179,58 +170,7 @@
         class="empty-state"
         *ngIf="!loading && !errorMessage && filteredClasses.length === 0"
       >
-        <p>No hay clases que coincidan con los filtros.</p>
-      </div>
-    </section>
-
-    <section class="content-card" *ngIf="selectedClass">
-      <div class="content-header classes-header">
-        <h2>Administrar clase</h2>
-
-        <button type="button" class="admin-button secondary" (click)="closeClassDetail()">
-          Cerrar
-        </button>
-      </div>
-
-      <div class="selected-class-title">
-        <h3>{{ selectedClass.name }}</h3>
-        <p>
-          {{ selectedClass.discipline || 'Sin disciplina' }}
-          ·
-          {{ selectedClass.level || 'Sin nivel' }}
-        </p>
-      </div>
-
-      <div class="detail-grid">
-        <div class="detail-column">
-          <h3>Horarios asignados</h3>
-
-          <div class="detail-list" *ngIf="selectedClass.horarios.length > 0">
-            <article class="detail-item" *ngFor="let horario of selectedClass.horarios">
-              <strong>{{ getHorarioText(horario) }}</strong>
-              <span>{{ getInstructorFromHorario(horario) || 'Sin instructor' }}</span>
-            </article>
-          </div>
-
-          <p class="state-message" *ngIf="selectedClass.horarios.length === 0">
-            Esta clase no tiene horarios asignados.
-          </p>
-        </div>
-
-        <div class="detail-column">
-          <h3>Próximas sesiones</h3>
-
-          <div class="detail-list" *ngIf="selectedClass.upcomingSessions.length > 0">
-            <article class="detail-item" *ngFor="let sesion of selectedClass.upcomingSessions">
-              <strong>{{ buildSesionSubtitle(sesion) }}</strong>
-              <span>{{ getSessionInstructor(sesion) || 'Sin instructor' }}</span>
-            </article>
-          </div>
-
-          <p class="state-message" *ngIf="selectedClass.upcomingSessions.length === 0">
-            Esta clase no tiene próximas sesiones.
-          </p>
-        </div>
+        <p>No hay clases registradas.</p>
       </div>
     </section>
   </main>
@@ -239,12 +179,12 @@
     <section class="class-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>
-          <h2>{{ classModalMode === 'create' ? 'Nueva clase' : 'Administrar clase' }}</h2>
+          <h2>{{ classModalMode === 'create' ? 'Nueva clase' : 'Editar clase' }}</h2>
           <p>
             {{
               classModalMode === 'create'
-                ? 'Crear una nueva clase para el gimnasio'
-                : 'Editar información y revisar horarios/sesiones'
+                ? 'Crea una clase y genera sesiones semanales automáticamente'
+                : 'Actualiza los datos de la clase'
             }}
           </p>
         </div>
@@ -255,92 +195,116 @@
       </div>
 
       <form class="class-form" (ngSubmit)="saveClass()">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="className">Nombre</label>
-            <input
-              id="className"
-              name="className"
-              type="text"
-              [(ngModel)]="classForm.name"
-              placeholder="Ej: Jiu-Jitsu Básico"
-              required
-            />
-          </div>
+        <div class="form-section">
+          <h3>Datos de la clase</h3>
 
-          <div class="form-group">
-            <label for="classDiscipline">Disciplina</label>
-            <input
-              id="classDiscipline"
-              name="classDiscipline"
-              type="text"
-              [(ngModel)]="classForm.discipline"
-              placeholder="Ej: Jiu-Jitsu"
-            />
-          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="className">Nombre</label>
+              <input
+                id="className"
+                name="className"
+                type="text"
+                [(ngModel)]="classForm.name"
+                placeholder="Ej: Jiu-Jitsu Básico"
+                required
+              />
+            </div>
 
-          <div class="form-group">
-            <label for="classLevel">Nivel</label>
-            <select
-              id="classLevel"
-              name="classLevel"
-              [(ngModel)]="classForm.level"
-            >
-              <option value="">Sin nivel</option>
-              <option value="Básico">Básico</option>
-              <option value="Intermedio">Intermedio</option>
-              <option value="Avanzado">Avanzado</option>
-              <option value="Todos los niveles">Todos los niveles</option>
-            </select>
-          </div>
+            <div class="form-group">
+              <label for="classLevel">Nivel</label>
+              <select
+                id="classLevel"
+                name="classLevel"
+                [(ngModel)]="classForm.level"
+                required
+              >
+                <option value="">Selecciona un nivel</option>
+                <option value="Básico">Básico</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+                <option value="Todos los niveles">Todos los niveles</option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label for="classDescription">Descripción</label>
-            <textarea
-              id="classDescription"
-              name="classDescription"
-              rows="3"
-              [(ngModel)]="classForm.description"
-              placeholder="Descripción breve de la clase"
-            ></textarea>
+            <div class="form-group">
+              <label for="classInstructor">Instructor</label>
+              <select
+                id="classInstructor"
+                name="classInstructor"
+                [(ngModel)]="classForm.instructorId"
+                required
+              >
+                <option [ngValue]="null">Selecciona un profesor</option>
+                <option
+                  *ngFor="let profesor of profesores"
+                  [ngValue]="profesor.id"
+                >
+                  {{ getUsuarioDisplayName(profesor) }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Horario semanal</h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Días</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item" *ngFor="let day of weekDays">
+                  <input
+                    type="checkbox"
+                    [checked]="classForm.daysOfWeek.includes(day.value)"
+                    (change)="toggleDaySelection(day.value, $event.target.checked)"
+                  />
+                  <span>{{ day.label }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="classCapacity">Capacidad</label>
+              <input
+                id="classCapacity"
+                name="classCapacity"
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="classForm.maxCapacity"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="classStartTime">Hora inicio</label>
+              <input
+                id="classStartTime"
+                name="classStartTime"
+                type="time"
+                [(ngModel)]="classForm.startTime"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="classEndTime">Hora fin</label>
+              <input
+                id="classEndTime"
+                name="classEndTime"
+                type="time"
+                [(ngModel)]="classForm.endTime"
+                required
+              />
+            </div>
           </div>
         </div>
 
         <p class="state-message error" *ngIf="classModalError">
           {{ classModalError }}
         </p>
-
-        <div class="modal-detail-grid" *ngIf="classModalMode === 'edit' && selectedClass">
-          <div class="modal-detail-column">
-            <h3>Horarios asignados</h3>
-
-            <div class="detail-list" *ngIf="selectedClass.horarios.length > 0">
-              <article class="detail-item" *ngFor="let horario of selectedClass.horarios">
-                <strong>{{ getHorarioText(horario) }}</strong>
-                <span>{{ getInstructorFromHorario(horario) || 'Sin instructor' }}</span>
-              </article>
-            </div>
-
-            <p class="state-message" *ngIf="selectedClass.horarios.length === 0">
-              Esta clase no tiene horarios asignados.
-            </p>
-          </div>
-
-          <div class="modal-detail-column">
-            <h3>Próximas sesiones</h3>
-
-            <div class="detail-list" *ngIf="selectedClass.upcomingSessions.length > 0">
-              <article class="detail-item" *ngFor="let sesion of selectedClass.upcomingSessions">
-                <strong>{{ buildSesionSubtitle(sesion) }}</strong>
-                <span>{{ getSessionInstructor(sesion) || 'Sin instructor' }}</span>
-              </article>
-            </div>
-
-            <p class="state-message" *ngIf="selectedClass.upcomingSessions.length === 0">
-              Esta clase no tiene próximas sesiones.
-            </p>
-          </div>
-        </div>
 
         <div class="modal-actions">
           <button
@@ -373,5 +337,151 @@
     </section>
   </div>
 
-  <app-admin-footer></app-admin-footer>
+  <div
+    class="modal-backdrop"
+    *ngIf="sessionEditModalOpen"
+    (click)="closeSessionEditModal()"
+  >
+    <section class="class-modal session-edit-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>Editar sesión</h2>
+          <p *ngIf="editingSessionItem">
+            {{ editingSessionItem.className }} · {{ editingSessionItem.sessionDateLabel }}
+          </p>
+        </div>
+
+        <button type="button" class="modal-close" (click)="closeSessionEditModal()">
+          ✕
+        </button>
+      </div>
+
+      <form class="class-form" (ngSubmit)="saveSessionEdit()">
+        <div class="form-section">
+          <h3>Datos de la clase</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="sessionClassName">Nombre</label>
+              <input
+                id="sessionClassName"
+                name="sessionClassName"
+                type="text"
+                [(ngModel)]="sessionEditForm.name"
+                placeholder="Ej: Jiu-Jitsu Básico"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionClassLevel">Nivel</label>
+              <select
+                id="sessionClassLevel"
+                name="sessionClassLevel"
+                [(ngModel)]="sessionEditForm.level"
+                required
+              >
+                <option value="">Selecciona un nivel</option>
+                <option value="Básico">Básico</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+                <option value="Todos los niveles">Todos los niveles</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sessionInstructor">Instructor</label>
+              <select
+                id="sessionInstructor"
+                name="sessionInstructor"
+                [(ngModel)]="sessionEditForm.instructorId"
+                required
+              >
+                <option [ngValue]="null">Selecciona un profesor</option>
+                <option
+                  *ngFor="let profesor of profesores"
+                  [ngValue]="profesor.id"
+                >
+                  {{ getUsuarioDisplayName(profesor) }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Horario semanal</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="sessionCapacity">Capacidad</label>
+              <input
+                id="sessionCapacity"
+                name="sessionCapacity"
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="sessionEditForm.maxCapacity"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionStartTime">Hora inicio</label>
+              <input
+                id="sessionStartTime"
+                name="sessionStartTime"
+                type="time"
+                [(ngModel)]="sessionEditForm.startTime"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sessionEndTime">Hora fin</label>
+              <input
+                id="sessionEndTime"
+                name="sessionEndTime"
+                type="time"
+                [(ngModel)]="sessionEditForm.endTime"
+                required
+              />
+            </div>
+
+          </div>
+        </div>
+
+        <p class="state-message error" *ngIf="sessionEditError">
+          {{ sessionEditError }}
+        </p>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="admin-button secondary"
+            (click)="closeSessionEditModal()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="admin-button danger"
+            [disabled]="savingSessionEdit"
+            (click)="deleteSessionForDay()"
+          >
+            Eliminar este día
+          </button>
+
+          <button
+            type="submit"
+            class="admin-button"
+            [disabled]="savingSessionEdit"
+          >
+            {{ savingSessionEdit ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <app-role-footer></app-role-footer>
 </div>

@@ -1,0 +1,423 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #050505;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+.profile-page {
+  min-height: 100vh;
+  padding-bottom: 96px;
+}
+
+.profile-main {
+  width: min(100% - 28px, 376px);
+  margin: 0 auto;
+  padding: 22px 0 30px;
+}
+
+.profile-card {
+  display: grid;
+  gap: 20px;
+}
+
+.hero-panel {
+  min-height: 298px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #1f1f1f, #292929);
+  color: #ffffff;
+  padding: 28px 20px;
+}
+
+.avatar-wrap {
+  position: relative;
+  width: 132px;
+  height: 132px;
+}
+
+.avatar {
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+  border: 6px solid #80868d;
+  background: #f2f2f2;
+  color: #111111;
+  font-size: 62px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.camera-btn {
+  position: absolute;
+  right: -4px;
+  bottom: 6px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 4px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.camera-btn svg {
+  width: 21px;
+  height: 21px;
+  fill: currentColor;
+}
+
+h1,
+h2,
+p,
+dl {
+  margin: 0;
+}
+
+.hero-panel h1 {
+  margin-top: 26px;
+  max-width: 100%;
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1.05;
+  text-align: center;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  text-shadow: 1px 1px 0 #4f6f93;
+}
+
+.belt-pill {
+  margin-top: 22px;
+  min-width: 58px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #000000;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.belt-pill.belt-blue,
+.belt-pill.belt-purple,
+.belt-pill.belt-brown,
+.belt-pill.belt-black {
+  color: #ffffff;
+}
+
+.belt-pill.belt-blue {
+  background: #1d4ed8;
+}
+
+.belt-pill.belt-purple {
+  background: #6d28d9;
+}
+
+.belt-pill.belt-brown {
+  background: #7c3f1d;
+}
+
+.belt-pill.belt-black {
+  background: #050505;
+  border: 1px solid #ffffff;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metric-card,
+.plan-card,
+.belt-card,
+.details-card {
+  background: #fafafa;
+  border: 1px solid #f1f1f1;
+}
+
+.metric-card {
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 10px;
+  text-align: center;
+}
+
+.metric-card svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 14px;
+  fill: #000000;
+}
+
+.metric-card span,
+.belt-info span,
+.belt-info label,
+.info-list dt {
+  color: #5d636b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.metric-card strong {
+  margin-top: 8px;
+  color: #000000;
+  font-size: 16px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.plan-card {
+  padding: 23px 20px 20px;
+}
+
+.plan-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.progress-track {
+  height: 10px;
+  margin-top: 16px;
+  background: #ececec;
+  overflow: hidden;
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  background: #000000;
+}
+
+.plan-note {
+  margin-top: 12px;
+  color: #5d636b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.belt-card {
+  min-height: 176px;
+  display: grid;
+  grid-template-columns: 114px 1fr;
+  gap: 24px;
+  align-items: center;
+  padding: 22px 20px;
+}
+
+.belt-illustration {
+  position: relative;
+  height: 96px;
+}
+
+.belt-illustration::before,
+.belt-illustration::after {
+  content: '';
+  position: absolute;
+  top: 37px;
+  left: 8px;
+  width: 100px;
+  height: 22px;
+  border: 2px solid #4b4b4b;
+  background: var(--belt-color, #ffffff);
+}
+
+.belt-illustration::before {
+  transform: rotate(39deg);
+}
+
+.belt-illustration::after {
+  transform: rotate(-39deg);
+}
+
+.belt-illustration span {
+  position: absolute;
+  left: 45px;
+  top: 31px;
+  width: 28px;
+  height: 38px;
+  border: 2px solid #4b4b4b;
+  background: var(--belt-color, #ffffff);
+  z-index: 2;
+}
+
+.belt-illustration i {
+  position: absolute;
+  top: 42px;
+  width: 4px;
+  height: 15px;
+  background: #e5e5e5;
+  border: 1px solid #111111;
+  z-index: 3;
+  transform: rotate(39deg);
+}
+
+.belt-card.belt-white {
+  --belt-color: #ffffff;
+}
+
+.belt-card.belt-blue {
+  --belt-color: #1d4ed8;
+}
+
+.belt-card.belt-purple {
+  --belt-color: #6d28d9;
+}
+
+.belt-card.belt-brown {
+  --belt-color: #7c3f1d;
+}
+
+.belt-card.belt-black {
+  --belt-color: #050505;
+}
+
+.belt-info {
+  min-width: 0;
+}
+
+.belt-info h2 {
+  margin-top: 14px;
+  font-size: 24px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.belt-info label {
+  display: block;
+  margin-top: 18px;
+}
+
+.degree-display {
+  width: 100%;
+  height: 50px;
+  margin-top: 4px;
+  border: 1px solid #c9c9c9;
+  background: #ffffff;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.details-card {
+  padding: 20px;
+}
+
+.details-card h2 {
+  margin-bottom: 16px;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.info-list {
+  display: grid;
+  gap: 12px;
+}
+
+.info-list div {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid #ececec;
+  padding-top: 12px;
+}
+
+.info-list div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.info-list dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.logout-btn {
+  width: 100%;
+  height: 48px;
+  margin-top: 18px;
+  border: 1px solid #000000;
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.status-message {
+  margin: 0 0 18px;
+  color: #555555;
+  font-size: 17px;
+}
+
+.status-message.error {
+  color: #b42318;
+}
+
+@media (max-width: 420px) {
+  .profile-main {
+    width: min(100% - 20px, 376px);
+  }
+
+  .hero-panel {
+    min-height: 274px;
+  }
+
+  .metric-grid {
+    gap: 10px;
+  }
+
+  .metric-card {
+    min-height: 118px;
+    padding: 14px 8px;
+  }
+
+  .metric-card span,
+  .belt-info span,
+  .belt-info label,
+  .info-list dt {
+    font-size: 11px;
+  }
+
+  .belt-card {
+    grid-template-columns: 92px 1fr;
+    gap: 16px;
+    padding: 18px 14px;
+  }
+
+  .belt-illustration {
+    transform: scale(0.82);
+    transform-origin: left center;
+  }
+}

@@ -1,10 +1,11 @@
 <footer class="app-footer">
   <div class="footer-inner">
-    <button
-      type="button"
+    <a
+      routerLink="/horarios"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      queryParamsHandling="preserve"
       class="footer-item"
-      [class.active]="activeTab === 'reservas'"
-      (click)="setActiveTab('reservas')"
     >
       <span class="footer-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -13,14 +14,32 @@
           />
         </svg>
       </span>
-      <span>RESERVAS</span>
-    </button>
+      <span>HORARIOS</span>
+    </a>
 
-    <button
-      type="button"
+    <a
+      routerLink="/anuncios"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      queryParamsHandling="preserve"
       class="footer-item"
-      [class.active]="activeTab === 'perfil'"
-      (click)="setActiveTab('perfil')"
+    >
+      <span class="footer-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M4 5h16v14H4V5zm2 2v10h12V7H6zm1 1h5v3H7V8zm6 0h4v1h-4V8zm0 2h4v1h-4v-1zm-6 3h10v1H7v-1zm0 2h10v1H7v-1z"
+          />
+        </svg>
+      </span>
+      <span>ANUNCIOS</span>
+    </a>
+
+    <a
+      routerLink="/perfil"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      queryParamsHandling="preserve"
+      class="footer-item"
     >
       <span class="footer-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -30,13 +49,14 @@
         </svg>
       </span>
       <span>PERFIL</span>
-    </button>
+    </a>
 
-    <button
-      type="button"
+    <a
+      routerLink="/pago"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      queryParamsHandling="preserve"
       class="footer-item"
-      [class.active]="activeTab === 'pago'"
-      (click)="setActiveTab('pago')"
     >
       <span class="footer-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -46,6 +66,6 @@
         </svg>
       </span>
       <span>PAGO</span>
-    </button>
+    </a>
   </div>
 </footer>

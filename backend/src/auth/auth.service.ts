@@ -9,6 +9,8 @@ import * as bcrypt from 'bcryptjs';
 import { UserRole, UserStatus } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsuarioEstado, UsuarioTipo } from '../usuarios/dto/usuario.enums';
+import { PAYMENT_PLANS } from '../pagos/payment-plans';
+import type { PaymentPlanId } from '../pagos/payment-plans';
 
 @Injectable()
 export class AuthService {
@@ -114,6 +116,92 @@ export class AuthService {
       name: user.name,
       email: user.email,
       role: user.role,
+    };
+  }
+
+  async getProfile(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        belt: true,
+        beltDegree: true,
+        status: true,
+        membershipPlan: true,
+        membershipStartedAt: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    const plan = user.membershipPlan
+      ? PAYMENT_PLANS[user.membershipPlan as PaymentPlanId]
+      : undefined;
+    const membershipExpiresAt = user.membershipStartedAt
+      ? new Date(
+          user.membershipStartedAt.getFullYear(),
+          user.membershipStartedAt.getMonth() + 1,
+          user.membershipStartedAt.getDate(),
+          user.membershipStartedAt.getHours(),
+          user.membershipStartedAt.getMinutes(),
+          user.membershipStartedAt.getSeconds(),
+          user.membershipStartedAt.getMilliseconds(),
+        )
+      : null;
+    const [usedClasses, usedEvents] =
+      user.membershipStartedAt && membershipExpiresAt
+        ? await Promise.all([
+            this.prisma.reservation.count({
+              where: {
+                userId,
+                session: {
+                  date: {
+                    gte: user.membershipStartedAt,
+                    lt: membershipExpiresAt,
+                  },
+                },
+              },
+            }),
+            this.prisma.eventReservation.count({
+              where: {
+                userId,
+                event: {
+                  eventDate: {
+                    gte: user.membershipStartedAt,
+                    lt: membershipExpiresAt,
+                  },
+                },
+              },
+            }),
+          ])
+        : [0, 0];
+    const [totalClasses, totalEvents] = await Promise.all([
+      this.prisma.reservation.count({
+        where: { userId },
+      }),
+      this.prisma.eventReservation.count({
+        where: { userId },
+      }),
+    ]);
+
+    return {
+      ...user,
+      totalAttendances: totalClasses + totalEvents,
+      membership: {
+        planId: plan?.id ?? null,
+        planName: plan?.name ?? 'Sin cuota',
+        monthlyClassLimit: plan?.monthlyClassLimit ?? 0,
+        usedClasses: usedClasses + usedEvents,
+        expiresAt: membershipExpiresAt?.toISOString() ?? null,
+      },
     };
   }
 }

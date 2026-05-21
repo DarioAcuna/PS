@@ -1,5 +1,6 @@
-<div class="dashboard-page">
+<div class="dashboard-page" [class.public-view]="!showAdminManagement()">
   <app-admin-header
+    *ngIf="isAdminUser()"
     [selectedTab]="selectedTab"
     [navItems]="navItems"
     (tabSelected)="selectTab($event)"
@@ -8,12 +9,22 @@
   ></app-admin-header>
 
   <main class="dashboard-main">
-    <section class="intro-block">
+    <section class="intro-block" *ngIf="showAdminManagement(); else publicIntro">
       <h1>Gestion de anuncios</h1>
       <p>Administra publicaciones visibles para los usuarios.</p>
     </section>
 
-    <section class="summary-grid">
+    <ng-template #publicIntro>
+      <section class="intro-block public-intro">
+        <p class="eyebrow">Blog de novedades</p>
+        <h1>Anuncios y avisos</h1>
+        <p>
+          Consulta aquí los anuncios publicados por administración, ordenados de más nuevos a más antiguos.
+        </p>
+      </section>
+    </ng-template>
+
+    <section class="summary-grid" *ngIf="showAdminManagement(); else publicSummary">
       <article class="summary-card">
         <span class="card-label">Total anuncios</span>
         <h3>{{ anuncios().length }}</h3>
@@ -30,7 +41,26 @@
       </article>
     </section>
 
-    <section class="content-card">
+    <ng-template #publicSummary>
+      <section class="summary-grid public-summary-grid">
+        <article class="summary-card">
+          <span class="card-label">Publicados</span>
+          <h3>{{ publicStats().count }}</h3>
+        </article>
+
+        <article class="summary-card">
+          <span class="card-label">Último anuncio</span>
+          <h3 class="summary-copy">{{ publicStats().latestTitle }}</h3>
+        </article>
+
+        <article class="summary-card">
+          <span class="card-label">Fecha</span>
+          <h3 class="summary-copy">{{ publicStats().latestDate }}</h3>
+        </article>
+      </section>
+    </ng-template>
+
+    <section class="content-card" *ngIf="showAdminManagement(); else publicBlog">
       <div class="content-header">
         <h2>{{ editingId() === null ? 'Crear anuncio' : 'Editar anuncio' }}</h2>
       </div>
@@ -59,24 +89,57 @@
       <p class="status-message success" *ngIf="successMessage()">{{ successMessage() }}</p>
     </section>
 
-    <section class="content-card">
+    <ng-template #publicBlog>
+      <section class="content-card blog-shell">
+        <div class="content-header">
+          <h2>Últimos anuncios</h2>
+        </div>
+
+        <p class="status-message" *ngIf="isLoading()">Cargando anuncios...</p>
+        <p class="status-message" *ngIf="!isLoading() && visibleAnuncios().length === 0">
+          Todavía no hay anuncios publicados.
+        </p>
+
+        <div class="blog-grid" *ngIf="!isLoading() && visibleAnuncios().length > 0">
+          <article
+            class="blog-card"
+            *ngFor="let anuncio of visibleAnuncios(); let first = first; trackBy: trackById"
+            [class.featured]="first"
+          >
+            <div class="blog-meta">
+              <span class="state-pill">Publicado</span>
+              <span class="blog-date">{{ formatPublishedAt(anuncio.publishedAt) }}</span>
+            </div>
+
+            <h3>{{ anuncio.title }}</h3>
+            <p class="blog-content">{{ anuncio.content }}</p>
+          </article>
+        </div>
+      </section>
+    </ng-template>
+
+    <section class="content-card" *ngIf="showAdminManagement()">
       <div class="content-header">
         <h2>Listado de anuncios</h2>
       </div>
 
       <p class="status-message" *ngIf="isLoading()">Cargando anuncios...</p>
-      <p class="status-message" *ngIf="!isLoading() && anuncios().length === 0">No hay anuncios creados.</p>
+      <p class="status-message" *ngIf="!isLoading() && visibleAnuncios().length === 0">No hay anuncios creados.</p>
 
-      <div class="content-list" *ngIf="!isLoading() && anuncios().length > 0">
-        <article class="content-item" *ngFor="let anuncio of anuncios(); trackBy: trackById">
+      <div class="content-list" *ngIf="!isLoading() && visibleAnuncios().length > 0">
+        <article class="content-item" *ngFor="let anuncio of visibleAnuncios(); trackBy: trackById">
           <div class="item-row">
-            <h3>{{ anuncio.title }}</h3>
+            <div>
+              <h3>{{ anuncio.title }}</h3>
+              <p>Publicado el {{ formatPublishedAt(anuncio.publishedAt) }}</p>
+            </div>
+
             <span class="state-pill" [class.inactive]="!anuncio.isActive">
               {{ anuncio.isActive ? 'Activo' : 'Inactivo' }}
             </span>
           </div>
 
-          <p>{{ anuncio.content }}</p>
+          <p class="item-content">{{ anuncio.content }}</p>
 
           <div class="item-actions">
             <button type="button" class="secondary-btn" (click)="startEdit(anuncio)">Editar</button>
@@ -87,6 +150,6 @@
     </section>
   </main>
 
-  <app-admin-footer></app-admin-footer>
+  <app-role-footer></app-role-footer>
 </div>
 

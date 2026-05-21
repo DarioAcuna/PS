@@ -1,0 +1,199 @@
+<div class="schedule-page">
+  <app-admin-header
+    *ngIf="isAdmin()"
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="schedule-main">
+    <h1>Clases</h1>
+
+    <section class="filters-panel">
+      <label class="filter-field">
+        <span>Clase</span>
+        <select
+          [ngModel]="selectedClass()"
+          (ngModelChange)="selectedClass.set($event)"
+        >
+          <option value="">Todas</option>
+          <option *ngFor="let option of classOptions()" [value]="option">
+            {{ option }}
+          </option>
+        </select>
+      </label>
+
+      <label class="filter-field date-field">
+        <span>Dia</span>
+        <input
+          type="date"
+          [ngModel]="selectedDate()"
+          (ngModelChange)="selectedDate.set($event); loadDay()"
+        />
+      </label>
+    </section>
+
+    <p class="state-message" *ngIf="loading()">Cargando clases...</p>
+    <p class="state-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+    <p class="state-message" *ngIf="!loading() && hasActivePlan()">
+      Asistencias disponibles: {{ remainingAttendances() }} / {{ monthlyClassLimit() }}
+    </p>
+
+    <section class="classes-list" *ngIf="!loading()">
+      <article
+        class="class-card"
+        [class.event-card]="item.type === 'event'"
+        *ngFor="let item of visibleScheduleItems()"
+      >
+        <div class="class-top">
+          <div class="class-avatar" aria-hidden="true">
+            {{ initials(item.subtitle) }}
+          </div>
+
+          <div class="class-info">
+            <h2>{{ item.title }}</h2>
+            <strong>
+              {{ item.startTime }}{{ item.endTime ? ' - ' + item.endTime : '' }}
+            </strong>
+          </div>
+
+          <p class="instructor-name">{{ item.subtitle }}</p>
+          <p class="class-level" *ngIf="item.description">{{ item.description }}</p>
+        </div>
+
+        <button
+          *ngIf="item.session as session"
+          type="button"
+          class="reserve-btn"
+          [class.cancel]="isReserved(session.id)"
+          [class.completed]="isReserved(session.id) && hasSessionStarted(session)"
+          [disabled]="
+            actionSessionId() === session.id ||
+            (isReserved(session.id) && hasSessionStarted(session)) ||
+            (!isReserved(session.id) && (hasSessionStarted(session) || freeSlots(session) === 0))
+          "
+          (click)="reserve(session)"
+        >
+          {{
+            actionSessionId() === session.id
+              ? 'Actualizando...'
+              : isReserved(session.id)
+                ? hasSessionStarted(session)
+                  ? 'Impartida'
+                  : 'Cancelar reserva'
+                : hasSessionStarted(session)
+                  ? 'Clase pasada'
+                : freeSlots(session) === 0
+                  ? 'Sin plazas'
+                : !hasActivePlan()
+                  ? 'Sin cuota'
+                : isSessionOutsideCurrentWeek(session)
+                  ? 'Otra semana'
+                : isSessionAfterMembershipExpiration(session)
+                  ? 'Fuera de cuota'
+                : !hasAvailableAttendance()
+                  ? 'Sin asistencias'
+                  : 'Reservar clase'
+          }}
+        </button>
+
+        <button
+          *ngIf="item.event as event"
+          type="button"
+          class="reserve-btn"
+          [class.cancel]="isEventReserved(event.id)"
+          [disabled]="
+            actionEventId() === event.id ||
+            (!isEventReserved(event.id) && (hasEventStarted(event) || freeEventSlots(event) === 0))
+          "
+          (click)="reserveEvent(event)"
+        >
+          {{
+            actionEventId() === event.id
+              ? 'Actualizando...'
+              : isEventReserved(event.id)
+                ? 'Cancelar reserva'
+                : hasEventStarted(event)
+                  ? 'Evento pasado'
+                : freeEventSlots(event) === 0
+                  ? 'Sin plazas'
+                : !hasActivePlan()
+                  ? 'Sin cuota'
+                : isEventOutsideCurrentWeek(event)
+                  ? 'Otra semana'
+                : isEventAfterMembershipExpiration(event)
+                  ? 'Fuera de cuota'
+                : !hasAvailableAttendance()
+                  ? 'Sin asistencias'
+                  : 'Reservar evento'
+          }}
+        </button>
+
+        <div class="capacity-row" *ngIf="item.session as session">
+          <button type="button" class="participants-btn" (click)="openParticipants(session.id)">
+            Ver participantes ({{ participantCount(session.id) }}/{{ capacity(session) }})
+          </button>
+        </div>
+
+        <div class="capacity-row" *ngIf="item.event as event">
+          <span>Reservas {{ eventParticipantCount(event.id) }}/{{ event.capacity }}</span>
+        </div>
+      </article>
+
+      <p class="empty-state" *ngIf="visibleScheduleItems().length === 0">
+        No hay clases para ese dia.
+      </p>
+    </section>
+  </main>
+
+  <div
+    class="participants-modal"
+    *ngIf="participantsModalSessionId() as sessionId"
+    (click)="closeParticipants()"
+  >
+    <div class="participants-modal-card" (click)="$event.stopPropagation()">
+      <header>
+        <h2>Participantes</h2>
+        <button type="button" class="close-btn" (click)="closeParticipants()">Cerrar</button>
+      </header>
+
+      <p class="state-message" *ngIf="loadingParticipants() === sessionId">
+        Cargando participantes...
+      </p>
+
+      <ng-container *ngIf="loadingParticipants() !== sessionId">
+        <p
+          class="state-message"
+          *ngIf="(participantsBySession()[sessionId] || []).length === 0"
+        >
+          No hay participantes todavia.
+        </p>
+
+        <div class="participants-list">
+          <div
+            class="participant-row"
+            *ngFor="let reservation of participantsBySession()[sessionId] || []"
+          >
+            <span>{{ initials(participantName(reservation)) }}</span>
+            <div class="participant-name">
+              <strong>{{ participantName(reservation) }}</strong>
+              <small>{{ reservation.user?.belt || 'Sin cinturon' }}</small>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="notice-modal" *ngIf="noticeMessage()" (click)="closeNotice()">
+    <div class="notice-modal-card" (click)="$event.stopPropagation()">
+      <h2>Aviso</h2>
+      <p>{{ noticeMessage() }}</p>
+      <button type="button" class="reserve-btn" (click)="closeNotice()">Entendido</button>
+    </div>
+  </div>
+
+  <app-role-footer></app-role-footer>
+</div>

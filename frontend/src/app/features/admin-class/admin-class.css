@@ -477,6 +477,34 @@
   gap: 18px 28px;
 }
 
+.form-section {
+  border-bottom: 1px solid #dfdfdf;
+  padding-bottom: 18px;
+}
+
+.form-section h3 {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.checkbox-row input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -544,6 +572,10 @@
   padding-top: 18px;
 }
 
+.session-edit-modal {
+  width: min(680px, 100%);
+}
+
 @media (max-width: 900px) {
   .class-modal {
     padding: 18px;
@@ -557,5 +589,273 @@
   .modal-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 4px 0;
+}
+
+.checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.checkbox-item input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 2px solid #111111;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.checkbox-item input::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #111111;
+  transform: scale(0);
+  transition: transform 0.12s ease;
+}
+
+.checkbox-item input:checked::before {
+  transform: scale(1);
+}
+
+.checkbox-item input:focus-visible {
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.2);
+}
+
+.checkbox-item:hover input {
+  border-color: #000000;
+}
+
+.content-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #666666;
+  font-weight: 500;
+}
+
+.schedule-card {
+  margin-bottom: 18px;
+}
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.schedule-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-nav .admin-button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px 10px;
+  text-decoration: none;
+}
+
+.schedule-grid {
+  display: none;
+}
+
+.gantt-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 4px 10px;
+}
+
+.gantt-header-row {
+  display: grid;
+  grid-template-columns: 90px repeat(7, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.gantt-time-header,
+.gantt-day-header {
+  background: #f6f6f6;
+  border: 1px solid #d8d8d8;
+  padding: 10px;
+}
+
+.gantt-day-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.gantt-day-date {
+  font-size: 11px;
+  color: #666666;
+  font-weight: 600;
+}
+
+.gantt-body {
+  display: grid;
+  grid-template-columns: 90px repeat(7, minmax(140px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gantt-time-column {
+  position: relative;
+  border: 1px solid #e0e0e0;
+  background: #fcfcfc;
+  overflow: visible;
+}
+
+.gantt-time-label {
+  position: absolute;
+  left: 10px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: #333333;
+  background: #fcfcfc;
+  line-height: 1.1;
+  padding: 1px 4px;
+}
+
+.gantt-day-canvas {
+  position: relative;
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  background: #fdfdfd;
+  overflow: visible;
+}
+
+.gantt-grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px solid rgba(17, 17, 17, 0.06);
+  pointer-events: none;
+}
+
+.gantt-grid-line:nth-child(odd) {
+  border-top-color: rgba(17, 17, 17, 0.035);
+}
+
+.gantt-item {
+  position: absolute;
+  border: 1px solid #1a1a1a;
+  background: #ffffff;
+  padding: 8px 28px 28px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+}
+
+.gantt-item.level-basic {
+  background: #e8f7e8;
+}
+
+.gantt-item.level-intermediate {
+  background: #fff8dc;
+}
+
+.gantt-item.level-advanced {
+  background: #ffe9e9;
+}
+
+.gantt-item.level-all-levels {
+  background: #e8f6ff;
+}
+
+.gantt-item strong {
+  font-size: 11px;
+  font-weight: 800;
+  padding-right: 24px;
+}
+
+.gantt-item span {
+  font-size: 10px;
+  color: #444444;
+  font-weight: 600;
+}
+
+.gantt-item small {
+  font-size: 10px;
+  color: #666666;
+  font-weight: 600;
+}
+
+.gantt-item em {
+  font-size: 10px;
+  color: #111111;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.gantt-edit-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  border: 1px solid #777777;
+  background: #ffffff;
+  color: #111111;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.gantt-edit-btn:hover {
+  background: #efefef;
+}
+
+.gantt-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: #b0b0b0;
+  font-weight: 600;
+  z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .gantt-header-row,
+  .gantt-body {
+    grid-template-columns: 80px repeat(7, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .gantt-header-row,
+  .gantt-body {
+    grid-template-columns: 70px repeat(7, minmax(120px, 1fr));
   }
 }

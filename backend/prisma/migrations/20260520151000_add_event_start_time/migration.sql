@@ -1,0 +1,2 @@
+ALTER TABLE "events"
+ADD COLUMN "start_time" TEXT NOT NULL DEFAULT '00:00';

@@ -16,8 +16,8 @@ async function main() {
   await prisma.announcement.deleteMany();
   await prisma.clase.deleteMany();
 
-  // Contraseña: Admin2024User (12 caracteres, mayús, minús, números)
-  const hashedPassword = await bcrypt.hash('Admin2024User', 10);
+  // Contraseña: admin123
+  const hashedPassword = await bcrypt.hash('admin123', 10);
 
   const adminUser = await prisma.user.create({
     data: {
@@ -69,6 +69,8 @@ async function main() {
         endTime: '19:30',
         instructor: 'Álvaro',
         status: SessionStatus.SCHEDULED,
+        className: clase1.name,
+        classLevel: clase1.level ?? null,
       },
       {
         scheduleId: horario2.id,
@@ -77,6 +79,8 @@ async function main() {
         endTime: '21:00',
         instructor: 'Javier',
         status: SessionStatus.SCHEDULED,
+        className: clase2.name,
+        classLevel: clase2.level ?? null,
       },
     ],
   });

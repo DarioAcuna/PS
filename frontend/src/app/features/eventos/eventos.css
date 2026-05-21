@@ -1,0 +1,292 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #111111;
+}
+
+* {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+.dashboard-page {
+  min-height: 100vh;
+  background: #f3f3f3;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+
+.dashboard-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 22px 110px;
+}
+
+.intro-block {
+  margin-bottom: 18px;
+  padding: 4px 2px;
+}
+
+.intro-block h1 {
+  margin: 0 0 4px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.intro-block p,
+.status-message {
+  margin: 0;
+  font-size: 13px;
+  color: #666666;
+  font-weight: 500;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.summary-card,
+.content-card {
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.summary-card {
+  min-height: 120px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666666;
+  letter-spacing: 0.4px;
+}
+
+.summary-card h3 {
+  margin: 12px 0 0;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.summary-card .event-title {
+  font-size: 24px;
+}
+
+.content-card {
+  padding: 22px;
+  margin-bottom: 18px;
+}
+
+.content-header {
+  margin-bottom: 18px;
+}
+
+.content-header h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.split-header,
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-form label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.event-form input,
+.event-form textarea {
+  width: 100%;
+  border: 1px solid #d7d7d7;
+  padding: 10px 12px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 15px;
+  background: #ffffff;
+}
+
+.event-form input {
+  height: 42px;
+}
+
+.form-actions,
+.item-actions,
+.detail-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.form-actions {
+  margin-top: 6px;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn {
+  min-width: 150px;
+  height: 42px;
+  border: 1px solid #9f9f9f;
+  padding: 0 14px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.primary-btn {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+.primary-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.danger-btn {
+  border-color: #d86b6b;
+  color: #b70000;
+}
+
+.status-message {
+  margin-top: 12px;
+}
+
+.status-message.success {
+  color: #186432;
+}
+
+.status-message.error {
+  color: #b70000;
+}
+
+.content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.content-item {
+  padding: 6px 0 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.content-item:last-child {
+  border-bottom: none;
+}
+
+.content-item h3,
+.detail-panel h3 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.content-item p,
+.detail-panel p {
+  margin: 0;
+  font-size: 14px;
+  color: #4e4e4e;
+  font-weight: 500;
+}
+
+.state-pill,
+.detail-meta span {
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #2f8e55;
+  color: #2f8e55;
+  padding: 3px 8px;
+}
+
+.item-actions {
+  margin-top: 10px;
+}
+
+.detail-panel {
+  border: 1px solid #f0f0f0;
+  padding: 16px;
+}
+
+.detail-meta {
+  margin-top: 14px;
+}
+
+@media (max-width: 1100px) {
+  .summary-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-main {
+    padding: 16px 16px 110px;
+  }
+
+  .split-header,
+  .item-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .primary-btn,
+  .secondary-btn,
+  .danger-btn {
+    width: 100%;
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .intro-block h1 {
+    font-size: 24px;
+  }
+
+  .content-header h2 {
+    font-size: 22px;
+  }
+
+  .content-item h3,
+  .detail-panel h3 {
+    font-size: 16px;
+  }
+}

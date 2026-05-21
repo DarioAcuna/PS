@@ -1,0 +1,136 @@
+<div class="dashboard-page">
+  <app-admin-header
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="dashboard-main">
+    <section class="intro-block">
+      <h1>Gestion de eventos</h1>
+      <p>Administra los eventos visibles para los usuarios.</p>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="card-label">Total eventos</span>
+        <h3>{{ eventos().length }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Proximos</span>
+        <h3>{{ upcomingCount() }}</h3>
+      </article>
+
+      <article class="summary-card">
+        <span class="card-label">Proximo evento</span>
+        <h3 class="event-title">{{ nextEvent() }}</h3>
+      </article>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>{{ editingId() === null ? 'Crear evento' : 'Editar evento' }}</h2>
+      </div>
+
+      <form class="event-form" [formGroup]="eventoForm" (ngSubmit)="submit()">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="eventName">Nombre</label>
+            <input id="eventName" type="text" formControlName="name" maxlength="120" />
+          </div>
+
+          <div class="form-field">
+            <label for="eventDate">Fecha</label>
+            <input id="eventDate" type="date" formControlName="eventDate" />
+          </div>
+
+          <div class="form-field">
+            <label for="eventStartTime">Hora inicio</label>
+            <input id="eventStartTime" type="time" formControlName="startTime" />
+          </div>
+
+          <div class="form-field">
+            <label for="eventEndTime">Hora final</label>
+            <input id="eventEndTime" type="time" formControlName="endTime" />
+          </div>
+
+          <div class="form-field">
+            <label for="eventCapacity">Capacidad</label>
+            <input id="eventCapacity" type="number" min="1" step="1" formControlName="capacity" />
+          </div>
+        </div>
+
+        <label for="eventDescription">Descripcion</label>
+        <textarea
+          id="eventDescription"
+          rows="4"
+          formControlName="description"
+          maxlength="2000"
+        ></textarea>
+
+        <div class="form-actions">
+          <button type="submit" class="primary-btn" [disabled]="isSaving()">
+            {{ editingId() === null ? 'Crear evento' : 'Guardar cambios' }}
+          </button>
+          <button type="button" class="secondary-btn" (click)="clearForm()">Limpiar</button>
+        </div>
+      </form>
+
+      <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+      <p class="status-message success" *ngIf="successMessage()">{{ successMessage() }}</p>
+    </section>
+
+    <section class="content-card" *ngIf="selectedEvent() as event">
+      <div class="content-header split-header">
+        <h2>Detalle del evento</h2>
+        <button type="button" class="secondary-btn" (click)="selectedEvent.set(null)">Cerrar</button>
+      </div>
+
+      <article class="detail-panel">
+        <h3>{{ event.name }}</h3>
+        <p>{{ event.description }}</p>
+        <div class="detail-meta">
+          <span>{{ formatDate(event.eventDate) }}</span>
+          <span>{{ event.startTime }} - {{ event.endTime }}</span>
+          <span>Capacidad: {{ event.capacity }}</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="content-card">
+      <div class="content-header">
+        <h2>Listado de eventos</h2>
+      </div>
+
+      <p class="status-message" *ngIf="isLoading()">Cargando eventos...</p>
+      <p class="status-message" *ngIf="!isLoading() && eventos().length === 0">
+        No hay eventos creados.
+      </p>
+
+      <div class="content-list" *ngIf="!isLoading() && eventos().length > 0">
+        <article class="content-item" *ngFor="let event of eventos(); trackBy: trackById">
+          <div class="item-row">
+            <div>
+              <h3>{{ event.name }}</h3>
+              <p>{{ formatDate(event.eventDate) }} - {{ event.startTime }} a {{ event.endTime }}</p>
+            </div>
+
+            <span class="state-pill">Capacidad {{ event.capacity }}</span>
+          </div>
+
+          <p>{{ event.description }}</p>
+
+          <div class="item-actions">
+            <button type="button" class="secondary-btn" (click)="startEdit(event)">Editar</button>
+            <button type="button" class="danger-btn" (click)="remove(event)">Eliminar</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <app-role-footer></app-role-footer>
+</div>

@@ -7,12 +7,16 @@ import { authGuard, publicGuard } from './core/guards/auth.guard';
 import { Signup } from './features/signup/signup';
 import { MiembrosComponent } from './features/miembros/miembros';
 import { AdminClasesComponent } from './features/admin-class/admin-class';
+import { EventosComponent } from './features/eventos/eventos';
+import { PerfilComponent } from './features/perfil/perfil';
+import { HorariosComponent } from './features/horarios/horarios';
+import { PagoComponent } from './features/pago/pago';
 
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [authGuard],
-    component: DashboardComponent,
+    redirectTo: '/horarios',
+    pathMatch: 'full',
   },
   {
     path: 'login',
@@ -26,18 +30,28 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    redirectTo: '/panel-admin',
+    redirectTo: '/horarios',
     pathMatch: 'full',
   },
   {
     path: 'reservas',
-    redirectTo: '/panel-admin',
+    redirectTo: '/horarios',
     pathMatch: 'full',
   },
   {
     path: 'perfil',
-    redirectTo: '/panel-admin',
-    pathMatch: 'full',
+    component: PerfilComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'horarios',
+    component: HorariosComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'pago',
+    component: PagoComponent,
+    canActivate: [authGuard],
   },
   {
     path: 'panel-admin',
@@ -57,6 +71,11 @@ export const routes: Routes = [
   {
     path: 'miembros',
     component: MiembrosComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'eventos',
+    component: EventosComponent,
     canActivate: [authGuard],
   },
   {

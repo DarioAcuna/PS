@@ -4,8 +4,8 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
-import { FooterComponent } from '../../shared/admin-footer/admin-footer';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { RoleFooterComponent } from '../../shared/role-footer/role-footer';
 import { AuthService } from '../../services/auth/auth.service';
 import { UsuariosService } from '../../services/usuarios/usuarios.service';
 import {
@@ -27,7 +27,7 @@ interface HeaderNavItem {
 @Component({
   selector: 'app-miembros',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, AdminHeaderComponent, RoleFooterComponent],
   templateUrl: './miembros.html',
   styleUrl: './miembros.css',
 })
@@ -416,6 +416,11 @@ export class MiembrosComponent implements OnInit, OnDestroy {
 
     if (tabId === 'miembros') {
       void this.router.navigate(['/miembros']);
+      return;
+    }
+
+    if (tabId === 'eventos') {
+      void this.router.navigate(['/eventos']);
       return;
     }
 

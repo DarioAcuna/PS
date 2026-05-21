@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
@@ -17,24 +16,9 @@ export class ClasesService {
     return clean?.length ? clean : undefined;
   }
 
-  private async validarCombinacionUnica(
-    name: string,
-    level: string,
-    currentClassId?: number,
-  ) {
-    const existente = await this.prisma.clase.findFirst({
-      where: {
-        name,
-        level,
-        ...(currentClassId ? { NOT: { id: currentClassId } } : {}),
-      },
-    });
-
-    if (existente) {
-      throw new ConflictException(
-        'Ya existe una clase con el mismo nombre y nivel',
-      );
-    }
+  private inicioDiaUtc() {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   }
 
   async create(createClaseDto: CreateClaseDto) {
@@ -49,27 +33,12 @@ export class ClasesService {
       throw new ConflictException('El nivel de la clase es obligatorio');
     }
 
-    await this.validarCombinacionUnica(name, level);
-
-    try {
-      return this.prisma.clase.create({
-        data: {
-          name,
-          level,
-        },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          'Ya existe una clase con el mismo nombre y nivel',
-        );
-      }
-
-      throw error;
-    }
+    return this.prisma.clase.create({
+      data: {
+        name,
+        level,
+      },
+    });
   }
 
   async findAll() {
@@ -100,45 +69,85 @@ export class ClasesService {
       throw new ConflictException('El nivel de la clase es obligatorio');
     }
 
-    await this.validarCombinacionUnica(name, level, id);
+    const todayUtc = this.inicioDiaUtc();
 
-    try {
-      return this.prisma.clase.update({
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.clase.update({
         where: { id },
         data: {
           name,
           level,
         },
       });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          'Ya existe una clase con el mismo nombre y nivel',
-        );
-      }
 
-      throw error;
-    }
+      await tx.session.updateMany({
+        where: {
+          date: { gte: todayUtc },
+          schedule: { classId: id },
+        },
+        data: {
+          className: updated.name,
+          classLevel: updated.level,
+        },
+      });
+
+      return updated;
+    });
   }
 
   async remove(id: number) {
     await this.findOne(id);
 
-    const horariosAsociados = await this.prisma.schedule.count({
-      where: { classId: id },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const horarios = await tx.schedule.findMany({
+        where: { classId: id },
+        select: { id: true },
+      });
 
-    if (horariosAsociados > 0) {
-      throw new ConflictException(
-        'No se puede borrar la clase porque tiene horarios asignados',
-      );
-    }
+      const scheduleIds = horarios.map((horario) => horario.id);
 
-    return this.prisma.clase.delete({
-      where: { id },
+      if (scheduleIds.length > 0) {
+        const sesiones = await tx.session.findMany({
+          where: {
+            scheduleId: {
+              in: scheduleIds,
+            },
+          },
+          select: { id: true },
+        });
+
+        const sessionIds = sesiones.map((sesion) => sesion.id);
+
+        if (sessionIds.length > 0) {
+          await tx.reservation.deleteMany({
+            where: {
+              sessionId: {
+                in: sessionIds,
+              },
+            },
+          });
+        }
+
+        await tx.session.deleteMany({
+          where: {
+            scheduleId: {
+              in: scheduleIds,
+            },
+          },
+        });
+
+        await tx.schedule.deleteMany({
+          where: {
+            id: {
+              in: scheduleIds,
+            },
+          },
+        });
+      }
+
+      return tx.clase.delete({
+        where: { id },
+      });
     });
   }
 }

@@ -28,18 +28,18 @@ export class HorariosService {
     endTime: string,
     currentScheduleId?: number,
   ) {
-    const schedulesInSlot = await this.prisma.schedule.count({
+    const overlappingSchedules = await this.prisma.schedule.count({
       where: {
         dayOfWeek,
-        startTime,
-        endTime,
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
         ...(currentScheduleId ? { NOT: { id: currentScheduleId } } : {}),
       },
     });
 
-    if (schedulesInSlot >= 2) {
+    if (overlappingSchedules >= 2) {
       throw new ConflictException(
-        'Solo puede haber 2 clases por la misma franja horaria',
+        'Solo puede haber 2 clases simultaneas en la misma franja horaria',
       );
     }
   }
@@ -75,7 +75,7 @@ export class HorariosService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         throw new ConflictException(
-          'Solo puede haber 2 clases por la misma franja horaria',
+          'Solo puede haber 2 clases simultaneas en la misma franja horaria',
         );
       }
 
@@ -148,7 +148,7 @@ export class HorariosService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         throw new ConflictException(
-          'Solo puede haber 2 clases por la misma franja horaria',
+          'Solo puede haber 2 clases simultaneas en la misma franja horaria',
         );
       }
 

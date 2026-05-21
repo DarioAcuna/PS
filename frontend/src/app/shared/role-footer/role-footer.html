@@ -1,0 +1,5 @@
+<app-admin-footer *ngIf="showAdminFooter$ | async; else userFooter"></app-admin-footer>
+
+<ng-template #userFooter>
+  <app-footer></app-footer>
+</ng-template>

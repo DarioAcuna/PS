@@ -21,15 +21,15 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: R
 
 /**
  * Guard para rutas públicas (login)
- * Redirige a panel-admin si ya está autenticado
+ * Redirige a horarios si ya está autenticado
  */
 export const publicGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Si ya está autenticado, redirigir al panel admin
+  // Si ya está autenticado, redirigir a clases
   if (authService.isAuthenticated()) {
-    router.navigate(['/panel-admin']);
+    router.navigate(['/horarios']);
     return false;
   }
 

@@ -1,0 +1,114 @@
+<div class="profile-page">
+  <app-admin-header
+    *ngIf="isAdmin()"
+    [selectedTab]="selectedTab"
+    [navItems]="navItems"
+    (tabSelected)="selectTab($event)"
+    (homeClicked)="goToHome()"
+    (logoutClicked)="logout()"
+  ></app-admin-header>
+
+  <main class="profile-main">
+    <p class="status-message" *ngIf="isLoading()">Cargando perfil...</p>
+    <p class="status-message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+    <ng-container *ngIf="user() as profile">
+      <section class="profile-card">
+        <div class="hero-panel">
+          <div class="avatar-wrap">
+            <div class="avatar" aria-hidden="true">
+              {{ displayName().slice(0, 1).toUpperCase() }}
+            </div>
+
+            <button type="button" class="camera-btn" aria-label="Cambiar foto">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 3 7.5 5H5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-2.5L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+              </svg>
+            </button>
+          </div>
+
+          <h1>{{ displayName() }}</h1>
+          <span class="belt-pill" [ngClass]="beltClass()">{{ beltName() }}</span>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 2h2v2h6V2h2v2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V2zm12 8H5v10h14V10zM5 8h14V6H5v2z" />
+            </svg>
+            <span>Entrenando desde</span>
+            <strong>{{ trainingSince(profile.createdAt) }}</strong>
+          </article>
+
+          <article class="metric-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6.4 3 2.1 2.1-1.4 1.4L5 4.4 3.4 6 6 8.6 2 12.6 3.4 14 14 3.4 12.6 2 8.6 6 6.4 3zm11.2 0L15 5.6l1.4 1.4 2.2-2.1L20.1 6 17.5 8.6l4 4-1.4 1.4L9.5 3.4 10.9 2l4 4L17.6 3zM7 14l3 3-4 4H3v-3l4-4zm10 0 4 4v3h-3l-4-4 3-3z" />
+            </svg>
+            <span>Asistencias totales</span>
+            <strong>{{ totalAttendances() }}</strong>
+          </article>
+        </div>
+
+        <article class="plan-card">
+          <div class="plan-row">
+            <strong>{{ planName() }}</strong>
+            <strong>{{ usedClasses() }} / {{ monthlyClassLimit() }}</strong>
+          </div>
+          <div class="progress-track">
+            <span [style.width.%]="attendanceProgress()"></span>
+          </div>
+          <p class="plan-note" *ngIf="monthlyClassLimit() === 0">
+            Todavia no tienes una cuota activa.
+          </p>
+        </article>
+
+        <article class="belt-card" [ngClass]="beltClass()">
+          <div class="belt-illustration" aria-hidden="true">
+            <span></span>
+            <i
+              *ngFor="let stripe of getDegreeStripes(beltDegree())"
+              [style.left.px]="stripe"
+            ></i>
+          </div>
+
+          <div class="belt-info">
+            <span>Cinturon actual</span>
+            <h2>{{ beltName() }}</h2>
+
+            <label>Grados</label>
+            <div class="degree-display">
+              {{ beltDegree() }}
+            </div>
+          </div>
+        </article>
+
+        <article class="details-card">
+          <h2>Datos de la cuenta</h2>
+
+          <dl class="info-list">
+            <div>
+              <dt>Email</dt>
+              <dd>{{ profile.email }}</dd>
+            </div>
+            <div>
+              <dt>Rol</dt>
+              <dd>{{ roleLabel(profile.role) }}</dd>
+            </div>
+            <div>
+              <dt>Estado</dt>
+              <dd>{{ statusLabel(profile.status) }}</dd>
+            </div>
+            <div>
+              <dt>Fecha de alta</dt>
+              <dd>{{ formatDate(profile.createdAt) }}</dd>
+            </div>
+          </dl>
+
+          <button type="button" class="logout-btn" (click)="logout()">Cerrar sesion</button>
+        </article>
+      </section>
+    </ng-container>
+  </main>
+
+  <app-role-footer></app-role-footer>
+</div>

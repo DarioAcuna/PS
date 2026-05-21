@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClaseDto } from './dto/create-clase.dto';
 import { UpdateClaseDto } from './dto/update-clase.dto';
@@ -15,26 +14,6 @@ export class ClasesService {
   private normalizarCampo(value?: string) {
     const clean = value?.trim();
     return clean?.length ? clean : undefined;
-  }
-
-  private async validarCombinacionUnica(
-    name: string,
-    level: string,
-    currentClassId?: number,
-  ) {
-    const existente = await this.prisma.clase.findFirst({
-      where: {
-        name,
-        level,
-        ...(currentClassId ? { NOT: { id: currentClassId } } : {}),
-      },
-    });
-
-    if (existente) {
-      throw new ConflictException(
-        'Ya existe una clase con el mismo nombre y nivel',
-      );
-    }
   }
 
   private inicioDiaUtc() {
@@ -54,27 +33,12 @@ export class ClasesService {
       throw new ConflictException('El nivel de la clase es obligatorio');
     }
 
-    await this.validarCombinacionUnica(name, level);
-
-    try {
-      return this.prisma.clase.create({
-        data: {
-          name,
-          level,
-        },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          'Ya existe una clase con el mismo nombre y nivel',
-        );
-      }
-
-      throw error;
-    }
+    return this.prisma.clase.create({
+      data: {
+        name,
+        level,
+      },
+    });
   }
 
   async findAll() {
@@ -105,45 +69,30 @@ export class ClasesService {
       throw new ConflictException('El nivel de la clase es obligatorio');
     }
 
-    await this.validarCombinacionUnica(name, level, id);
+    const todayUtc = this.inicioDiaUtc();
 
-    try {
-      const todayUtc = this.inicioDiaUtc();
-
-      return await this.prisma.$transaction(async (tx) => {
-        const updated = await tx.clase.update({
-          where: { id },
-          data: {
-            name,
-            level,
-          },
-        });
-
-        await tx.session.updateMany({
-          where: {
-            date: { gte: todayUtc },
-            schedule: { classId: id },
-          },
-          data: {
-            className: updated.name,
-            classLevel: updated.level,
-          },
-        });
-
-        return updated;
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.clase.update({
+        where: { id },
+        data: {
+          name,
+          level,
+        },
       });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          'Ya existe una clase con el mismo nombre y nivel',
-        );
-      }
 
-      throw error;
-    }
+      await tx.session.updateMany({
+        where: {
+          date: { gte: todayUtc },
+          schedule: { classId: id },
+        },
+        data: {
+          className: updated.name,
+          classLevel: updated.level,
+        },
+      });
+
+      return updated;
+    });
   }
 
   async remove(id: number) {

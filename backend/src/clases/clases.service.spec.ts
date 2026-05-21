@@ -1,4 +1,3 @@
-import { ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClasesService } from './clases.service';
 
@@ -90,16 +89,16 @@ describe('ClasesService', () => {
     ).resolves.toMatchObject({ name: 'BJJ', level: 'Advanced' });
   });
 
-  it('rechaza crear clases con la misma combinacion name+level', async () => {
-    prisma.clase.findFirst.mockResolvedValueOnce({
-      id: 1,
+  it('permite crear clases con la misma combinacion name+level', async () => {
+    prisma.clase.create.mockResolvedValueOnce({
+      id: 3,
       name: 'BJJ',
       level: 'Beginner',
     });
 
     await expect(
       service.create({ name: 'BJJ', level: 'Beginner' }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).resolves.toMatchObject({ name: 'BJJ', level: 'Beginner' });
   });
 
   it('borra sesiones y horarios asociados antes de borrar la clase', async () => {

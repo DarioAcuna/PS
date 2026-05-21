@@ -13,7 +13,6 @@ model Clase {
   createdAt DateTime   @default(now()) @map("created_at")
   schedules Schedule[]
 
-  @@unique([name, level])
   @@map("classes")
 }
 
